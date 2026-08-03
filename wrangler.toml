@@ -1,0 +1,20 @@
+name = "sundome-reminder"
+main = "src/index.ts"
+compatibility_date = "2026-07-01"
+
+routes = [
+  { pattern = "sundome.take20m.dev", custom_domain = true }
+]
+
+# workers.dev のURLは公開しない(独自ドメインのみ)
+workers_dev = false
+preview_urls = false
+
+# INGEST_TOKEN は secret として設定する:
+#   wrangler secret put INGEST_TOKEN
+# ローカル開発時は .dev.vars に INGEST_TOKEN=... を書く
+
+[[d1_databases]]
+binding = "DB"
+database_name = "sundome-reminder"
+database_id = "d26ceca5-58bf-41ea-9243-6d034e2dcbb4"

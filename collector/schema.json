@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "sundome-reminder collector output",
+  "type": "object",
+  "required": ["collected_at", "events"],
+  "additionalProperties": false,
+  "properties": {
+    "collected_at": { "type": "string", "format": "date-time" },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["title", "artist", "date", "confidence", "lotteries"],
+        "additionalProperties": false,
+        "properties": {
+          "title": { "type": "string", "minLength": 1 },
+          "artist": { "type": "string", "minLength": 1 },
+          "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+          "open_time": { "type": ["string", "null"], "pattern": "^\\d{2}:\\d{2}$" },
+          "start_time": { "type": ["string", "null"], "pattern": "^\\d{2}:\\d{2}$" },
+          "source_url": { "type": ["string", "null"], "pattern": "^https?://" },
+          "confidence": { "enum": ["official", "inferred"] },
+          "lotteries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "confidence"],
+              "additionalProperties": false,
+              "properties": {
+                "name": { "type": "string", "minLength": 1 },
+                "starts_at": { "type": ["string", "null"], "format": "date-time" },
+                "ends_at": { "type": ["string", "null"], "format": "date-time" },
+                "url": { "type": ["string", "null"], "pattern": "^https?://" },
+                "confidence": { "enum": ["official", "inferred"] }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

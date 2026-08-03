@@ -1,0 +1,98 @@
+import type { EventWithLotteries } from './db'
+import { escapeHtml } from './html'
+
+/** schema.org MusicEvent の JSON-LD(Googleイベントリッチリザルト対応) */
+export function buildJsonLd(events: EventWithLotteries[], siteUrl: string): string {
+  const items = events.map((e) => ({
+    '@type': 'MusicEvent',
+    name: e.title,
+    startDate: e.start_time ? `${e.date}T${e.start_time}:00+09:00` : e.date,
+    ...(e.open_time ? { doorTime: `${e.date}T${e.open_time}:00+09:00` } : {}),
+    eventStatus: 'https://schema.org/EventScheduled',
+    eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+    location: {
+      '@type': 'EventVenue',
+      name: 'サンドーム福井',
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: '越前市',
+        addressRegion: '福井県',
+        streetAddress: '瓜生町5-1-1',
+        addressCountry: 'JP',
+      },
+    },
+    performer: { '@type': 'MusicGroup', name: e.artist },
+    ...(e.source_url ? { url: e.source_url } : {}),
+    offers: e.lotteries
+      .filter((l) => l.url || l.starts_at || l.ends_at)
+      .map((l) => ({
+        '@type': 'Offer',
+        name: l.name,
+        ...(l.url ? { url: l.url } : {}),
+        ...(l.starts_at ? { availabilityStarts: l.starts_at } : {}),
+        ...(l.ends_at ? { availabilityEnds: l.ends_at } : {}),
+      })),
+  }))
+  // <script> 内に埋め込むため、HTMLとして意味を持つ文字をJSONエスケープに置換する
+  // (< 等は有効なJSONのまま。</script> によるタグ脱出を防ぐ)
+  return JSON.stringify({
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebSite',
+        name: 'サンドーム福井 ライブ情報',
+        url: siteUrl,
+      },
+      ...items,
+    ],
+  })
+    .replaceAll('<', '\\u003c')
+    .replaceAll('>', '\\u003e')
+    .replaceAll('&', '\\u0026')
+    .replaceAll(' ', '\\u2028')
+    .replaceAll(' ', '\\u2029')
+}
+
+export function buildMetaDescription(events: EventWithLotteries[]): string {
+  const artists = [...new Set(events.map((e) => e.artist))].slice(0, 5)
+  const list = artists.length > 0 ? `${artists.join('、')} などの公演を掲載中。` : ''
+  return `サンドーム福井(福井県越前市)で開催されるライブの予定と、チケット先行・抽選の受付期間を毎日更新。${list}締切カウントダウン・RSS対応。`
+}
+
+export function buildSitemap(siteUrl: string, lastmod: string, extraPaths: string[] = []): string {
+  const url = (path: string) => `  <url><loc>${new URL(path, siteUrl).toString()}</loc><lastmod>${lastmod}</lastmod></url>`
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${['/', '/about', ...extraPaths].map(url).join('\n')}
+</urlset>
+`
+}
+
+export function buildRobots(siteUrl: string): string {
+  return `User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${new URL('/sitemap.xml', siteUrl).toString()}\n`
+}
+
+/** 共通の <head> メタタグ(title, description, OGP, canonical) */
+export function buildHeadMeta(opts: {
+  title: string
+  description: string
+  canonical: string
+}): string {
+  const t = escapeHtml(opts.title)
+  const d = escapeHtml(opts.description)
+  const canonical = escapeHtml(opts.canonical)
+  return `<title>${t}</title>
+<meta name="google-site-verification" content="Zqb1r-WsvcKYv5AbyATIlunK_PCtx7NgNemnjRPkXBg">
+<meta name="description" content="${d}">
+<meta name="theme-color" content="#2b47c4">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/favicon.svg">
+<link rel="canonical" href="${canonical}">
+<meta property="og:type" content="website">
+<meta property="og:title" content="${t}">
+<meta property="og:description" content="${d}">
+<meta property="og:url" content="${canonical}">
+<meta property="og:site_name" content="サンドーム福井 ライブ情報">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary">`
+}
