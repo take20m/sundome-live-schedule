@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "sundome-reminder collector output",
+  "title": "sundome-live-schedule collector output",
   "type": "object",
   "required": ["collected_at", "events"],
   "additionalProperties": false,

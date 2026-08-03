@@ -1,4 +1,4 @@
-# sundome-reminder
+# sundome-live-schedule
 
 サンドーム福井のライブ開催予定とチケット抽選期間を、Claude Code(`claude -p`)で毎晩自動収集して表示するサイト。
 

@@ -1,4 +1,4 @@
-# SPEC: sundome-reminder
+# SPEC: sundome-live-schedule
 
 サンドーム福井のライブ開催予定と、各公演のチケット抽選(申込)期間を自動収集して一覧表示するサイト。LT発表のデモを兼ねる。
 

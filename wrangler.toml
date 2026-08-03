@@ -1,3 +1,4 @@
+# Worker名とD1名はデプロイ済みリソースの内部名のため旧名のまま(リポジトリ名は sundome-live-schedule)
 name = "sundome-reminder"
 main = "src/index.ts"
 compatibility_date = "2026-07-01"
