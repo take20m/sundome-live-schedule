@@ -102,7 +102,19 @@ function lotterySummary(artist: string, l: IncomingLottery, kind: 'added' | 'upd
 
 type UpsertResult = 'added' | 'updated' | 'unchanged'
 
-/** snapshots のハッシュと比較し、差分があるときだけ書き込み+changes 追加のステートメントを返す */
+/** ISO文字列の表記ゆれ(+09:00 vs Z等)を吸収して同時刻か判定 */
+function sameInstant(a: string | null, b: string | null): boolean {
+  if (a == null || b == null) return a === b
+  return Date.parse(a) === Date.parse(b)
+}
+
+/**
+ * snapshots のハッシュと比較し、差分があるときだけ書き込み+changes 追加のステートメントを返す。
+ * - notify=false: 書き込みはするが通知(changes)には載せない(締切済みの受付など)
+ * - seenSummaries: 同一リクエスト内の同文通知を1回に抑える(同ツアー複数公演日の重複対策)
+ * - ハッシュは 'v2:' プレフィックス付き。旧形式からの移行時は差分があっても通知しない
+ *   (ハッシュ仕様変更による偽の「更新」を一晩分のRSSに流さないため)
+ */
 async function diffAndUpsert(
   db: D1Database,
   itemId: string,
@@ -112,14 +124,22 @@ async function diffAndUpsert(
   upsertStmt: D1PreparedStatement,
   nowIso: string,
   batch: D1PreparedStatement[],
+  notify: boolean,
+  seenSummaries: Set<string>,
 ): Promise<UpsertResult> {
   const existing = await db
     .prepare('SELECT hash FROM snapshots WHERE item_id = ?')
     .bind(itemId)
     .first<{ hash: string }>()
-  if (existing?.hash === contentHash) return 'unchanged'
+  if (existing?.hash === contentHash) {
+    // 通知対象の変化なし。ただし名前・URL等のハッシュ対象外フィールドは
+    // サイレントに最新へ更新しておく
+    batch.push(upsertStmt)
+    return 'unchanged'
+  }
 
   const kind: 'added' | 'updated' = existing ? 'updated' : 'added'
+  const legacyMigration = existing !== null && existing !== undefined && !existing.hash.startsWith('v2:')
   batch.push(upsertStmt)
   batch.push(
     db
@@ -129,13 +149,19 @@ async function diffAndUpsert(
       )
       .bind(itemId, itemType, contentHash, nowIso),
   )
-  batch.push(
-    db
-      .prepare(
-        'INSERT INTO changes (item_id, item_type, change_kind, summary, created_at) VALUES (?, ?, ?, ?, ?)',
+  if (notify && !legacyMigration) {
+    const summary = summaryOf(kind)
+    if (!seenSummaries.has(summary)) {
+      seenSummaries.add(summary)
+      batch.push(
+        db
+          .prepare(
+            'INSERT INTO changes (item_id, item_type, change_kind, summary, created_at) VALUES (?, ?, ?, ?, ?)',
+          )
+          .bind(itemId, itemType, kind, summary, nowIso),
       )
-      .bind(itemId, itemType, kind, summaryOf(kind), nowIso),
-  )
+    }
+  }
   return kind
 }
 
@@ -162,10 +188,12 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
   }
 
   const db = c.env.DB
-  const nowIso = new Date().toISOString()
+  const now = new Date()
+  const nowIso = now.toISOString()
   const eventCounts: Counts = { added: 0, updated: 0, unchanged: 0 }
   const lotteryCounts: Counts = { added: 0, updated: 0, unchanged: 0 }
   const batch: D1PreparedStatement[] = []
+  const seenSummaries = new Set<string>()
 
   for (const ev of events) {
     // サンドーム福井は単一ホールで実質1日1公演のため、日付をIDにする
@@ -183,9 +211,11 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
       source_url: ev.source_url ?? existingEv?.source_url ?? null,
       confidence: existingEv?.confidence === 'official' ? 'official' : ev.confidence,
     }
-    const eventHash = await sha256Hex(
-      JSON.stringify([ev.title, ev.artist, ev.date, evm.open_time, evm.start_time, evm.source_url, evm.confidence]),
-    )
+    // ハッシュ対象は「通知する価値のある変化」だけに絞る。
+    // タイトル・アーティスト名・URLの表記ゆれはサイレントに更新する
+    const eventHash = `v2:${await sha256Hex(
+      JSON.stringify([ev.date, evm.open_time, evm.start_time, evm.confidence]),
+    )}`
     const eventResult = await diffAndUpsert(
       db,
       eventId,
@@ -208,6 +238,8 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
         .bind(eventId, ev.title, ev.artist, ev.date, evm.open_time, evm.start_time, evm.source_url, evm.confidence, nowIso),
       nowIso,
       batch,
+      true,
+      seenSummaries,
     )
     eventCounts[eventResult]++
 
@@ -222,7 +254,16 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
 
     const incomingLotteryIds = new Set<string>()
     for (const l of ev.lotteries) {
-      const lotteryId = `lot-${eventId}-${(await sha256Hex(normalizeKey(l.name))).slice(0, 8)}`
+      let lotteryId = `lot-${eventId}-${(await sha256Hex(normalizeKey(l.name))).slice(0, 8)}`
+
+      // 表記ゆれ対策: 名前が変わっていても受付期間が完全一致する既存行は
+      // 同一の申込とみなしてIDを引き継ぐ(名前はサイレントに最新へ更新される)
+      if (!existingLots.has(lotteryId) && (l.starts_at || l.ends_at)) {
+        const match = existingLotRows.find(
+          (r) => sameInstant(r.starts_at, l.starts_at) && sameInstant(r.ends_at, l.ends_at),
+        )
+        if (match) lotteryId = match.id
+      }
       incomingLotteryIds.add(lotteryId)
 
       // ラチェット: 期間・URLは null で上書きしない。official は格下げしない
@@ -234,9 +275,12 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
         confidence: old?.confidence === 'official' ? 'official' : l.confidence,
       }
       const merged: IncomingLottery = { name: l.name, ...lm }
-      const lotteryHash = await sha256Hex(
-        JSON.stringify([l.name, lm.starts_at, lm.ends_at, lm.url, lm.confidence]),
-      )
+      // 名前・URLの表記ゆれは通知対象にしない(期間と確度の変化だけ通知)
+      const lotteryHash = `v2:${await sha256Hex(
+        JSON.stringify([lm.starts_at, lm.ends_at, lm.confidence]),
+      )}`
+      // 既に締切を過ぎた受付は、収集で新たに見つかっても通知しない(表示はされる)
+      const lotteryNotify = !(lm.ends_at && Date.parse(lm.ends_at) < now.getTime())
       const lotteryResult = await diffAndUpsert(
         db,
         lotteryId,
@@ -254,6 +298,8 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
           .bind(lotteryId, eventId, l.name, lm.starts_at, lm.ends_at, lm.url, lm.confidence, nowIso),
         nowIso,
         batch,
+        lotteryNotify,
+        seenSummaries,
       )
       lotteryCounts[lotteryResult]++
     }

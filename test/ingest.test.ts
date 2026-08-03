@@ -199,6 +199,46 @@ describe('ingest API', () => {
     expect(results.length).toBe(1)
   })
 
+  it('通知ノイズ抑制: 改名・締切済み・複数公演日の重複はRSSに流れない', async () => {
+    const day = 24 * 60 * 60 * 1000
+    const future = (d: number) => new Date(Date.now() + d * day).toISOString()
+    const past = (d: number) => new Date(Date.now() - d * day).toISOString()
+    const mk = (date: string, lotteries: object[]) => ({
+      title: 'NOISE TOUR',
+      artist: 'ノイズ',
+      date,
+      confidence: 'official',
+      lotteries,
+    })
+    const fc = { name: 'FC先行', starts_at: future(1), ends_at: future(10), url: null, confidence: 'official' }
+    const ended = { name: '一次先行', starts_at: past(30), ends_at: past(20), url: null, confidence: 'official' }
+
+    const before = await env.DB.prepare('SELECT count(*) AS n FROM changes').first<{ n: number }>()
+
+    // 2公演日に同じ受付(未来)+締切済みの受付
+    await post({ events: [mk('2027-09-09', [fc, ended]), mk('2027-09-10', [fc, ended])] })
+    let after = await env.DB.prepare('SELECT count(*) AS n FROM changes').first<{ n: number }>()
+    // 公演added×2(日付が違うので別サマリ) + FC先行added×1(同文は重複排除) = 3。締切済みは通知されない
+    expect(after!.n - before!.n).toBe(3)
+
+    // 同じ受付を改名して再送(期間一致) → ID引き継ぎで added も updated も出ない
+    const renamed = structuredClone(fc)
+    renamed.name = 'NOISE TOUR 2027 ファンクラブ先行'
+    const res = await post({ events: [mk('2027-09-09', [renamed])] })
+    const body = (await res.json()) as Record<string, { unchanged: number }>
+    expect(body.lotteries.unchanged).toBe(1)
+    after = await env.DB.prepare('SELECT count(*) AS n FROM changes').first<{ n: number }>()
+    expect(after!.n - before!.n).toBe(3) // 増えていない
+
+    // 名前は最新のものにサイレント更新されている
+    const row = await env.DB.prepare(
+      "SELECT name FROM lotteries WHERE event_id = 'ev-2027-09-09' AND starts_at IS NOT NULL AND ends_at > ?",
+    )
+      .bind(new Date().toISOString())
+      .first<{ name: string }>()
+    expect(row?.name).toBe('NOISE TOUR 2027 ファンクラブ先行')
+  })
+
   it('不正な日付の公演は破棄され skipped に載る', async () => {
     const res = await post({
       events: [
