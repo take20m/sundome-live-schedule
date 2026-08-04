@@ -1,4 +1,5 @@
 import type { Context } from 'hono'
+import { todayInJst } from '../lib/db'
 import { formatJst } from '../lib/format'
 import type { Bindings, Confidence, LotteryRow } from '../types'
 
@@ -238,10 +239,12 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
         .bind(eventId, ev.title, ev.artist, ev.date, evm.open_time, evm.start_time, evm.source_url, evm.confidence, nowIso),
       nowIso,
       batch,
-      true,
+      // 開催済みの公演はサイトに表示されないため、通知もしない
+      ev.date >= todayInJst(now),
       seenSummaries,
     )
     eventCounts[eventResult]++
+    const eventInPast = ev.date < todayInJst(now)
 
     const { results: existingLotRows } = await db
       .prepare('SELECT * FROM lotteries WHERE event_id = ?')
@@ -279,8 +282,15 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
       const lotteryHash = `v2:${await sha256Hex(
         JSON.stringify([lm.starts_at, lm.ends_at, lm.confidence]),
       )}`
-      // 既に締切を過ぎた受付は、収集で新たに見つかっても通知しない(表示はされる)
-      const lotteryNotify = !(lm.ends_at && Date.parse(lm.ends_at) < now.getTime())
+      // 通知するのは「行動できる受付」だけ:
+      // - 過去公演の受付は通知しない(サイトにも表示されない)
+      // - 期間が1つも取れていない受付は通知しない(期間未確認の名前は表記ゆれで
+      //   毎晩IDが変わりやすくノイズ源。期間が判明した時点で「抽選更新」として通知される)
+      // - 既に締切を過ぎた受付は通知しない(表示はされる)
+      const lotteryNotify =
+        !eventInPast &&
+        (lm.starts_at !== null || lm.ends_at !== null) &&
+        !(lm.ends_at && Date.parse(lm.ends_at) < now.getTime())
       const lotteryResult = await diffAndUpsert(
         db,
         lotteryId,

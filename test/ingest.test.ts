@@ -237,6 +237,21 @@ describe('ingest API', () => {
       .bind(new Date().toISOString())
       .first<{ name: string }>()
     expect(row?.name).toBe('NOISE TOUR 2027 ファンクラブ先行')
+
+    // 期間が全く不明の受付、過去公演の受付はどちらも通知されない(DBには入る)
+    const yesterday = past(1).slice(0, 10)
+    await post({
+      events: [
+        mk('2027-09-09', [{ name: '期間なし先行', starts_at: null, ends_at: null, url: null, confidence: 'inferred' }]),
+        mk(yesterday, [{ name: '過去公演の先行', starts_at: future(1), ends_at: future(5), url: null, confidence: 'official' }]),
+      ],
+    })
+    after = await env.DB.prepare('SELECT count(*) AS n FROM changes').first<{ n: number }>()
+    expect(after!.n - before!.n).toBe(3) // 通知は増えない
+    const stored = await env.DB.prepare(
+      "SELECT count(*) AS n FROM lotteries WHERE name IN ('期間なし先行', '過去公演の先行')",
+    ).first<{ n: number }>()
+    expect(stored!.n).toBe(2) // 取り込みはされている
   })
 
   it('不正な日付の公演は破棄され skipped に載る', async () => {
