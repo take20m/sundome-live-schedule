@@ -7,6 +7,7 @@ export function buildJsonLd(events: EventWithLotteries[], siteUrl: string): stri
     '@type': 'MusicEvent',
     name: e.title,
     startDate: e.start_time ? `${e.date}T${e.start_time}:00+09:00` : e.date,
+    endDate: e.date,
     ...(e.open_time ? { doorTime: `${e.date}T${e.open_time}:00+09:00` } : {}),
     eventStatus: 'https://schema.org/EventScheduled',
     eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
@@ -29,8 +30,8 @@ export function buildJsonLd(events: EventWithLotteries[], siteUrl: string): stri
         '@type': 'Offer',
         name: l.name,
         ...(l.url ? { url: l.url } : {}),
-        ...(l.starts_at ? { availabilityStarts: l.starts_at } : {}),
-        ...(l.ends_at ? { availabilityEnds: l.ends_at } : {}),
+        ...(l.starts_at ? { availabilityStarts: l.starts_at, validFrom: l.starts_at } : {}),
+        ...(l.ends_at ? { availabilityEnds: l.ends_at, validThrough: l.ends_at } : {}),
       })),
   }))
   // <script> 内に埋め込むため、HTMLとして意味を持つ文字をJSONエスケープに置換する
