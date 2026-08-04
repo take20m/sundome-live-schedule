@@ -1,11 +1,21 @@
 import type { EventWithLotteries } from './db'
 import { escapeHtml } from './html'
 
+/** 受付状態を schema.org の availability 語彙へ(受付前=PreOrder / 受付中=InStock / 終了=Discontinued) */
+function offerAvailability(starts: string | null, ends: string | null, now: number): string | null {
+  if (starts && now < Date.parse(starts)) return 'https://schema.org/PreOrder'
+  if (ends && now > Date.parse(ends)) return 'https://schema.org/Discontinued'
+  if (starts || ends) return 'https://schema.org/InStock'
+  return null
+}
+
 /** schema.org MusicEvent の JSON-LD(Googleイベントリッチリザルト対応) */
 export function buildJsonLd(events: EventWithLotteries[], siteUrl: string): string {
+  const now = Date.now()
   const items = events.map((e) => ({
     '@type': 'MusicEvent',
     name: e.title,
+    description: `${e.artist}のサンドーム福井(福井県越前市)公演「${e.title}」。チケット先行・抽選の受付期間を掲載。`,
     startDate: e.start_time ? `${e.date}T${e.start_time}:00+09:00` : e.date,
     endDate: e.date,
     ...(e.open_time ? { doorTime: `${e.date}T${e.open_time}:00+09:00` } : {}),
@@ -26,13 +36,17 @@ export function buildJsonLd(events: EventWithLotteries[], siteUrl: string): stri
     ...(e.source_url ? { url: e.source_url } : {}),
     offers: e.lotteries
       .filter((l) => l.url || l.starts_at || l.ends_at)
-      .map((l) => ({
-        '@type': 'Offer',
-        name: l.name,
-        ...(l.url ? { url: l.url } : {}),
-        ...(l.starts_at ? { availabilityStarts: l.starts_at, validFrom: l.starts_at } : {}),
-        ...(l.ends_at ? { availabilityEnds: l.ends_at, validThrough: l.ends_at } : {}),
-      })),
+      .map((l) => {
+        const availability = offerAvailability(l.starts_at, l.ends_at, now)
+        return {
+          '@type': 'Offer',
+          name: l.name,
+          ...(l.url ? { url: l.url } : {}),
+          ...(l.starts_at ? { availabilityStarts: l.starts_at, validFrom: l.starts_at } : {}),
+          ...(l.ends_at ? { availabilityEnds: l.ends_at, validThrough: l.ends_at } : {}),
+          ...(availability ? { availability } : {}),
+        }
+      }),
   }))
   // <script> 内に埋め込むため、HTMLとして意味を持つ文字をJSONエスケープに置換する
   // (< 等は有効なJSONのまま。</script> によるタグ脱出を防ぐ)
