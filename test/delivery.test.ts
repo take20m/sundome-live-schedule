@@ -19,12 +19,38 @@ describe('一覧ページ', () => {
 })
 
 describe('締切セクションとカウントダウン', () => {
-  it('受付中の抽選が締切セクションにカウントダウン付きで出る', async () => {
+  it('受付中の抽選が販売中セクションにカウントダウン付きで出る', async () => {
     const res = await SELF.fetch('https://example.com/')
     const html = await res.text()
-    expect(html).toContain('締切が近い受付')
+    expect(html).toContain('販売中のチケット')
     expect(html).toMatch(/data-ends="[^"]+"/)
     expect(html).toMatch(/あと\d+日|あと\d+時間/)
+  })
+
+  it('終了未定の販売中(先着)もセクションに載る。売り切れは載らない', async () => {
+    const day = 24 * 60 * 60 * 1000
+    const now = new Date()
+    const date = new Date(now.getTime() + 40 * day).toISOString().slice(0, 10)
+    await env.DB.prepare(
+      `INSERT INTO events (id, title, artist, date, confidence, updated_at) VALUES (?, 'ENDLESS TOUR', 'エンドレス', ?, 'official', ?)`,
+    )
+      .bind(`ev-${date}`, date, now.toISOString())
+      .run()
+    await env.DB.prepare(
+      `INSERT INTO lotteries (id, event_id, name, starts_at, ends_at, confidence, sold_out, updated_at)
+       VALUES (?, ?, '一般発売(先着)', ?, NULL, 'official', 0, ?),
+              (?, ?, '売切済の販売', ?, NULL, 'official', 1, ?)`,
+    )
+      .bind(
+        `lot-ev-${date}-00000001`, `ev-${date}`, new Date(now.getTime() - 5 * day).toISOString(), now.toISOString(),
+        `lot-ev-${date}-00000002`, `ev-${date}`, new Date(now.getTime() - 5 * day).toISOString(), now.toISOString(),
+      )
+      .run()
+    const html = await (await SELF.fetch('https://example.com/')).text()
+    const section = html.split('販売中のチケット')[1].split('今後の公演')[0]
+    expect(section).toContain('一般発売(先着)')
+    expect(section).toContain('〆未定')
+    expect(section).not.toContain('売切済の販売')
   })
 
   it('同一ツアーの複数公演日に紐づく同じ受付は1回だけ表示される', async () => {

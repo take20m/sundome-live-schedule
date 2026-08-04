@@ -54,16 +54,17 @@ function renderDeadlines(events: EventWithLotteries[], now: Date): string {
   for (const e of events) {
     for (const l of e.lotteries) {
       const status = lotteryStatus(l, now)
-      if ((status === 'open' || status === 'upcoming') && l.ends_at) {
+      // 受付中(締切あり/終了未定とも)と受付前を載せる。売り切れ・終了・期間不明は除外
+      if (status === 'open' || (status === 'upcoming' && l.ends_at)) {
         entries.push({ event: e, lottery: l, status })
       }
     }
   }
   if (entries.length === 0) return ''
+  // 締切が近い順。終了未定(ends_atなし)の販売中は最後に
+  const sortKey = (x: Entry) => x.lottery.ends_at ?? '9999'
   entries.sort(
-    (a, b) =>
-      (a.lottery.ends_at ?? '').localeCompare(b.lottery.ends_at ?? '') ||
-      a.event.date.localeCompare(b.event.date),
+    (a, b) => sortKey(a).localeCompare(sortKey(b)) || a.event.date.localeCompare(b.event.date),
   )
 
   // 「アーティスト+締切」でグループ化して1行にまとめる。
@@ -71,7 +72,7 @@ function renderDeadlines(events: EventWithLotteries[], now: Date): string {
   type Group = { first: Entry; names: string[]; dates: Set<string> }
   const groups = new Map<string, Group>()
   for (const entry of entries) {
-    const key = `${entry.event.artist}|${Date.parse(entry.lottery.ends_at!)}`
+    const key = `${entry.event.artist}|${entry.lottery.ends_at ? Date.parse(entry.lottery.ends_at) : 'endless'}`
     const g = groups.get(key)
     if (!g) {
       groups.set(key, { first: entry, names: [entry.lottery.name], dates: new Set([entry.event.date]) })
@@ -89,21 +90,26 @@ function renderDeadlines(events: EventWithLotteries[], now: Date): string {
     .slice(0, 6)
     .map(({ first, names, dates }) => {
       const { event, lottery, status } = first
-      const ends = new Date(lottery.ends_at!)
+      const hasEnd = lottery.ends_at !== null
       const countdown =
-        status === 'open' ? formatCountdown(ends.getTime() - now.getTime()) : `${formatJst(lottery.starts_at)}〜`
+        status === 'open'
+          ? hasEnd
+            ? formatCountdown(new Date(lottery.ends_at!).getTime() - now.getTime())
+            : '販売中'
+          : `${formatJst(lottery.starts_at)}〜`
       const sortedDates = [...dates].sort()
       const datesLabel = `${sortedDates[0].slice(0, 4)}/${sortedDates.map(md).join('・')}`
       const nameLabel = names.length > 1 ? `${names[0]} 他${names.length - 1}件` : names[0]
+      const endLabel = hasEnd ? `〆${formatJst(lottery.ends_at)}` : '〆未定'
       return `<a class="deadline${status === 'open' ? ' deadline-open' : ''}" href="/e/${escapeHtml(event.id)}">
-      <span class="countdown"${status === 'open' ? ` data-ends="${escapeHtml(lottery.ends_at!)}"` : ''}>${escapeHtml(countdown)}</span>
+      <span class="countdown"${status === 'open' && hasEnd ? ` data-ends="${escapeHtml(lottery.ends_at!)}"` : ''}>${escapeHtml(countdown)}</span>
       <span><span class="who">${escapeHtml(event.artist)}</span>
-      <span class="what">${escapeHtml(nameLabel)} · 公演 ${escapeHtml(datesLabel)} · 〆${escapeHtml(formatJst(lottery.ends_at))}</span></span>
+      <span class="what">${escapeHtml(nameLabel)} · 公演 ${escapeHtml(datesLabel)} · ${escapeHtml(endLabel)}</span></span>
       <span class="badge badge-${status}">${STATUS_LABEL[status]}</span>
     </a>`
     })
     .join('\n')
-  return `<h2 class="section">締切が近い受付</h2>\n<div class="deadlines">${items}</div>`
+  return `<h2 class="section">販売中のチケット</h2>\n<div class="deadlines">${items}</div>`
 }
 
 export function renderLottery(l: LotteryRow, now: Date): string {
