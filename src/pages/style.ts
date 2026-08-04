@@ -66,6 +66,8 @@ h2.section::after { content: ""; flex: 1; height: 1px; background: var(--line); 
 .tix::before { top: -0.65rem; } .tix::after { bottom: -0.65rem; }
 .tix.open::before, .tix.open::after { border-color: var(--accent); }
 .stub .y { font-size: .68rem; color: var(--muted); letter-spacing: .18em; }
+.stub .today-label { font-size: .66rem; color: var(--on-accent); background: var(--accent); border-radius: 2px; padding: .06rem .3rem; letter-spacing: .18em; display: inline-block; }
+.tix.is-today .stub { background: var(--accent-soft); }
 .stub .md { font-size: 1.45rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.2; }
 .stub .dw { font-size: .68rem; color: var(--accent); font-weight: 700; letter-spacing: .28em; }
 .bod { padding: .9rem 1.1rem 1rem; flex: 1; min-width: 0; }

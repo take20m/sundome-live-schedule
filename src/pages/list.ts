@@ -1,3 +1,4 @@
+import { todayInJst } from '../lib/db'
 import type { EventWithLotteries } from '../lib/db'
 import { formatJst } from '../lib/format'
 import { escapeHtml } from '../lib/html'
@@ -62,26 +63,39 @@ function renderDeadlines(events: EventWithLotteries[], now: Date): string {
       a.event.date.localeCompare(b.event.date),
   )
 
-  // 同一ツアーの複数公演日に同じ受付が紐づくため、申込単位で重複排除
-  // (アーティスト+受付名+締切が同じなら1つの申込とみなし、最初の公演日に代表させる)
-  const seen = new Set<string>()
-  const unique = entries.filter(({ event, lottery }) => {
-    const key = `${event.artist}|${lottery.name}|${lottery.ends_at}`
-    if (seen.has(key)) return false
-    seen.add(key)
-    return true
-  })
+  // 「アーティスト+締切」でグループ化して1行にまとめる。
+  // 同一ツアーの複数公演日や、席種違いの同時受付(プレリザーブ/ステージサイド等)を集約する
+  type Group = { first: Entry; names: string[]; dates: Set<string> }
+  const groups = new Map<string, Group>()
+  for (const entry of entries) {
+    const key = `${entry.event.artist}|${Date.parse(entry.lottery.ends_at!)}`
+    const g = groups.get(key)
+    if (!g) {
+      groups.set(key, { first: entry, names: [entry.lottery.name], dates: new Set([entry.event.date]) })
+    } else {
+      if (!g.names.includes(entry.lottery.name)) g.names.push(entry.lottery.name)
+      g.dates.add(entry.event.date)
+    }
+  }
 
-  const items = unique
+  const md = (date: string) => {
+    const [, m, d] = date.split('-').map(Number)
+    return `${m}/${d}`
+  }
+  const items = [...groups.values()]
     .slice(0, 6)
-    .map(({ event, lottery, status }) => {
+    .map(({ first, names, dates }) => {
+      const { event, lottery, status } = first
       const ends = new Date(lottery.ends_at!)
       const countdown =
         status === 'open' ? formatCountdown(ends.getTime() - now.getTime()) : `${formatJst(lottery.starts_at)}〜`
+      const sortedDates = [...dates].sort()
+      const datesLabel = `${sortedDates[0].slice(0, 4)}/${sortedDates.map(md).join('・')}`
+      const nameLabel = names.length > 1 ? `${names[0]} 他${names.length - 1}件` : names[0]
       return `<a class="deadline${status === 'open' ? ' deadline-open' : ''}" href="/e/${escapeHtml(event.id)}">
       <span class="countdown"${status === 'open' ? ` data-ends="${escapeHtml(lottery.ends_at!)}"` : ''}>${escapeHtml(countdown)}</span>
       <span><span class="who">${escapeHtml(event.artist)}</span>
-      <span class="what">${escapeHtml(lottery.name)} · 〆${escapeHtml(formatJst(lottery.ends_at))}</span></span>
+      <span class="what">${escapeHtml(nameLabel)} · 公演 ${escapeHtml(datesLabel)} · 〆${escapeHtml(formatJst(lottery.ends_at))}</span></span>
       <span class="badge badge-${status}">${STATUS_LABEL[status]}</span>
     </a>`
     })
@@ -106,13 +120,14 @@ export function renderLottery(l: LotteryRow, now: Date): string {
 
 function renderEvent(e: EventWithLotteries, now: Date): string {
   const hasOpen = e.lotteries.some((l) => lotteryStatus(l, now) === 'open')
+  const isToday = e.date === todayInJst(now)
   const times = [e.open_time && `開場 ${e.open_time}`, e.start_time && `開演 ${e.start_time}`]
     .filter(Boolean)
     .join(' / ')
   const d = stubDate(e.date)
-  return `<article class="tix${hasOpen ? ' open' : ''}" id="${escapeHtml(e.id)}">
+  return `<article class="tix${hasOpen ? ' open' : ''}${isToday ? ' is-today' : ''}" id="${escapeHtml(e.id)}">
     <div class="stub">
-      <div class="y">${escapeHtml(d.y)}</div>
+      ${isToday ? '<div class="today-label">本日公演</div>' : `<div class="y">${escapeHtml(d.y)}</div>`}
       <div class="md">${escapeHtml(d.md)}</div>
       <div class="dw">${escapeHtml(d.dw)}</div>
     </div>

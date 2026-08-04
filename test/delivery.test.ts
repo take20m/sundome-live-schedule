@@ -52,6 +52,35 @@ describe('締切セクションとカウントダウン', () => {
     const html = await (await SELF.fetch('https://example.com/')).text()
     // 締切セクション内の受付中カウントダウンは1件だけ(公演カード側は2枚ある)
     expect(html.match(/data-ends=/g)?.length).toBe(1)
+    // 締切行に公演日が出る(2公演日がまとまる)
+    expect(html).toMatch(/公演 \d{4}\/\d+\/\d+・\d+\/\d+/)
+  })
+
+  it('同一アーティスト・同一締切の複数受付は1行にまとまり「他N件」表示', async () => {
+    const seeded = await env.DB.prepare(
+      "SELECT event_id, starts_at, ends_at FROM lotteries WHERE name = 'FC先行(抽選)' LIMIT 1",
+    ).first<{ event_id: string; starts_at: string; ends_at: string }>()
+    await env.DB.prepare(
+      `INSERT INTO lotteries (id, event_id, name, starts_at, ends_at, confidence, updated_at)
+       VALUES (?, ?, 'FC先行(ステージサイド席)', ?, ?, 'inferred', ?)`,
+    )
+      .bind(`lot-${seeded!.event_id}-cafebabe`, seeded!.event_id, seeded!.starts_at, seeded!.ends_at, new Date().toISOString())
+      .run()
+    const html = await (await SELF.fetch('https://example.com/')).text()
+    expect(html.match(/data-ends=/g)?.length).toBe(1)
+    expect(html).toContain('他1件')
+  })
+
+  it('今日開催の公演には「本日公演」マーカーが付く', async () => {
+    const today = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
+    await env.DB.prepare(
+      `INSERT INTO events (id, title, artist, date, confidence, updated_at) VALUES (?, 'TODAY LIVE', '今日のアーティスト', ?, 'official', ?)`,
+    )
+      .bind(`ev-${today}`, today, new Date().toISOString())
+      .run()
+    const html = await (await SELF.fetch('https://example.com/')).text()
+    expect(html).toContain('本日公演')
+    expect(html).toContain('is-today')
   })
 })
 
@@ -80,7 +109,9 @@ describe('SEO', () => {
 
 describe('公演詳細ページ', () => {
   it('公演情報と抽選が表示され、JSON-LDを含む', async () => {
-    const { results } = await env.DB.prepare('SELECT id FROM events LIMIT 1').all<{ id: string }>()
+    const { results } = await env.DB.prepare(
+      "SELECT id FROM events WHERE artist = 'SAMPLE ARTIST' LIMIT 1",
+    ).all<{ id: string }>()
     const res = await SELF.fetch(`https://example.com/e/${results[0].id}`)
     expect(res.status).toBe(200)
     const html = await res.text()
