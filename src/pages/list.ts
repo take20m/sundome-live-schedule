@@ -33,7 +33,7 @@ const STATUS_LABEL: Record<LotteryStatus, string> = {
   open: '受付中',
   upcoming: '受付前',
   closed: '終了',
-  soldout: '予定枚数終了',
+  soldout: '売り切れ',
   unknown: '期間不明',
 }
 

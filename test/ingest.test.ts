@@ -254,7 +254,7 @@ describe('ingest API', () => {
     expect(stored!.n).toBe(2) // 取り込みはされている
   })
 
-  it('sold_out: 期間内でも予定枚数終了として表示され、フラグはtrue方向にのみ倒れる', async () => {
+  it('sold_out: 期間内でも売り切れとして表示され、フラグはtrue方向にのみ倒れる', async () => {
     const day = 24 * 60 * 60 * 1000
     const soldOutEvent = {
       title: 'SOLDOUT TOUR',
@@ -274,9 +274,9 @@ describe('ingest API', () => {
     }
     await post({ events: [soldOutEvent] })
 
-    // 一覧で「予定枚数終了」バッジ、受付中扱いにならない
+    // 一覧で「売り切れ」バッジ、受付中扱いにならない
     const html = await (await SELF.fetch('https://example.com/')).text()
-    expect(html).toContain('予定枚数終了')
+    expect(html).toContain('売り切れ')
 
     // 浅い収集(sold_out欠落)で再送してもフラグは維持される
     const shallow = structuredClone(soldOutEvent)
