@@ -61,10 +61,15 @@ function renderDeadlines(events: EventWithLotteries[], now: Date): string {
     }
   }
   if (entries.length === 0) return ''
-  // 締切が近い順。終了未定(ends_atなし)の販売中は最後に
-  const sortKey = (x: Entry) => x.lottery.ends_at ?? '9999'
+  // 並び: 受付中(締切順) → 受付前(開始順) → 販売中(終了未定)。
+  // いま動けるものを上に、まだ動けない/急がないものを下に
+  const rank = (x: Entry) => (x.status === 'upcoming' ? 1 : x.lottery.ends_at ? 0 : 2)
+  const sortKey = (x: Entry) => x.lottery.ends_at ?? x.lottery.starts_at ?? '9999'
   entries.sort(
-    (a, b) => sortKey(a).localeCompare(sortKey(b)) || a.event.date.localeCompare(b.event.date),
+    (a, b) =>
+      rank(a) - rank(b) ||
+      sortKey(a).localeCompare(sortKey(b)) ||
+      a.event.date.localeCompare(b.event.date),
   )
 
   // 「アーティスト+締切」でグループ化して1行にまとめる。
