@@ -1,11 +1,12 @@
 import type { EventWithLotteries } from './db'
 import { escapeHtml } from './html'
 
-/** 受付状態を schema.org の availability 語彙へ(受付前=PreOrder / 受付中=InStock / 終了=Discontinued) */
-function offerAvailability(starts: string | null, ends: string | null, now: number): string | null {
-  if (starts && now < Date.parse(starts)) return 'https://schema.org/PreOrder'
-  if (ends && now > Date.parse(ends)) return 'https://schema.org/Discontinued'
-  if (starts || ends) return 'https://schema.org/InStock'
+/** 受付状態を schema.org の availability 語彙へ(売切=SoldOut / 受付前=PreOrder / 受付中=InStock / 終了=Discontinued) */
+function offerAvailability(l: { starts_at: string | null; ends_at: string | null; sold_out: number }, now: number): string | null {
+  if (l.sold_out === 1) return 'https://schema.org/SoldOut'
+  if (l.starts_at && now < Date.parse(l.starts_at)) return 'https://schema.org/PreOrder'
+  if (l.ends_at && now > Date.parse(l.ends_at)) return 'https://schema.org/Discontinued'
+  if (l.starts_at || l.ends_at) return 'https://schema.org/InStock'
   return null
 }
 
@@ -37,7 +38,7 @@ export function buildJsonLd(events: EventWithLotteries[], siteUrl: string): stri
     offers: e.lotteries
       .filter((l) => l.url || l.starts_at || l.ends_at)
       .map((l) => {
-        const availability = offerAvailability(l.starts_at, l.ends_at, now)
+        const availability = offerAvailability(l, now)
         return {
           '@type': 'Offer',
           name: l.name,

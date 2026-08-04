@@ -16,9 +16,11 @@ export function stubDate(date: string): { y: string; md: string; dw: string } {
   return { y: String(y), md: `${String(m).padStart(2, '0')}.${String(day).padStart(2, '0')}`, dw }
 }
 
-type LotteryStatus = 'open' | 'upcoming' | 'closed' | 'unknown'
+type LotteryStatus = 'open' | 'upcoming' | 'closed' | 'soldout' | 'unknown'
 
 export function lotteryStatus(l: LotteryRow, now: Date): LotteryStatus {
+  // 期間内でも先着販売の予定枚数終了などは受付不可
+  if (l.sold_out === 1) return 'soldout'
   const starts = l.starts_at ? new Date(l.starts_at) : null
   const ends = l.ends_at ? new Date(l.ends_at) : null
   if (starts && now < starts) return 'upcoming'
@@ -31,6 +33,7 @@ const STATUS_LABEL: Record<LotteryStatus, string> = {
   open: '受付中',
   upcoming: '受付前',
   closed: '終了',
+  soldout: '予定枚数終了',
   unknown: '期間不明',
 }
 
@@ -118,16 +121,20 @@ export function renderLottery(l: LotteryRow, now: Date): string {
   </li>`
 }
 
+const SOON_LABEL = ['本日公演', '明日公演', '明後日公演']
+
 function renderEvent(e: EventWithLotteries, now: Date): string {
   const hasOpen = e.lotteries.some((l) => lotteryStatus(l, now) === 'open')
-  const isToday = e.date === todayInJst(now)
+  const daysAway = Math.round((Date.parse(e.date) - Date.parse(todayInJst(now))) / 86400000)
+  const soonLabel = daysAway >= 0 && daysAway <= 2 ? SOON_LABEL[daysAway] : null
+  const isToday = daysAway === 0
   const times = [e.open_time && `開場 ${e.open_time}`, e.start_time && `開演 ${e.start_time}`]
     .filter(Boolean)
     .join(' / ')
   const d = stubDate(e.date)
   return `<article class="tix${hasOpen ? ' open' : ''}${isToday ? ' is-today' : ''}" id="${escapeHtml(e.id)}">
     <div class="stub">
-      ${isToday ? '<div class="today-label">本日公演</div>' : `<div class="y">${escapeHtml(d.y)}</div>`}
+      ${soonLabel ? `<div class="today-label${isToday ? '' : ' soon'}">${soonLabel}</div>` : `<div class="y">${escapeHtml(d.y)}</div>`}
       <div class="md">${escapeHtml(d.md)}</div>
       <div class="dw">${escapeHtml(d.dw)}</div>
     </div>

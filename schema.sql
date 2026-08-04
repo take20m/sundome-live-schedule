@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS lotteries (
   ends_at     TEXT,                      -- 受付終了 (ISO 8601)
   url         TEXT,
   confidence  TEXT NOT NULL DEFAULT 'inferred' CHECK (confidence IN ('official', 'inferred')),
+  sold_out    INTEGER NOT NULL DEFAULT 0,  -- 先着販売の予定枚数終了など(期間内でも受付不可)
   updated_at  TEXT NOT NULL
 );
 

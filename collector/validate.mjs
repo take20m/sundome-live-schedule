@@ -43,6 +43,7 @@ for (const [i, ev] of data.events.entries()) {
     check(l.ends_at == null || !Number.isNaN(Date.parse(l.ends_at)), `events[${i}].lotteries[${j}].ends_at`)
     check(l.url == null || URL_RE.test(l.url), `events[${i}].lotteries[${j}].url`)
     check(['official', 'inferred'].includes(l.confidence), `events[${i}].lotteries[${j}].confidence`)
+    check(l.sold_out === undefined || typeof l.sold_out === 'boolean', `events[${i}].lotteries[${j}].sold_out`)
   }
 }
 

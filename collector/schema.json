@@ -31,7 +31,8 @@
                 "starts_at": { "type": ["string", "null"], "format": "date-time" },
                 "ends_at": { "type": ["string", "null"], "format": "date-time" },
                 "url": { "type": ["string", "null"], "pattern": "^https?://" },
-                "confidence": { "enum": ["official", "inferred"] }
+                "confidence": { "enum": ["official", "inferred"] },
+                "sold_out": { "type": "boolean" }
               }
             }
           }

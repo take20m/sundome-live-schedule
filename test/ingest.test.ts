@@ -254,6 +254,40 @@ describe('ingest API', () => {
     expect(stored!.n).toBe(2) // 取り込みはされている
   })
 
+  it('sold_out: 期間内でも予定枚数終了として表示され、フラグはtrue方向にのみ倒れる', async () => {
+    const day = 24 * 60 * 60 * 1000
+    const soldOutEvent = {
+      title: 'SOLDOUT TOUR',
+      artist: 'ソールド',
+      date: '2027-10-10',
+      confidence: 'official',
+      lotteries: [
+        {
+          name: '一般発売(先着順)',
+          starts_at: new Date(Date.now() - 10 * day).toISOString(),
+          ends_at: null,
+          url: null,
+          confidence: 'official',
+          sold_out: true,
+        },
+      ],
+    }
+    await post({ events: [soldOutEvent] })
+
+    // 一覧で「予定枚数終了」バッジ、受付中扱いにならない
+    const html = await (await SELF.fetch('https://example.com/')).text()
+    expect(html).toContain('予定枚数終了')
+
+    // 浅い収集(sold_out欠落)で再送してもフラグは維持される
+    const shallow = structuredClone(soldOutEvent)
+    delete (shallow.lotteries[0] as Record<string, unknown>).sold_out
+    await post({ events: [shallow] })
+    const row = await env.DB.prepare(
+      "SELECT sold_out FROM lotteries WHERE event_id = 'ev-2027-10-10'",
+    ).first<{ sold_out: number }>()
+    expect(row?.sold_out).toBe(1)
+  })
+
   it('不正な日付の公演は破棄され skipped に載る', async () => {
     const res = await post({
       events: [

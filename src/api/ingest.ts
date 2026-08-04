@@ -9,6 +9,7 @@ type IncomingLottery = {
   ends_at: string | null
   url: string | null
   confidence: Confidence
+  sold_out?: boolean
 }
 
 type IncomingEvent = {
@@ -77,6 +78,7 @@ function sanitize(raw: unknown, skipped: string[]): IncomingEvent[] {
         ends_at: (lo.ends_at as string | null) ?? null,
         url: isUrlOrNull(lo.url ?? null) ? ((lo.url as string | null) ?? null) : null,
         confidence: isConfidence(lo.confidence) ? lo.confidence : 'inferred',
+        sold_out: lo.sold_out === true,
       })
     }
     out.push({
@@ -269,18 +271,20 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
       }
       incomingLotteryIds.add(lotteryId)
 
-      // ラチェット: 期間・URLは null で上書きしない。official は格下げしない
+      // ラチェット: 期間・URLは null で上書きしない。official は格下げしない。
+      // sold_out は true 方向にのみ倒れる(浅い収集でフラグが消えないように)
       const old = existingLots.get(lotteryId)
       const lm = {
         starts_at: l.starts_at ?? old?.starts_at ?? null,
         ends_at: l.ends_at ?? old?.ends_at ?? null,
         url: l.url ?? old?.url ?? null,
         confidence: old?.confidence === 'official' ? 'official' : l.confidence,
+        sold_out: l.sold_out === true || old?.sold_out === 1 ? 1 : 0,
       }
-      const merged: IncomingLottery = { name: l.name, ...lm }
-      // 名前・URLの表記ゆれは通知対象にしない(期間と確度の変化だけ通知)
+      const merged: IncomingLottery = { name: l.name, ...lm, sold_out: lm.sold_out === 1 }
+      // 名前・URLの表記ゆれは通知対象にしない(期間・確度・販売終了の変化だけ通知)
       const lotteryHash = `v2:${await sha256Hex(
-        JSON.stringify([lm.starts_at, lm.ends_at, lm.confidence]),
+        JSON.stringify([lm.starts_at, lm.ends_at, lm.confidence, lm.sold_out]),
       )}`
       // 通知するのは「行動できる受付」だけ:
       // - 過去公演の受付は通知しない(サイトにも表示されない)
@@ -299,13 +303,14 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
         (kind) => lotterySummary(ev.artist, merged, kind),
         db
           .prepare(
-            `INSERT INTO lotteries (id, event_id, name, starts_at, ends_at, url, confidence, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `INSERT INTO lotteries (id, event_id, name, starts_at, ends_at, url, confidence, sold_out, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON CONFLICT(id) DO UPDATE SET
                name = excluded.name, starts_at = excluded.starts_at, ends_at = excluded.ends_at,
-               url = excluded.url, confidence = excluded.confidence, updated_at = excluded.updated_at`,
+               url = excluded.url, confidence = excluded.confidence, sold_out = excluded.sold_out,
+               updated_at = excluded.updated_at`,
           )
-          .bind(lotteryId, eventId, l.name, lm.starts_at, lm.ends_at, lm.url, lm.confidence, nowIso),
+          .bind(lotteryId, eventId, l.name, lm.starts_at, lm.ends_at, lm.url, lm.confidence, lm.sold_out, nowIso),
         nowIso,
         batch,
         lotteryNotify,

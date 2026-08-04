@@ -25,5 +25,6 @@ export type LotteryRow = {
   ends_at: string | null
   url: string | null
   confidence: Confidence
+  sold_out: number // 0 | 1
   updated_at: string
 }
