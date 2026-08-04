@@ -61,9 +61,8 @@ function renderDeadlines(events: EventWithLotteries[], now: Date): string {
     }
   }
   if (entries.length === 0) return ''
-  // 並び: 受付中(締切順) → 受付前(開始順) → 販売中(終了未定)。
-  // いま動けるものを上に、まだ動けない/急がないものを下に
-  const rank = (x: Entry) => (x.status === 'upcoming' ? 1 : x.lottery.ends_at ? 0 : 2)
+  // 並び: ステータス優先。受付中(締切順) → 受付中(終了未定) → 受付前(開始順)
+  const rank = (x: Entry) => (x.status === 'upcoming' ? 2 : x.lottery.ends_at ? 0 : 1)
   const sortKey = (x: Entry) => x.lottery.ends_at ?? x.lottery.starts_at ?? '9999'
   entries.sort(
     (a, b) =>
