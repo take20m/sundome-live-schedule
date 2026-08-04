@@ -127,7 +127,6 @@ export function renderLottery(l: LotteryRow, now: Date): string {
     <span class="badge badge-${status}">${STATUS_LABEL[status]}</span>
     <span class="lottery-name">${name}</span>
     <span class="lottery-period">${escapeHtml(period)}</span>
-    ${l.confidence === 'inferred' ? '<span class="badge badge-inferred" title="自動収集による推定情報">推定</span>' : ''}
   </li>`
 }
 
@@ -154,7 +153,6 @@ function renderEvent(e: EventWithLotteries, now: Date): string {
     <div class="event-meta">
       ${times ? `<span class="times">${escapeHtml(times)}</span>` : ''}
       ${e.source_url ? `<a href="${escapeHtml(e.source_url)}" rel="noopener" target="_blank">情報</a>` : ''}
-      ${e.confidence === 'inferred' ? '<span class="badge badge-inferred" title="会場公式では未確認">推定</span>' : ''}
     </div>
     ${e.lotteries.length > 0 ? `<ul class="lotteries">${e.lotteries.map((l) => renderLottery(l, now)).join('')}</ul>` : '<p class="no-lottery">チケット情報は未収集です</p>'}
     </div>

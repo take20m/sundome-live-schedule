@@ -85,7 +85,6 @@ h2.section::after { content: ""; flex: 1; height: 1px; background: var(--line); 
 .badge { font-size: .68rem; padding: .1rem .55rem; border-radius: 2px; letter-spacing: .08em; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
 .badge-open { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .badge-upcoming { border-color: var(--accent); color: var(--accent); }
-.badge-inferred { font-size: .64rem; }
 .no-lottery, .empty { color: var(--muted); font-size: .9rem; }
 
 a { color: var(--accent); }

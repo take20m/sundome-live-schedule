@@ -57,7 +57,6 @@ ${SITE_HEADER}
     ${times ? `<span class="times">${escapeHtml(times)}</span>` : ''}
     <span>サンドーム福井(福井県越前市)</span>
     ${e.source_url ? `<a href="${escapeHtml(e.source_url)}" rel="noopener" target="_blank">情報</a>` : ''}
-    ${e.confidence === 'inferred' ? '<span class="badge badge-inferred" title="会場公式では未確認">推定</span>' : ''}
   </div>
   ${
     e.lotteries.length > 0
