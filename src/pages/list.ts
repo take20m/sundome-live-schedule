@@ -153,7 +153,7 @@ function renderEvent(e: EventWithLotteries, now: Date): string {
     <div class="tour-title">${escapeHtml(e.title)}</div>
     <div class="event-meta">
       ${times ? `<span class="times">${escapeHtml(times)}</span>` : ''}
-      ${e.source_url ? `<a href="${escapeHtml(e.source_url)}" rel="noopener" target="_blank">情報元</a>` : ''}
+      ${e.source_url ? `<a href="${escapeHtml(e.source_url)}" rel="noopener" target="_blank">情報</a>` : ''}
       ${e.confidence === 'inferred' ? '<span class="badge badge-inferred" title="会場公式では未確認">推定</span>' : ''}
     </div>
     ${e.lotteries.length > 0 ? `<ul class="lotteries">${e.lotteries.map((l) => renderLottery(l, now)).join('')}</ul>` : '<p class="no-lottery">チケット情報は未収集です</p>'}
