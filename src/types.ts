@@ -13,6 +13,7 @@ export type EventRow = {
   open_time: string | null
   start_time: string | null
   source_url: string | null
+  artist_url: string | null
   confidence: Confidence
   updated_at: string
 }

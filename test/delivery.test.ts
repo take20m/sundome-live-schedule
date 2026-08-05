@@ -133,6 +133,22 @@ describe('SEO', () => {
   })
 })
 
+describe('アーティスト公式サイトリンク', () => {
+  it('一覧・詳細に公式サイトリンクが出て、JSON-LDのperformer.sameAsにも入る', async () => {
+    const html = await (await SELF.fetch('https://example.com/')).text()
+    expect(html).toContain('<a href="https://example.com/artist"')
+    expect(html).toContain('公式サイト')
+    expect(html).toContain('"sameAs":"https://example.com/artist"')
+
+    const detail = await (
+      await SELF.fetch(
+        `https://example.com/e/${(await env.DB.prepare("SELECT id FROM events WHERE artist = 'SAMPLE ARTIST' LIMIT 1").first<{ id: string }>())!.id}`,
+      )
+    ).text()
+    expect(detail).toContain('SAMPLE ARTIST 公式サイト')
+  })
+})
+
 describe('公演詳細ページ', () => {
   it('公演情報と抽選が表示され、JSON-LDを含む', async () => {
     const { results } = await env.DB.prepare(

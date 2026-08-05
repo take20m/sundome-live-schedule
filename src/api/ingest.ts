@@ -19,6 +19,7 @@ type IncomingEvent = {
   open_time: string | null
   start_time: string | null
   source_url: string | null
+  artist_url: string | null
   confidence: Confidence
   lotteries: IncomingLottery[]
 }
@@ -88,6 +89,7 @@ function sanitize(raw: unknown, skipped: string[]): IncomingEvent[] {
       open_time: (ev.open_time as string | null) ?? null,
       start_time: (ev.start_time as string | null) ?? null,
       source_url: isUrlOrNull(ev.source_url ?? null) ? ((ev.source_url as string | null) ?? null) : null,
+      artist_url: isUrlOrNull(ev.artist_url ?? null) ? ((ev.artist_url as string | null) ?? null) : null,
       confidence: isConfidence(ev.confidence) ? ev.confidence : 'inferred',
       lotteries,
     })
@@ -205,13 +207,20 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
 
     // ラチェット: 収集漏れ(null)で既知の値を上書きしない。official は inferred に格下げしない
     const existingEv = await db
-      .prepare('SELECT open_time, start_time, source_url, confidence FROM events WHERE id = ?')
+      .prepare('SELECT open_time, start_time, source_url, artist_url, confidence FROM events WHERE id = ?')
       .bind(eventId)
-      .first<{ open_time: string | null; start_time: string | null; source_url: string | null; confidence: Confidence }>()
+      .first<{
+        open_time: string | null
+        start_time: string | null
+        source_url: string | null
+        artist_url: string | null
+        confidence: Confidence
+      }>()
     const evm = {
       open_time: ev.open_time ?? existingEv?.open_time ?? null,
       start_time: ev.start_time ?? existingEv?.start_time ?? null,
       source_url: ev.source_url ?? existingEv?.source_url ?? null,
+      artist_url: ev.artist_url ?? existingEv?.artist_url ?? null,
       confidence: existingEv?.confidence === 'official' ? 'official' : ev.confidence,
     }
     // ハッシュ対象は「通知する価値のある変化」だけに絞る。
@@ -230,15 +239,15 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
           : `公演更新: ${ev.artist}「${ev.title}」(${ev.date})`,
       db
         .prepare(
-          `INSERT INTO events (id, title, artist, date, open_time, start_time, source_url, confidence, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `INSERT INTO events (id, title, artist, date, open_time, start_time, source_url, artist_url, confidence, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(id) DO UPDATE SET
              title = excluded.title, artist = excluded.artist, date = excluded.date,
              open_time = excluded.open_time, start_time = excluded.start_time,
-             source_url = excluded.source_url, confidence = excluded.confidence,
-             updated_at = excluded.updated_at`,
+             source_url = excluded.source_url, artist_url = excluded.artist_url,
+             confidence = excluded.confidence, updated_at = excluded.updated_at`,
         )
-        .bind(eventId, ev.title, ev.artist, ev.date, evm.open_time, evm.start_time, evm.source_url, evm.confidence, nowIso),
+        .bind(eventId, ev.title, ev.artist, ev.date, evm.open_time, evm.start_time, evm.source_url, evm.artist_url, evm.confidence, nowIso),
       nowIso,
       batch,
       // 開催済みの公演はサイトに表示されないため、通知もしない

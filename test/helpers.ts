@@ -18,8 +18,8 @@ export async function seedSample(db: D1Database, now: Date = new Date()): Promis
 
   await db
     .prepare(
-      `INSERT INTO events (id, title, artist, date, open_time, start_time, source_url, confidence, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO events (id, title, artist, date, open_time, start_time, source_url, artist_url, confidence, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .bind(
       `ev-${eventDate}`,
@@ -29,6 +29,7 @@ export async function seedSample(db: D1Database, now: Date = new Date()): Promis
       '17:00',
       '18:00',
       'https://example.com/tour',
+      'https://example.com/artist',
       'official',
       nowIso,
     )

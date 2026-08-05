@@ -33,7 +33,11 @@ export function buildJsonLd(events: EventWithLotteries[], siteUrl: string): stri
         addressCountry: 'JP',
       },
     },
-    performer: { '@type': 'MusicGroup', name: e.artist },
+    performer: {
+      '@type': 'MusicGroup',
+      name: e.artist,
+      ...(e.artist_url ? { sameAs: e.artist_url } : {}),
+    },
     ...(e.source_url ? { url: e.source_url } : {}),
     offers: e.lotteries
       .filter((l) => l.url || l.starts_at || l.ends_at)

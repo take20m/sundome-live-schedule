@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS events (
   open_time   TEXT,                      -- 開場 (HH:MM)
   start_time  TEXT,                      -- 開演 (HH:MM)
   source_url  TEXT,
+  artist_url  TEXT,                      -- アーティスト公式サイト(誰の公演か調べる導線)
   confidence  TEXT NOT NULL DEFAULT 'inferred' CHECK (confidence IN ('official', 'inferred')),
   updated_at  TEXT NOT NULL              -- ISO 8601
 );
