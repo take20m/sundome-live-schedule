@@ -134,10 +134,11 @@ describe('SEO', () => {
 })
 
 describe('アーティスト公式サイトリンク', () => {
-  it('一覧・詳細に公式サイトリンクが出て、JSON-LDのperformer.sameAsにも入る', async () => {
+  it('一覧にはリンクを出さず、詳細に公式サイト・コンサート情報を出す', async () => {
     const html = await (await SELF.fetch('https://example.com/')).text()
-    expect(html).toContain('<a href="https://example.com/artist"')
-    expect(html).toContain('公式サイト')
+    // 一覧はスッキリ(外部リンクは出さない)。JSON-LDには載る
+    expect(html).not.toContain('公式サイト')
+    expect(html).not.toContain('>コンサート情報<')
     expect(html).toContain('"sameAs":"https://example.com/artist"')
 
     const detail = await (
@@ -146,6 +147,7 @@ describe('アーティスト公式サイトリンク', () => {
       )
     ).text()
     expect(detail).toContain('SAMPLE ARTIST 公式サイト')
+    expect(detail).toContain('コンサート情報')
   })
 })
 

@@ -57,7 +57,7 @@ ${SITE_HEADER}
     ${times ? `<span class="times">${escapeHtml(times)}</span>` : ''}
     <span>サンドーム福井(福井県越前市)</span>
     ${e.artist_url ? `<a href="${escapeHtml(e.artist_url)}" rel="noopener" target="_blank">${escapeHtml(e.artist)} 公式サイト</a>` : ''}
-    ${e.source_url ? `<a href="${escapeHtml(e.source_url)}" rel="noopener" target="_blank">情報</a>` : ''}
+    ${e.source_url ? `<a href="${escapeHtml(e.source_url)}" rel="noopener" target="_blank">コンサート情報</a>` : ''}
   </div>
   ${
     e.lotteries.length > 0

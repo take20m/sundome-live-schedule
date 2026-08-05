@@ -152,8 +152,6 @@ function renderEvent(e: EventWithLotteries, now: Date): string {
     <div class="tour-title">${escapeHtml(e.title)}</div>
     <div class="event-meta">
       ${times ? `<span class="times">${escapeHtml(times)}</span>` : ''}
-      ${e.artist_url ? `<a href="${escapeHtml(e.artist_url)}" rel="noopener" target="_blank">公式サイト</a>` : ''}
-      ${e.source_url ? `<a href="${escapeHtml(e.source_url)}" rel="noopener" target="_blank">情報</a>` : ''}
     </div>
     ${e.lotteries.length > 0 ? `<ul class="lotteries">${e.lotteries.map((l) => renderLottery(l, now)).join('')}</ul>` : '<p class="no-lottery">チケット情報は未収集です</p>'}
     </div>
