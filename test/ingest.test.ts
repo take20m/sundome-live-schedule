@@ -288,6 +288,43 @@ describe('ingest API', () => {
     expect(row?.sold_out).toBe(1)
   })
 
+  it('ハッシュ仕様が変わった行は通知しない(材料変更による一斉誤通知の防止)', async () => {
+    const day = 24 * 60 * 60 * 1000
+    const ev = {
+      title: 'HASHVER TOUR',
+      artist: 'ハッシュ',
+      date: '2027-11-11',
+      confidence: 'official',
+      lotteries: [
+        {
+          name: 'FC先行',
+          starts_at: new Date(Date.now() + 1 * day).toISOString(),
+          ends_at: new Date(Date.now() + 9 * day).toISOString(),
+          url: null,
+          confidence: 'official',
+        },
+      ],
+    }
+    await post({ events: [ev] })
+    const before = await env.DB.prepare('SELECT count(*) AS n FROM changes').first<{ n: number }>()
+
+    // 旧バージョンのハッシュに書き換える(ハッシュ材料を変えた直後と同じ状況を再現)
+    await env.DB.prepare(
+      "UPDATE snapshots SET hash = 'v1:stale' WHERE item_id LIKE 'lot-ev-2027-11-11-%' OR item_id = 'ev-2027-11-11'",
+    ).run()
+
+    // 同じ内容を再送 → 差分あり判定になるが、バージョン移行なので通知されない
+    await post({ events: [ev] })
+    const after = await env.DB.prepare('SELECT count(*) AS n FROM changes').first<{ n: number }>()
+    expect(after!.n).toBe(before!.n)
+
+    // snapshots は新バージョンに更新済み → 次回以降は通常判定に戻る
+    const snap = await env.DB.prepare(
+      "SELECT hash FROM snapshots WHERE item_id = 'ev-2027-11-11'",
+    ).first<{ hash: string }>()
+    expect(snap?.hash.startsWith('v1:')).toBe(false)
+  })
+
   it('不正な日付の公演は破棄され skipped に載る', async () => {
     const res = await post({
       events: [

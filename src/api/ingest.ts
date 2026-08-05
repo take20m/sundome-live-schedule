@@ -107,6 +107,18 @@ function lotterySummary(artist: string, l: IncomingLottery, kind: 'added' | 'upd
 
 type UpsertResult = 'added' | 'updated' | 'unchanged'
 
+/**
+ * 通知判定ハッシュのバージョン。
+ *
+ * ⚠️ ハッシュの材料(eventHash / lotteryHash に渡す配列)を変更したら、必ずこの値を上げること。
+ * 材料が変わると全行のハッシュが変わるため、上げ忘れると「仕様変更による偽の更新」が
+ * 購読者全員に一斉配信される。バージョンが違う行は移行扱いとして通知しない。
+ *
+ * v2: 初版(名前・URLを材料から除外し、表記ゆれで通知しないようにした)
+ * v3: lottery の材料に sold_out を追加
+ */
+const HASH_VERSION = 'v3'
+
 /** ISO文字列の表記ゆれ(+09:00 vs Z等)を吸収して同時刻か判定 */
 function sameInstant(a: string | null, b: string | null): boolean {
   if (a == null || b == null) return a === b
@@ -117,8 +129,8 @@ function sameInstant(a: string | null, b: string | null): boolean {
  * snapshots のハッシュと比較し、差分があるときだけ書き込み+changes 追加のステートメントを返す。
  * - notify=false: 書き込みはするが通知(changes)には載せない(締切済みの受付など)
  * - seenSummaries: 同一リクエスト内の同文通知を1回に抑える(同ツアー複数公演日の重複対策)
- * - ハッシュは 'v2:' プレフィックス付き。旧形式からの移行時は差分があっても通知しない
- *   (ハッシュ仕様変更による偽の「更新」を一晩分のRSSに流さないため)
+ * - ハッシュは HASH_VERSION プレフィックス付き。旧バージョンからの移行時は差分があっても
+ *   通知しない(ハッシュ仕様変更による偽の「更新」を一斉配信しないため)
  */
 async function diffAndUpsert(
   db: D1Database,
@@ -144,7 +156,8 @@ async function diffAndUpsert(
   }
 
   const kind: 'added' | 'updated' = existing ? 'updated' : 'added'
-  const legacyMigration = existing !== null && existing !== undefined && !existing.hash.startsWith('v2:')
+  // ハッシュ仕様が変わっただけの行は通知しない(材料変更による一斉誤通知の防止)
+  const hashVersionChanged = existing != null && !existing.hash.startsWith(`${HASH_VERSION}:`)
   batch.push(upsertStmt)
   batch.push(
     db
@@ -154,7 +167,7 @@ async function diffAndUpsert(
       )
       .bind(itemId, itemType, contentHash, nowIso),
   )
-  if (notify && !legacyMigration) {
+  if (notify && !hashVersionChanged) {
     const summary = summaryOf(kind)
     if (!seenSummaries.has(summary)) {
       seenSummaries.add(summary)
@@ -225,7 +238,7 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
     }
     // ハッシュ対象は「通知する価値のある変化」だけに絞る。
     // タイトル・アーティスト名・URLの表記ゆれはサイレントに更新する
-    const eventHash = `v2:${await sha256Hex(
+    const eventHash = `${HASH_VERSION}:${await sha256Hex(
       JSON.stringify([ev.date, evm.open_time, evm.start_time, evm.confidence]),
     )}`
     const eventResult = await diffAndUpsert(
@@ -292,7 +305,7 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
       }
       const merged: IncomingLottery = { name: l.name, ...lm, sold_out: lm.sold_out === 1 }
       // 名前・URLの表記ゆれは通知対象にしない(期間・確度・販売終了の変化だけ通知)
-      const lotteryHash = `v2:${await sha256Hex(
+      const lotteryHash = `${HASH_VERSION}:${await sha256Hex(
         JSON.stringify([lm.starts_at, lm.ends_at, lm.confidence, lm.sold_out]),
       )}`
       // 通知するのは「行動できる受付」だけ:
