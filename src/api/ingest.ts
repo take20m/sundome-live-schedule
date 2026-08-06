@@ -325,12 +325,12 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
         (kind) => lotterySummary(ev.artist, merged, kind),
         db
           .prepare(
-            `INSERT INTO lotteries (id, event_id, name, starts_at, ends_at, url, confidence, sold_out, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `INSERT INTO lotteries (id, event_id, name, starts_at, ends_at, url, confidence, sold_out, missed_count, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
              ON CONFLICT(id) DO UPDATE SET
                name = excluded.name, starts_at = excluded.starts_at, ends_at = excluded.ends_at,
                url = excluded.url, confidence = excluded.confidence, sold_out = excluded.sold_out,
-               updated_at = excluded.updated_at`,
+               missed_count = 0, updated_at = excluded.updated_at`,
           )
           .bind(lotteryId, eventId, l.name, lm.starts_at, lm.ends_at, lm.url, lm.confidence, lm.sold_out, nowIso),
         nowIso,
@@ -342,16 +342,26 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
     }
 
     // 抽選の置換: 今回の収集に含まれない古い抽選(表記ゆれの残骸など)を削除する。
-    // ガード: ①今回の収集が空なら削除しない(収集漏れ対策)
-    //         ②期間付きの既存行は、今回の収集も期間情報を取れている場合のみ削除
-    //           (期間なしの浅い収集結果で、期間付きの良いデータを消さない)
+    // LLMの収集は夜ごとに取れる受付のセットが揺れるため、削除は慎重に:
+    //   ①今回の収集が空なら削除しない(収集漏れ対策)
+    //   ②期間付きの既存行は、今回の収集も期間情報を取れている場合のみ対象
+    //   ③1回見落とされただけでは消さない。2回連続で現れなかった行だけ削除する
+    //     (1回で消すと翌晩の再発見が「新規」通知になり、購読者に誤通知が飛ぶ)
     if (ev.lotteries.length > 0) {
       for (const row of existingLotRows) {
         if (incomingLotteryIds.has(row.id)) continue
         const rowHasPeriod = row.starts_at !== null || row.ends_at !== null
         if (rowHasPeriod && !runHasPeriod) continue
-        batch.push(db.prepare('DELETE FROM lotteries WHERE id = ?').bind(row.id))
-        batch.push(db.prepare('DELETE FROM snapshots WHERE item_id = ?').bind(row.id))
+        if (row.missed_count >= 1) {
+          // snapshots は残す。万一この行が後日復活しても内容が同じなら通知されない
+          batch.push(db.prepare('DELETE FROM lotteries WHERE id = ?').bind(row.id))
+        } else {
+          batch.push(
+            db
+              .prepare('UPDATE lotteries SET missed_count = missed_count + 1 WHERE id = ?')
+              .bind(row.id),
+          )
+        }
       }
     }
   }

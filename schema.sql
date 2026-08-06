@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS lotteries (
   url         TEXT,
   confidence  TEXT NOT NULL DEFAULT 'inferred' CHECK (confidence IN ('official', 'inferred')),
   sold_out    INTEGER NOT NULL DEFAULT 0,  -- 先着販売の予定枚数終了など(期間内でも受付不可)
+  missed_count INTEGER NOT NULL DEFAULT 0, -- 連続して収集結果に現れなかった回数(1回の見落としで消さないため)
   updated_at  TEXT NOT NULL
 );
 

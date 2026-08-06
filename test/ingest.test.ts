@@ -97,9 +97,12 @@ describe('ingest API', () => {
     let { results } = await env.DB.prepare("SELECT id FROM lotteries WHERE event_id = 'ev-2027-05-05'").all()
     expect(results.length).toBe(1)
 
-    // 完全に別の名前に変わった → 新IDが追加され、古いIDは削除される(置換)
+    // 完全に別の名前に変わった → 新IDが追加。古いIDは1回目は残り(収集揺れ対策)、2回目で削除
     const renamed = structuredClone(base)
     renamed.lotteries[0].name = 'ファンクラブ第2弾先行'
+    await post({ events: [renamed] })
+    ;({ results } = await env.DB.prepare("SELECT id FROM lotteries WHERE event_id = 'ev-2027-05-05'").all())
+    expect(results.length).toBe(2)
     await post({ events: [renamed] })
     ;({ results } = await env.DB.prepare("SELECT id FROM lotteries WHERE event_id = 'ev-2027-05-05'").all())
     expect(results.length).toBe(1)
@@ -190,10 +193,11 @@ describe('ingest API', () => {
     let { results } = await env.DB.prepare("SELECT id FROM lotteries WHERE event_id = 'ev-2027-07-07'").all()
     expect(results.length).toBe(2) // 保護: 期間付きが残る
 
-    // 期間付きの収集が来たら置換が働き、古い行は削除される
+    // 期間付きの収集が来たら置換の対象になる。ただし削除は2回連続で漏れてから
     const renamedWithPeriod = structuredClone(renamedShallow)
     renamedWithPeriod.lotteries[0].starts_at = '2027-05-01T10:00:00+09:00'
     renamedWithPeriod.lotteries[0].ends_at = '2027-05-10T23:59:00+09:00'
+    await post({ events: [renamedWithPeriod] })
     await post({ events: [renamedWithPeriod] })
     ;({ results } = await env.DB.prepare("SELECT id FROM lotteries WHERE event_id = 'ev-2027-07-07'").all())
     expect(results.length).toBe(1)
@@ -323,6 +327,40 @@ describe('ingest API', () => {
       "SELECT hash FROM snapshots WHERE item_id = 'ev-2027-11-11'",
     ).first<{ hash: string }>()
     expect(snap?.hash.startsWith('v1:')).toBe(false)
+  })
+
+  it('1回の収集漏れでは受付を消さず、2回連続で漏れたら削除。復活時に誤通知しない', async () => {
+    const day = 24 * 60 * 60 * 1000
+    const other = { name: '別の先行', starts_at: new Date(Date.now() + 2 * day).toISOString(), ends_at: new Date(Date.now() + 8 * day).toISOString(), url: null, confidence: 'official' }
+    const flaky = { name: 'ゆらぎ先行', starts_at: new Date(Date.now() + 3 * day).toISOString(), ends_at: new Date(Date.now() + 9 * day).toISOString(), url: null, confidence: 'official' }
+    const mk = (lotteries: object[]) => ({
+      title: 'FLAKY TOUR', artist: 'ゆらぎ', date: '2027-12-25', confidence: 'official', lotteries,
+    })
+
+    await post({ events: [mk([other, flaky])] })
+    const baseline = await env.DB.prepare('SELECT count(*) AS n FROM changes').first<{ n: number }>()
+
+    // 1回目の見落とし → 消えずに残る(表示が1晩だけ欠けるのを防ぐ)
+    await post({ events: [mk([other])] })
+    let rows = await env.DB.prepare(
+      "SELECT missed_count FROM lotteries WHERE event_id = 'ev-2027-12-25' AND name = 'ゆらぎ先行'",
+    ).all<{ missed_count: number }>()
+    expect(rows.results.length).toBe(1)
+    expect(rows.results[0].missed_count).toBe(1)
+
+    // 2回連続の見落とし → 削除される
+    await post({ events: [mk([other])] })
+    rows = await env.DB.prepare(
+      "SELECT missed_count FROM lotteries WHERE event_id = 'ev-2027-12-25' AND name = 'ゆらぎ先行'",
+    ).all<{ missed_count: number }>()
+    expect(rows.results.length).toBe(0)
+
+    // 後日また収集で見つかっても、内容が同じなら通知は増えない
+    const before = await env.DB.prepare('SELECT count(*) AS n FROM changes').first<{ n: number }>()
+    await post({ events: [mk([other, flaky])] })
+    const after = await env.DB.prepare('SELECT count(*) AS n FROM changes').first<{ n: number }>()
+    expect(after!.n).toBe(before!.n)
+    expect(after!.n).toBeGreaterThan(baseline!.n - 1) // 初回のadded通知は出ている
   })
 
   it('不正な日付の公演は破棄され skipped に載る', async () => {
