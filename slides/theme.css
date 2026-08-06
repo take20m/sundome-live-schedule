@@ -1,0 +1,214 @@
+/* @theme sundome */
+/* サイト本体と同じ「チケット半券インディゴ」。紙白 × 藍 × 等幅の数字 */
+
+@import 'default';
+
+:root {
+  --bg: #eef0f4;
+  --card: #fbfbfa;
+  --fg: #171a21;
+  --muted: #6b7280;
+  --line: #d6dae3;
+  --accent: #2b47c4;
+  --accent-soft: #e3e8fa;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+section {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "Avenir Next", "Hiragino Sans", "Noto Sans JP", sans-serif;
+  font-size: 24px;
+  line-height: 1.65;
+  padding: 62px 70px 50px;
+  /* default テーマは flex 中央寄せ。通常スライドはブロックにして
+     タイトルの縦位置を全ページで揃える(表紙とデモだけ中央寄せに戻す) */
+  display: block;
+}
+
+/* 上部の刻印。チケットの券面ヘッダー */
+section::before {
+  content: "SUNDOME FUKUI — TICKET & SCHEDULE";
+  position: absolute;
+  top: 30px;
+  left: 70px;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: .3em;
+  color: var(--muted);
+}
+
+section::after {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--muted);
+  right: 40px;
+  bottom: 24px;
+}
+
+section h1 {
+  font-size: 54px;
+  line-height: 1.35;
+  margin: 0 0 20px;
+  letter-spacing: .01em;
+  border-bottom: 4px double var(--fg);
+  padding-bottom: 18px;
+}
+
+section h2 {
+  font-size: 38px;
+  margin: 0 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+section h2::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+section h3 {
+  font-size: 23px;
+  color: var(--accent);
+  margin: 20px 0 6px;
+}
+
+strong { color: var(--accent); }
+em { color: var(--muted); font-style: normal; font-size: .85em; }
+
+section ul, section ol { margin: 0; padding-left: 1.2em; }
+section li { margin: 10px 0; }
+li::marker { color: var(--accent); }
+
+code {
+  font-family: var(--mono);
+  background: var(--accent-soft);
+  color: var(--fg);
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: .88em;
+}
+
+section pre {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 22px 26px;
+  font-size: 20px;
+  line-height: 1.65;
+}
+pre code { background: none; padding: 0; font-size: 1em; }
+
+section table {
+  border-collapse: collapse;
+  width: 100%;
+  background: transparent;
+  font-size: 22px;
+}
+th, td { border: 1px solid var(--line); padding: 9px 16px; text-align: left; background: var(--card); }
+/* 最終列に残り幅を全部渡す(右端に地色の帯が残らないように) */
+th:last-child, td:last-child { width: 99%; }
+th {
+  font-size: 17px;
+  letter-spacing: .12em;
+  color: var(--muted);
+  font-weight: 600;
+  background: transparent;
+}
+td.num, .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+section blockquote {
+  border: none;
+  border-left: 5px solid var(--accent);
+  background: var(--card);
+  margin: 24px 0;
+  padding: 16px 26px;
+  font-size: 27px;
+  color: var(--fg);
+}
+
+a { color: var(--accent); }
+
+/* 表紙 */
+section.lead {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+section.lead h1 {
+  font-size: 62px;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+/* URL は表紙・まとめ共通の意匠 */
+.url {
+  font-family: var(--mono);
+  font-size: 30px;
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+section.lead .by {
+  font-family: var(--mono);
+  font-size: 18px;
+  letter-spacing: .24em;
+  color: var(--muted);
+  margin-top: 40px;
+}
+
+/* チケット半券レイアウト(表紙・まとめで使う) */
+.tix {
+  display: flex;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  margin-top: 34px;
+}
+.tix .stub {
+  flex: 0 0 190px;
+  border-right: 2px dashed var(--line);
+  background: var(--accent-soft);
+  padding: 22px 16px;
+  text-align: center;
+  font-family: var(--mono);
+}
+.tix .stub .big { font-size: 40px; font-weight: 700; line-height: 1.1; }
+.tix .stub .sub { font-size: 15px; letter-spacing: .22em; color: var(--accent); font-weight: 700; }
+.tix .stub .yr { font-size: 15px; letter-spacing: .2em; color: var(--muted); }
+.tix .bod { padding: 22px 30px; flex: 1; }
+
+/* デモスライド用の大きな見出し */
+section.demo {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+section.demo h1 { border: none; font-size: 76px; }
+section.demo p { font-size: 30px; color: var(--muted); }
+
+/* 2カラム */
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
+.panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--accent);
+  border-radius: 3px;
+  padding: 18px 24px;
+}
+.panel h4 { margin: 0 0 6px; font-size: 24px; }
+.panel p { margin: 0; font-size: 21px; color: var(--muted); }
+
+/* バッジ(サイトのステータス表示と同じ意匠) */
+.badge {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 17px;
+  padding: 2px 12px;
+  border-radius: 2px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+.badge.on { background: var(--accent); border-color: var(--accent); color: #fff; }
