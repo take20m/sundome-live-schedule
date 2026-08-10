@@ -1,7 +1,8 @@
 import type { EventWithLotteries } from '../lib/db'
 import { escapeHtml } from '../lib/html'
 import { buildHeadMeta, buildJsonLd } from '../lib/seo'
-import { COUNTDOWN_SCRIPT, lotteryStatus, renderLottery, stubDate } from './list'
+import { lotteryStatus } from '../lib/status'
+import { COUNTDOWN_SCRIPT, renderLottery, stubDate } from './list'
 import { SITE_CSS, SITE_FOOTER, SITE_HEADER } from './style'
 
 const WEEKDAYS_JA = ['日', '月', '火', '水', '木', '金', '土']

@@ -180,6 +180,87 @@ describe('aboutページ', () => {
   })
 })
 
+// 「受付中」のリンクを踏んだのに申し込めないページだった、という体験を防ぐ回帰テスト。
+// 実データでは会場検索ページ・FCのニュース記事・まとめサイトが申込先として収集されていた
+describe('申込リンク', () => {
+  const day = 24 * 60 * 60 * 1000
+  const eventDate = new Date(Date.now() + 50 * day).toISOString().slice(0, 10)
+  const LOTTERIES = [
+    { name: '受付中かつ購入ページ', from: -1, to: 3, url: 'https://eplus.jp/linktest/open-ok/' },
+    {
+      name: '受付中だが会場検索ページ',
+      from: -1,
+      to: 3,
+      url: 'https://t.pia.jp/pia/venue/venue.do?venueCd=SDFK',
+    },
+    { name: '終了かつ購入ページ', from: -10, to: -5, url: 'https://eplus.jp/linktest/closed-ng/' },
+    { name: '受付前かつ購入ページ', from: 5, to: 10, url: 'https://eplus.jp/linktest/upcoming-ng/' },
+  ]
+
+  beforeAll(async () => {
+    const now = new Date()
+    const nowIso = now.toISOString()
+    await env.DB.prepare(
+      `INSERT INTO events (id, title, artist, date, confidence, updated_at)
+       VALUES (?, 'LINK TEST TOUR', 'リンク検証', ?, 'official', ?)`,
+    )
+      .bind(`ev-${eventDate}`, eventDate, nowIso)
+      .run()
+    for (const [i, l] of LOTTERIES.entries()) {
+      await env.DB.prepare(
+        `INSERT INTO lotteries (id, event_id, name, starts_at, ends_at, url, confidence, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, 'official', ?)`,
+      )
+        .bind(
+          `lot-ev-${eventDate}-link${i}`,
+          `ev-${eventDate}`,
+          l.name,
+          new Date(now.getTime() + l.from * day).toISOString(),
+          new Date(now.getTime() + l.to * day).toISOString(),
+          l.url,
+          nowIso,
+        )
+        .run()
+    }
+  })
+
+  it('受付中かつ購入ページのときだけリンクになる', async () => {
+    const html = await (await SELF.fetch(`https://example.com/e/ev-${eventDate}`)).text()
+    expect(html).toContain('href="https://eplus.jp/linktest/open-ok/"')
+  })
+
+  it('受付中でも購入ページでなければリンクにしない(受付名は表示する)', async () => {
+    const html = await (await SELF.fetch(`https://example.com/e/ev-${eventDate}`)).text()
+    expect(html).toContain('受付中だが会場検索ページ')
+    expect(html).not.toContain('venue.do')
+  })
+
+  it('終了・受付前は購入ページでもリンクにしない', async () => {
+    const html = await (await SELF.fetch(`https://example.com/e/ev-${eventDate}`)).text()
+    expect(html).toContain('終了かつ購入ページ')
+    expect(html).toContain('受付前かつ購入ページ')
+    expect(html).not.toContain('linktest/closed-ng')
+    expect(html).not.toContain('linktest/upcoming-ng')
+  })
+
+  it('一覧ページでも同じ判定が効く', async () => {
+    const html = await (await SELF.fetch('https://example.com/')).text()
+    expect(html).toContain('href="https://eplus.jp/linktest/open-ok/"')
+    expect(html).not.toContain('venue.do')
+    expect(html).not.toContain('linktest/closed-ng')
+    expect(html).not.toContain('linktest/upcoming-ng')
+  })
+
+  // JSON-LD の Offer.url は検索結果のチケット導線に使われるので画面と同じ基準で出す
+  it('JSON-LDのOfferにも購入ページのURLだけ載る', async () => {
+    const html = await (await SELF.fetch(`https://example.com/e/ev-${eventDate}`)).text()
+    expect(html).toContain('"url":"https://eplus.jp/linktest/open-ok/"')
+    // 受付名と受付状態は載る(情報としては有用なので消さない)
+    expect(html).toContain('"name":"受付中だが会場検索ページ"')
+    expect(html).toContain('"availability":"https://schema.org/InStock"')
+  })
+})
+
 describe('RSSフィード', () => {
   it('更新項目を配信する', async () => {
     const res = await SELF.fetch('https://example.com/feed.xml')

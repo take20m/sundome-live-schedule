@@ -46,6 +46,14 @@ jobs:
           INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
         run: node collector/enrich.mjs 3
 
+      # 購入ページと判定できなかったホストを報告する(新しい販売サイトに気づくため)
+      - name: Report unknown ticket hosts
+        if: always()
+        env:
+          INGEST_URL: ${{ vars.INGEST_URL }}
+          INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
+        run: node collector/report-unknown-hosts.mjs
+
       - name: Upload collected JSON (debug用)
         if: always()
         uses: actions/upload-artifact@v4

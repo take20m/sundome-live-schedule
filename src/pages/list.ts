@@ -3,6 +3,9 @@ import type { EventWithLotteries } from '../lib/db'
 import { formatJst } from '../lib/format'
 import { escapeHtml } from '../lib/html'
 import { buildHeadMeta, buildJsonLd, buildMetaDescription } from '../lib/seo'
+import type { LotteryStatus } from '../lib/status'
+import { lotteryStatus } from '../lib/status'
+import { isPurchasePage } from '../lib/ticket-url'
 import type { LotteryRow } from '../types'
 import { SITE_CSS, SITE_FOOTER, SITE_HEADER } from './style'
 
@@ -14,19 +17,6 @@ export function stubDate(date: string): { y: string; md: string; dw: string } {
   if (!y || !m || !day) return { y: '', md: date, dw: '' }
   const dw = WEEKDAYS_EN[new Date(Date.UTC(y, m - 1, day)).getUTCDay()]
   return { y: String(y), md: `${String(m).padStart(2, '0')}.${String(day).padStart(2, '0')}`, dw }
-}
-
-type LotteryStatus = 'open' | 'upcoming' | 'closed' | 'soldout' | 'unknown'
-
-export function lotteryStatus(l: LotteryRow, now: Date): LotteryStatus {
-  // 期間内でも先着販売の予定枚数終了などは受付不可
-  if (l.sold_out === 1) return 'soldout'
-  const starts = l.starts_at ? new Date(l.starts_at) : null
-  const ends = l.ends_at ? new Date(l.ends_at) : null
-  if (starts && now < starts) return 'upcoming'
-  if (ends && now > ends) return 'closed'
-  if (starts || ends) return 'open'
-  return 'unknown'
 }
 
 const STATUS_LABEL: Record<LotteryStatus, string> = {
@@ -120,9 +110,13 @@ export function renderLottery(l: LotteryRow, now: Date): string {
   const status = lotteryStatus(l, now)
   const period =
     l.starts_at || l.ends_at ? `${formatJst(l.starts_at)} 〜 ${formatJst(l.ends_at)}` : '期間未確認'
-  const name = l.url
-    ? `<a href="${escapeHtml(l.url)}" rel="noopener" target="_blank">${escapeHtml(l.name)}</a>`
-    : escapeHtml(l.name)
+  // 受付中かつ実際に申し込める購入ページのときだけリンクにする。
+  // 終了・受付前や、告知ページ・まとめ記事に飛ばしても申し込めず苛立たせるだけ
+  const url = l.url
+  const name =
+    status === 'open' && isPurchasePage(url)
+      ? `<a href="${escapeHtml(url)}" rel="noopener" target="_blank">${escapeHtml(l.name)}</a>`
+      : escapeHtml(l.name)
   return `<li class="lottery lottery-${status}">
     <span class="badge badge-${status}">${STATUS_LABEL[status]}</span>
     <span class="lottery-name">${name}</span>

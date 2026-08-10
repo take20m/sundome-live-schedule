@@ -1,5 +1,7 @@
 import type { EventWithLotteries } from './db'
 import { escapeHtml } from './html'
+import { lotteryStatus } from './status'
+import { isPurchasePage } from './ticket-url'
 
 /** 受付状態を schema.org の availability 語彙へ(売切=SoldOut / 受付前=PreOrder / 受付中=InStock / 終了=Discontinued) */
 function offerAvailability(l: { starts_at: string | null; ends_at: string | null; sold_out: number }, now: number): string | null {
@@ -13,6 +15,7 @@ function offerAvailability(l: { starts_at: string | null; ends_at: string | null
 /** schema.org MusicEvent の JSON-LD(Googleイベントリッチリザルト対応) */
 export function buildJsonLd(events: EventWithLotteries[], siteUrl: string): string {
   const now = Date.now()
+  const nowDate = new Date(now)
   const items = events.map((e) => ({
     '@type': 'MusicEvent',
     name: e.title,
@@ -43,10 +46,15 @@ export function buildJsonLd(events: EventWithLotteries[], siteUrl: string): stri
       .filter((l) => l.url || l.starts_at || l.ends_at)
       .map((l) => {
         const availability = offerAvailability(l, now)
+        // Offer.url は「そのオファーを購入できるページ」を意味し、検索結果のチケット導線として
+        // 使われる。告知ページやまとめ記事を載せると検索経由で同じ空振りが起きるため、
+        // 画面のリンクと同じ判定を通したものだけ出す
+        const url = l.url
+        const purchasable = lotteryStatus(l, nowDate) === 'open' && isPurchasePage(url)
         return {
           '@type': 'Offer',
           name: l.name,
-          ...(l.url ? { url: l.url } : {}),
+          ...(purchasable ? { url } : {}),
           ...(l.starts_at ? { availabilityStarts: l.starts_at, validFrom: l.starts_at } : {}),
           ...(l.ends_at ? { availabilityEnds: l.ends_at, validThrough: l.ends_at } : {}),
           ...(availability ? { availability } : {}),

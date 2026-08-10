@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { handleIngest } from './api/ingest'
 import { handleMissing } from './api/missing'
+import { handleUnknownHosts } from './api/unknown-hosts'
 import { buildRss } from './feeds/rss'
 import { getEventWithLotteries, listAllEventIds, listEvents, listRecentChanges, todayInJst } from './lib/db'
 import { FAVICON_SVG } from './lib/icon'
@@ -61,5 +62,6 @@ app.get('/favicon.svg', (c) =>
 
 app.post('/api/ingest', handleIngest)
 app.get('/api/missing', handleMissing)
+app.get('/api/unknown-hosts', handleUnknownHosts)
 
 export default app
