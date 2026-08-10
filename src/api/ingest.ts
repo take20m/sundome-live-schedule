@@ -116,8 +116,19 @@ type UpsertResult = 'added' | 'updated' | 'unchanged'
  *
  * v2: 初版(名前・URLを材料から除外し、表記ゆれで通知しないようにした)
  * v3: lottery の材料に sold_out を追加
+ * v4: event の材料の時刻を「値」から「判明したか」に変更。
+ *     収集が同一ツアーの別公演日と時刻を取り違えるため(4/25に4/24の17:00を入れ、
+ *     翌晩 enrich が16:00へ直す等)、値を材料にすると毎晩「公演更新」が飛んでいた
  */
-const HASH_VERSION = 'v3'
+const HASH_VERSION = 'v4'
+
+/**
+ * 通知の方針。
+ * - always: 追加も更新も通知する
+ * - added-only: 新規追加だけ通知する(内容が動いただけでは通知しない)
+ * - never: 通知しない(書き込みはする)
+ */
+type NotifyPolicy = 'always' | 'added-only' | 'never'
 
 /** ISO文字列の表記ゆれ(+09:00 vs Z等)を吸収して同時刻か判定 */
 function sameInstant(a: string | null, b: string | null): boolean {
@@ -127,7 +138,8 @@ function sameInstant(a: string | null, b: string | null): boolean {
 
 /**
  * snapshots のハッシュと比較し、差分があるときだけ書き込み+changes 追加のステートメントを返す。
- * - notify=false: 書き込みはするが通知(changes)には載せない(締切済みの受付など)
+ * - notify: 'never' は書き込みだけして通知(changes)に載せない(締切済みの受付など)。
+ *   'added-only' は新規追加のみ通知し、内容が動いただけでは通知しない
  * - seenSummaries: 同一リクエスト内の同文通知を1回に抑える(同ツアー複数公演日の重複対策)
  * - ハッシュは HASH_VERSION プレフィックス付き。旧バージョンからの移行時は差分があっても
  *   通知しない(ハッシュ仕様変更による偽の「更新」を一斉配信しないため)
@@ -141,7 +153,7 @@ async function diffAndUpsert(
   upsertStmt: D1PreparedStatement,
   nowIso: string,
   batch: D1PreparedStatement[],
-  notify: boolean,
+  notify: NotifyPolicy,
   seenSummaries: Set<string>,
 ): Promise<UpsertResult> {
   const existing = await db
@@ -167,7 +179,9 @@ async function diffAndUpsert(
       )
       .bind(itemId, itemType, contentHash, nowIso),
   )
-  if (notify && !hashVersionChanged) {
+  const shouldNotify =
+    !hashVersionChanged && (notify === 'always' || (notify === 'added-only' && kind === 'added'))
+  if (shouldNotify) {
     const summary = summaryOf(kind)
     if (!seenSummaries.has(summary)) {
       seenSummaries.add(summary)
@@ -237,9 +251,12 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
       confidence: existingEv?.confidence === 'official' ? 'official' : ev.confidence,
     }
     // ハッシュ対象は「通知する価値のある変化」だけに絞る。
-    // タイトル・アーティスト名・URLの表記ゆれはサイレントに更新する
+    // タイトル・アーティスト名・URLの表記ゆれはサイレントに更新する。
+    // 時刻は値ではなく「判明したか」を材料にする。収集は同一ツアーの別公演日と
+    // 時刻を取り違えるため、値を入れると毎晩「公演更新」が飛ぶ。
+    // 知りたいのは「開場・開演が判明した」瞬間だけで、その後の揺れは黙って反映する
     const eventHash = `${HASH_VERSION}:${await sha256Hex(
-      JSON.stringify([ev.date, evm.open_time, evm.start_time, evm.confidence]),
+      JSON.stringify([ev.date, evm.open_time !== null, evm.start_time !== null, evm.confidence]),
     )}`
     const eventResult = await diffAndUpsert(
       db,
@@ -264,7 +281,7 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
       nowIso,
       batch,
       // 開催済みの公演はサイトに表示されないため、通知もしない
-      ev.date >= todayInJst(now),
+      ev.date >= todayInJst(now) ? 'always' : 'never',
       seenSummaries,
     )
     eventCounts[eventResult]++
@@ -311,8 +328,10 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
       // 通知するのは「行動できる受付」だけ:
       // - 過去公演の受付は通知しない(サイトにも表示されない)
       // - 期間が1つも取れていない受付は通知しない(期間未確認の名前は表記ゆれで
-      //   毎晩IDが変わりやすくノイズ源。期間が判明した時点で「抽選更新」として通知される)
+      //   毎晩IDが変わりやすくノイズ源)
       // - 既に締切を過ぎた受付は通知しない(表示はされる)
+      // 加えて通知は新規追加のみ(下の 'added-only')。期間が数分ずれた等の更新は
+      // 収集の揺れが大半でノイズになるため、黙って反映する
       const lotteryNotify =
         !eventInPast &&
         (lm.starts_at !== null || lm.ends_at !== null) &&
@@ -335,7 +354,7 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
           .bind(lotteryId, eventId, l.name, lm.starts_at, lm.ends_at, lm.url, lm.confidence, lm.sold_out, nowIso),
         nowIso,
         batch,
-        lotteryNotify,
+        lotteryNotify ? 'added-only' : 'never',
         seenSummaries,
       )
       lotteryCounts[lotteryResult]++

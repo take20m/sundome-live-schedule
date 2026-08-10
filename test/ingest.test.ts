@@ -73,9 +73,44 @@ describe('ingest API', () => {
     expect(body3.events.unchanged).toBe(1)
     expect(body3.lotteries.updated).toBe(1)
 
-    // changes: 公演added + 抽選added + 抽選updated = 3件
-    const { results } = await env.DB.prepare('SELECT * FROM changes ORDER BY id').all()
-    expect(results.length).toBe(3)
+    // changes: 公演added + 抽選added = 2件。
+    // 期間変更は updated として検知されるが(上の body3)、収集の揺れが大半なので通知しない
+    const { results } = await env.DB.prepare(
+      'SELECT change_kind FROM changes ORDER BY id',
+    ).all<{ change_kind: string }>()
+    expect(results.map((r) => r.change_kind)).toEqual(['added', 'added'])
+  })
+
+  it('公演時刻は判明時だけ通知し、その後の値の揺れでは通知しない', async () => {
+    const countChanges = async () =>
+      (await env.DB.prepare('SELECT count(*) AS n FROM changes').first<{ n: number }>())!.n
+    const base = {
+      title: 'TIME TOUR',
+      artist: '時刻ゆらぎ',
+      date: '2027-06-06',
+      open_time: null,
+      start_time: null,
+      confidence: 'official',
+      lotteries: [],
+    }
+
+    await post({ events: [base] })
+    const afterNew = await countChanges()
+
+    // 時刻が判明 → 知りたい情報なので通知する
+    await post({ events: [{ ...base, open_time: '17:00', start_time: '18:00' }] })
+    const afterKnown = await countChanges()
+    expect(afterKnown).toBe(afterNew + 1)
+
+    // 収集が同一ツアーの別公演日と取り違えた(値→値の変化) → 通知しない
+    await post({ events: [{ ...base, open_time: '16:00', start_time: '17:00' }] })
+    expect(await countChanges()).toBe(afterKnown)
+
+    // 通知しないだけで、表示用の値はサイレントに最新へ更新される
+    const ev = await env.DB.prepare(
+      "SELECT open_time, start_time FROM events WHERE id = 'ev-2027-06-06'",
+    ).first<{ open_time: string; start_time: string }>()
+    expect(ev).toEqual({ open_time: '16:00', start_time: '17:00' })
   })
 
   it('抽選名の表記ゆれは同一IDに正規化され、改名時は古い方が置換される', async () => {
