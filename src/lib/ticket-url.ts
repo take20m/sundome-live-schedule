@@ -5,6 +5,11 @@
  * 混ざる。「受付中」表示のリンクを踏んだのに申し込めない、という体験を防ぐため、
  * デフォルト拒否(ホワイトリスト方式)で既知プレイガイドの公演固有ページだけを許可する。
  *
+ * URLは3段階で扱う:
+ *   1. PLAYGUIDE_HOSTS に該当 → 記録し、リンクにする
+ *   2. どちらでもない         → 記録するがリンクにしない(公式の告知ページなど)
+ *   3. DENIED_HOSTS に該当    → そもそも記録しない(ingest で捨てる)
+ *
  * ## 新しいチケット販売サイトを追加する手順
  * 1. `GET /api/unknown-hosts` のレポートを見る(collect ワークフローのジョブサマリに毎日出る)
  * 2. そのホストで本当にチケットを購入・申込できるかを人間が確認する
@@ -66,6 +71,31 @@ function matchesHost(host: string, allowed: string): boolean {
 export function hostOf(rawUrl: string | null | undefined): string | null {
   const u = parseHttpUrl(rawUrl)
   return u ? normalizeHost(u.hostname) : null
+}
+
+/**
+ * 申込先として記録する価値がないホスト(転売プラットフォーム・まとめ記事・個人ブログ)。
+ *
+ * PLAYGUIDE_HOSTS との役割の違い:
+ *   ホワイトリスト外 → 記録はするがリンクにしない(公式の告知ページなど情報価値がある)
+ *   ここに該当       → そもそも記録しない(踏んでも申し込めず、公式情報でもない)
+ *
+ * 公式リセール(tixplus.jp の「チケプラTrade」等)は転売ではないのでここには入れない。
+ * 追加する前に、そのホストが本当に非公式かを人間が確認すること。
+ */
+export const DENIED_HOSTS: readonly string[] = [
+  'ticketjam.jp', // チケジャム(転売)。実データで申込先として収集されていた
+  'ticket-festa.com', // まとめ記事サイト。同上
+  'jayjayblog.com', // 個人ブログ。同上
+  'ticketstreet.jp', // チケットストリート(転売)
+  'ticket-ryutsu.com', // チケット流通センター(転売)
+  'livefans.jp', // ライブ情報まとめ
+]
+
+/** 申込先・情報源として記録してはいけないURLか */
+export function isDeniedHost(rawUrl: string | null | undefined): boolean {
+  const host = hostOf(rawUrl)
+  return host !== null && DENIED_HOSTS.some((h) => matchesHost(host, h))
 }
 
 /** その公演を実際に申し込める購入ページとみなせるか */

@@ -1,6 +1,7 @@
 import type { Context } from 'hono'
 import { todayInJst } from '../lib/db'
 import { formatJst } from '../lib/format'
+import { isDeniedHost } from '../lib/ticket-url'
 import type { Bindings, Confidence, LotteryRow } from '../types'
 
 type IncomingLottery = {
@@ -46,6 +47,26 @@ const isUrlOrNull = (v: unknown): v is string | null =>
   v == null || (typeof v === 'string' && /^https?:\/\//.test(v))
 const nonEmpty = (v: unknown): v is string => typeof v === 'string' && v.trim().length > 0
 
+/**
+ * 転売・まとめサイトのURLは記録しない。捨てた理由は skipped に残して
+ * collect ワークフローのログから気づけるようにする
+ */
+function keepUrl(url: string | null, label: string, skipped: string[]): string | null {
+  if (url !== null && isDeniedHost(url)) {
+    skipped.push(`${label}: 転売・まとめサイトのため破棄 (${url})`)
+    return null
+  }
+  return url
+}
+
+/**
+ * ラチェット(null で既知の値を上書きしない)が、既にDBに入っている転売サイトのURLを
+ * 守り続けてしまうのを防ぐ。収集側で捨てても old が勝つと消えないため既存値も検査する
+ */
+function dropDenied(url: string | null | undefined): string | null {
+  return url != null && !isDeniedHost(url) ? url : null
+}
+
 /** 不正な項目は捨てる(SPEC: 誤表示より欠落を優先)。捨てた理由は skipped に積む */
 function sanitize(raw: unknown, skipped: string[]): IncomingEvent[] {
   if (typeof raw !== 'object' || raw === null || !Array.isArray((raw as { events?: unknown }).events)) {
@@ -77,7 +98,11 @@ function sanitize(raw: unknown, skipped: string[]): IncomingEvent[] {
         name: lo.name.trim(),
         starts_at: (lo.starts_at as string | null) ?? null,
         ends_at: (lo.ends_at as string | null) ?? null,
-        url: isUrlOrNull(lo.url ?? null) ? ((lo.url as string | null) ?? null) : null,
+        url: keepUrl(
+          isUrlOrNull(lo.url ?? null) ? ((lo.url as string | null) ?? null) : null,
+          `events[${i}].lotteries[${j}].url`,
+          skipped,
+        ),
         confidence: isConfidence(lo.confidence) ? lo.confidence : 'inferred',
         sold_out: lo.sold_out === true,
       })
@@ -88,8 +113,16 @@ function sanitize(raw: unknown, skipped: string[]): IncomingEvent[] {
       date: ev.date,
       open_time: (ev.open_time as string | null) ?? null,
       start_time: (ev.start_time as string | null) ?? null,
-      source_url: isUrlOrNull(ev.source_url ?? null) ? ((ev.source_url as string | null) ?? null) : null,
-      artist_url: isUrlOrNull(ev.artist_url ?? null) ? ((ev.artist_url as string | null) ?? null) : null,
+      source_url: keepUrl(
+        isUrlOrNull(ev.source_url ?? null) ? ((ev.source_url as string | null) ?? null) : null,
+        `events[${i}].source_url`,
+        skipped,
+      ),
+      artist_url: keepUrl(
+        isUrlOrNull(ev.artist_url ?? null) ? ((ev.artist_url as string | null) ?? null) : null,
+        `events[${i}].artist_url`,
+        skipped,
+      ),
       confidence: isConfidence(ev.confidence) ? ev.confidence : 'inferred',
       lotteries,
     })
@@ -246,8 +279,10 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
     const evm = {
       open_time: ev.open_time ?? existingEv?.open_time ?? null,
       start_time: ev.start_time ?? existingEv?.start_time ?? null,
-      source_url: ev.source_url ?? existingEv?.source_url ?? null,
-      artist_url: ev.artist_url ?? existingEv?.artist_url ?? null,
+      // 既存値にも検査をかける。そうしないと過去に入った転売サイトのURLが
+      // ラチェットに守られて消えない
+      source_url: ev.source_url ?? dropDenied(existingEv?.source_url),
+      artist_url: ev.artist_url ?? dropDenied(existingEv?.artist_url),
       confidence: existingEv?.confidence === 'official' ? 'official' : ev.confidence,
     }
     // ハッシュ対象は「通知する価値のある変化」だけに絞る。
@@ -316,7 +351,7 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
       const lm = {
         starts_at: l.starts_at ?? old?.starts_at ?? null,
         ends_at: l.ends_at ?? old?.ends_at ?? null,
-        url: l.url ?? old?.url ?? null,
+        url: l.url ?? dropDenied(old?.url),
         confidence: old?.confidence === 'official' ? 'official' : l.confidence,
         sold_out: l.sold_out === true || old?.sold_out === 1 ? 1 : 0,
       }

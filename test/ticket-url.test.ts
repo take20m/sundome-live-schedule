@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { hostOf, isPurchasePage } from '../src/lib/ticket-url'
+import { hostOf, isDeniedHost, isPurchasePage } from '../src/lib/ticket-url'
 
 // テストケースの URL はすべて本番 D1 に実在した値。
 // 「受付中なのに申し込めないページに飛ばされる」の回帰テスト
@@ -68,6 +68,31 @@ describe('isPurchasePage', () => {
   it('似ているだけの別ドメインを許可しない', () => {
     expect(isPurchasePage('https://eplus.jp.evil.example/foo/')).toBe(false)
     expect(isPurchasePage('https://noteplus.jp/foo/')).toBe(false)
+  })
+})
+
+describe('isDeniedHost', () => {
+  it('転売仲介・まとめサイト・個人ブログは記録対象にしない', () => {
+    expect(isDeniedHost('https://ticketjam.jp/magazine/music/japan-rock/131991')).toBe(true)
+    expect(isDeniedHost('https://ticket-festa.com/music/jpop/18901')).toBe(true)
+    expect(isDeniedHost('https://jayjayblog.com/mr-children-arena-tour2026-ticket-details/')).toBe(
+      true,
+    )
+    expect(isDeniedHost('https://www.ticketjam.jp/foo')).toBe(true)
+  })
+
+  it('プレイガイド・公式サイト・公式リセールは記録する', () => {
+    expect(isDeniedHost('https://eplus.jp/fujiikaze2026/add-fukui/')).toBe(false)
+    // 公式の告知ページはリンクにはしないが情報としては残す
+    expect(isDeniedHost('https://sakanaction.jp/feature/tour2027_ticket')).toBe(false)
+    // 公式リセールは転売ではない
+    expect(isDeniedHost('https://ticket.tixplus.jp/foo/bar/')).toBe(false)
+  })
+
+  it('判定できないものは拒否しない', () => {
+    expect(isDeniedHost(null)).toBe(false)
+    expect(isDeniedHost(undefined)).toBe(false)
+    expect(isDeniedHost('not a url')).toBe(false)
   })
 })
 

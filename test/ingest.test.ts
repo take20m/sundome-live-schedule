@@ -398,6 +398,84 @@ describe('ingest API', () => {
     expect(after!.n).toBeGreaterThan(baseline!.n - 1) // 初回のadded通知は出ている
   })
 
+  // 収集AIが申込先として転売サイトやまとめ記事を拾ってくることへの防御
+  it('転売・まとめサイトのURLは記録せず skipped に載る', async () => {
+    const day = 24 * 60 * 60 * 1000
+    const period = {
+      starts_at: new Date(Date.now() + 1 * day).toISOString(),
+      ends_at: new Date(Date.now() + 9 * day).toISOString(),
+    }
+    const res = await post({
+      events: [
+        {
+          title: 'DENY TOUR',
+          artist: '転売よけ',
+          date: '2027-08-18',
+          source_url: 'https://ticket-festa.com/music/jpop/1',
+          confidence: 'official',
+          lotteries: [
+            { name: 'まとめ記事が申込先', ...period, url: 'https://ticketjam.jp/magazine/x', confidence: 'inferred' },
+            { name: '公式告知が申込先', ...period, url: 'https://sakanaction.jp/feature/x', confidence: 'official' },
+          ],
+        },
+      ],
+    })
+    const body = (await res.json()) as { skipped: string[] }
+    // source_url と lotteries[0].url の2件
+    expect(body.skipped.length).toBe(2)
+    expect(body.skipped.join('\n')).toContain('ticketjam.jp')
+
+    const ev = await env.DB.prepare(
+      "SELECT source_url FROM events WHERE id = 'ev-2027-08-18'",
+    ).first<{ source_url: string | null }>()
+    expect(ev?.source_url).toBe(null)
+
+    const { results } = await env.DB.prepare(
+      "SELECT name, url FROM lotteries WHERE event_id = 'ev-2027-08-18'",
+    ).all<{ name: string; url: string | null }>()
+    const byName = new Map(results.map((r) => [r.name, r.url]))
+    // 公式の告知ページは情報として残し、転売サイトだけ捨てる
+    expect(byName.get('まとめ記事が申込先')).toBe(null)
+    expect(byName.get('公式告知が申込先')).toBe('https://sakanaction.jp/feature/x')
+  })
+
+  it('既にDBに入っている転売サイトのURLは次回の収集で消える', async () => {
+    const day = 24 * 60 * 60 * 1000
+    const period = {
+      starts_at: new Date(Date.now() + 2 * day).toISOString(),
+      ends_at: new Date(Date.now() + 8 * day).toISOString(),
+    }
+    const ev = {
+      title: 'LEGACY TOUR',
+      artist: '過去データ',
+      date: '2027-08-19',
+      confidence: 'official',
+      lotteries: [{ name: '先行', ...period, url: 'https://eplus.jp/legacy/tour/', confidence: 'official' }],
+    }
+    await post({ events: [ev] })
+
+    // ブロック導入前に保存された状態を再現する
+    await env.DB.prepare(
+      "UPDATE lotteries SET url = 'https://ticketjam.jp/magazine/old' WHERE event_id = 'ev-2027-08-19'",
+    ).run()
+    await env.DB.prepare(
+      "UPDATE events SET source_url = 'https://ticketjam.jp/magazine/old' WHERE id = 'ev-2027-08-19'",
+    ).run()
+
+    // URLが取れなかった収集を再送 → ラチェットに守られず消える
+    await post({
+      events: [{ ...ev, lotteries: [{ ...ev.lotteries[0], url: null }] }],
+    })
+    const lot = await env.DB.prepare(
+      "SELECT url FROM lotteries WHERE event_id = 'ev-2027-08-19'",
+    ).first<{ url: string | null }>()
+    expect(lot?.url).toBe(null)
+    const evRow = await env.DB.prepare(
+      "SELECT source_url FROM events WHERE id = 'ev-2027-08-19'",
+    ).first<{ source_url: string | null }>()
+    expect(evRow?.source_url).toBe(null)
+  })
+
   it('不正な日付の公演は破棄され skipped に載る', async () => {
     const res = await post({
       events: [

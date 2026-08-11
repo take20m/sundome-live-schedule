@@ -54,11 +54,13 @@ jobs:
           INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
         run: node collector/report-unknown-hosts.mjs
 
+      # 1段目(events.json)だけでなく2段目(enrich-*.json)も残す。
+      # 収集内容を後から実データで追えないと、混入源が1段目か2段目か切り分けられない
       - name: Upload collected JSON (debug用)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: events-json
-          path: collector/out/events.json
+          path: collector/out/*.json
           if-no-files-found: ignore
           retention-days: 14
