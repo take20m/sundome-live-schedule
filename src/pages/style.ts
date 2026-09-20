@@ -56,7 +56,7 @@ a { color: var(--primary); }
 /* Top app bar (small) */
 .appbar { display: flex; align-items: center; gap: 4px; min-height: 64px; max-width: 760px; margin: 0 auto; padding: 8px 4px 8px 16px; }
 .brand { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; min-width: 0; }
-.logo { width: 28px; height: 28px; color: var(--primary); flex: none; }
+.logo { width: 28px; height: 28px; flex: none; border-radius: 7px; }
 .appbar h1 { margin: 0; font-size: 22px; line-height: 28px; font-weight: 400; letter-spacing: 0; }
 .appbar h1 span { white-space: nowrap; }
 .spacer { flex: 1; }

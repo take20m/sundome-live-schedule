@@ -1,28 +1,27 @@
-/** チケットモチーフの SVG。favicon は M3 primary(#0B3D91)で固定、ヘッダーのロゴは currentColor で描く */
-function ticketSvg(fill: string, fg: string, cls = ''): string {
+/**
+ * サイトのシンボル: 「サン」ドームの名前どおり、太陽の下に白いドーム(正面アーチ付き)。
+ * 濃紺の角丸地に黄の太陽。favicon は単体ファイルなので色を固定し、ヘッダーも同じ SVG を使う
+ */
+export const BRAND_COLOR = '#0B3D91'
+const SUN = '#F7D33B'
+const DOME = '#FFFFFF'
+
+function sunDomeSvg(cls = ''): string {
   return `<svg${cls ? ` class="${cls}"` : ''} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-hidden="true">
-<defs>
-<mask id="m">
-<rect width="64" height="64" fill="#fff"/>
-<circle cx="22" cy="9" r="6" fill="#000"/>
-<circle cx="22" cy="55" r="6" fill="#000"/>
-</mask>
-</defs>
-<rect x="3" y="9" width="58" height="46" rx="8" fill="${fill}" mask="url(#m)"/>
-<line x1="22" y1="19" x2="22" y2="45" stroke="${fg}" stroke-width="2.6" stroke-dasharray="4.4 4.4" stroke-linecap="round"/>
-<rect x="30" y="24" width="22" height="4.5" rx="2.25" fill="${fg}" opacity=".95"/>
-<rect x="30" y="34" width="15" height="4.5" rx="2.25" fill="${fg}" opacity=".55"/>
+<rect width="64" height="64" rx="14" fill="${BRAND_COLOR}"/>
+<circle cx="32" cy="24" r="9" fill="${SUN}"/>
+<g stroke="${SUN}" stroke-width="3" stroke-linecap="round"><path d="M32 6v5M14 24h5M45 24h5M19 11l3.5 3.5M45 11l-3.5 3.5"/></g>
+<path d="M10 50a22 16 0 0 1 44 0z" fill="${DOME}"/>
+<path d="M26 50v-5a6 6 0 0 1 12 0v5z" fill="${BRAND_COLOR}"/>
 </svg>
 `
 }
 
-export const BRAND_COLOR = '#0B3D91'
+/** /favicon.svg */
+export const FAVICON_SVG = sunDomeSvg()
 
-/** /favicon.svg。単体ファイルなので CSS 変数は使えず色を固定する */
-export const FAVICON_SVG = ticketSvg(BRAND_COLOR, '#FFFFFF')
-
-/** ヘッダーのロゴ。テーマの primary / on-primary に追従する */
-export const LOGO_SVG = ticketSvg('currentColor', 'var(--on-primary)', 'logo')
+/** ヘッダーのロゴ */
+export const LOGO_SVG = sunDomeSvg('logo')
 
 /** Material Symbols(Outlined, 24px グリッド)のパス。外部フォントを読まずに使う分だけ持つ */
 const MATERIAL_ICON_PATHS = {
