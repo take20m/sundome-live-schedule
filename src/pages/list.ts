@@ -324,6 +324,10 @@ ${head}
 <body>
 ${SITE_HEADER}
 <main>
+<picture class="banner">
+  <source media="(max-width: 480px)" srcset="/img/sundome-fukui-16x9.webp">
+  <img src="/img/sundome-fukui-21x9.webp" alt="サンドーム福井の外観" width="1600" height="685" decoding="async" fetchpriority="high">
+</picture>
 ${renderDeadlines(events, now)}
 <div class="section"><h2>今後の公演</h2><span class="sup">${events.length} 公演</span></div>
 ${body}

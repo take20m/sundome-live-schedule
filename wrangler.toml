@@ -15,6 +15,10 @@ preview_urls = false
 #   wrangler secret put INGEST_TOKEN
 # ローカル開発時は .dev.vars に INGEST_TOKEN=... を書く
 
+# 静的ファイル(会場写真など)。パスが一致すれば Worker より先にアセットが返る
+[assets]
+directory = "./public"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "sundome-reminder"

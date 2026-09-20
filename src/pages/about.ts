@@ -33,6 +33,12 @@ ${SITE_HEADER}
 <li>今後、アクセス解析や第三者配信の広告を導入する場合は、本ページで利用サービスと Cookie の取り扱いを告知します</li>
 </ul>
 
+<h2>掲載画像について</h2>
+<ul>
+<li>トップの会場写真は <a href="https://commons.wikimedia.org/wiki/File:Sundome_Fukui_2014-12-27_01.JPG" rel="noopener" target="_blank">Sundome Fukui 2014-12-27 01.JPG</a>(撮影: 賀正、Wikimedia Commons)を <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.ja" rel="noopener" target="_blank">CC BY-SA 4.0</a> のもとでトリミングして使用しています</li>
+<li>各公演の画像は、アーティスト公式サイトが SNS 共有用に公開している画像(og:image)を、複製せず直接参照して表示しています。掲載に問題がある場合は下記連絡先までお知らせください。すみやかに取り下げます</li>
+</ul>
+
 <h2>運営者・連絡先</h2>
 <ul>
 <li>運営者: take20m</li>
