@@ -44,7 +44,7 @@ describe('アーティストページとガイド', () => {
     expect(res.status).toBe(200)
     const html = await res.text()
     expect(html).toContain('<h1>あいみょん</h1>')
-    expect(html).toContain('下書き準備中')
+    expect(html).toContain('福井で観るときのポイント') // content/artists/あいみょん.md の見出し
     expect(html).toContain('今後の公演')
     expect(html).toContain('過去の公演')
     expect(html).toContain('AIMYON TOUR 2027')
@@ -64,7 +64,7 @@ describe('アーティストページとガイド', () => {
     const res = await SELF.fetch('https://example.com/guide/access')
     expect(res.status).toBe(200)
     const html = await res.text()
-    expect(html).toContain('<h1>サンドーム福井 アクセス・会場ガイド</h1>')
+    expect(html).toMatch(/<h1>サンドーム福井 アクセス・会場ガイド[^<]*<\/h1>/)
     expect(html).toContain('最終更新 2026-09-20')
     expect((await SELF.fetch('https://example.com/guide/nope')).status).toBe(404)
     const top = await (await SELF.fetch('https://example.com/')).text()
