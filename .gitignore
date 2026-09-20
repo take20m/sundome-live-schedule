@@ -6,3 +6,7 @@ dist/
 .dev.vars
 *.log
 .DS_Store
+
+# LT の発表資料はローカルのみ(写真を含むため公開しない)
+slides/
+.vscode/
