@@ -66,6 +66,27 @@ export async function listPastEvents(db: D1Database, beforeDate: string): Promis
 }
 
 /** 公演詳細ページ用: 過去公演もIDで引ける */
+/** アーティスト名(表記ゆれ吸収)が一致する公演を全期間・日付昇順で返す(アーティストページ用) */
+export async function listEventsByArtist(db: D1Database, artist: string): Promise<EventWithLotteries[]> {
+  const norm = (s: string) => s.normalize('NFKC').toLowerCase().replace(/\s+/g, '')
+  const key = norm(artist)
+  const { results: all } = await db.prepare('SELECT * FROM events ORDER BY date ASC').all<EventRow>()
+  const events = all.filter((e) => norm(e.artist) === key)
+  if (events.length === 0) return []
+  const ids = events.map((e) => e.id)
+  const { results: lotteries } = await db
+    .prepare(`SELECT * FROM lotteries WHERE event_id IN (${ids.map(() => '?').join(',')}) ORDER BY starts_at ASC`)
+    .bind(...ids)
+    .all<LotteryRow>()
+  const byEvent = new Map<string, LotteryRow[]>()
+  for (const l of lotteries) {
+    const list = byEvent.get(l.event_id) ?? []
+    list.push(l)
+    byEvent.set(l.event_id, list)
+  }
+  return events.map((e) => ({ ...e, lotteries: byEvent.get(e.id) ?? [] }))
+}
+
 export async function getEventWithLotteries(
   db: D1Database,
   id: string,

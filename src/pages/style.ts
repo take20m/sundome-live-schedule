@@ -142,7 +142,15 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 /* 固定ページ(about): 黄地に本文を直接置くと読みにくいので白カードに包む */
 .prose-card { background: var(--surface-container-low); border-radius: 16px; padding: 8px 24px 24px; box-shadow: var(--shadow-1); }
 @media (max-width: 480px) { .prose-card { padding: 4px 16px 16px; border-radius: 12px; } }
+.prose h1 { font-size: 22px; line-height: 28px; font-weight: 400; margin: 16px 0 4px; text-wrap: balance; }
 .prose h2 { font-size: 16px; line-height: 24px; font-weight: 500; letter-spacing: .15px; margin: 32px 0 8px; }
+.prose h3 { font-size: 14px; line-height: 20px; font-weight: 500; margin: 20px 0 4px; }
+.prose .updated { margin: 0 0 16px; font-size: 12px; line-height: 16px; letter-spacing: .4px; color: var(--on-surface-variant); }
+.prose img { max-width: 100%; border-radius: 8px; }
+.prose blockquote { margin: 8px 0; padding: 4px 16px; border-left: 3px solid var(--outline-variant); color: var(--on-surface-variant); }
+.prose table { border-collapse: collapse; width: 100%; font-size: 13px; }
+.prose th, .prose td { border-bottom: 1px solid var(--outline-variant); padding: 6px 8px; text-align: left; }
+.prose-card .lots { margin-top: 0; }
 .prose p, .prose li { margin: 0 0 8px; }
 .prose ul { padding-left: 1.3em; margin: 0 0 8px; }
 

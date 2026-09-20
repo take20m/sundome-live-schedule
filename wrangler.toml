@@ -15,6 +15,12 @@ preview_urls = false
 #   wrangler secret put INGEST_TOKEN
 # ローカル開発時は .dev.vars に INGEST_TOKEN=... を書く
 
+# content/ の Markdown を文字列として import する(記事・ガイド)
+[[rules]]
+type = "Text"
+globs = ["**/*.md"]
+fallthrough = true
+
 # 静的ファイル(会場写真など)。パスが一致すれば Worker より先にアセットが返る
 [assets]
 directory = "./public"

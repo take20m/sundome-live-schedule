@@ -14,3 +14,8 @@ declare module '*.sql?raw' {
 declare module '*/og-image.mjs' {
   export function extractOgImage(html: string, baseUrl: string): string | null
 }
+
+declare module '*.md' {
+  const content: string
+  export default content
+}
