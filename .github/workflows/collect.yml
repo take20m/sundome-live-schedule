@@ -2,8 +2,8 @@ name: collect
 
 on:
   schedule:
-    # JST 03:30(UTC 18:30)に毎日実行
-    - cron: '30 18 * * *'
+    # JST 17:00(UTC 08:00)に毎日実行(GitHub の schedule は混雑時に数十分遅れることがある)
+    - cron: '0 8 * * *'
   workflow_dispatch:
 
 jobs:
