@@ -145,7 +145,7 @@ describe('記事の独自記法', () => {
     expect(html).toContain('<h1 class="title">サンドーム福井への行き方と、帰りで困らないための準備</h1>')
     expect(html).toContain('<p class="lead">')
     expect(html).toContain('確認元 <b>会場公式サイト・FAQ、ハピラインふくい</b>')
-    expect(html).toContain('<section class="verdict"><h2>まず結論</h2><ol><li><strong>初めてなら鯖江駅から徒歩20分</strong>')
+    expect(html).toContain('<section class="verdict"><h2>まず結論</h2><ol><li><strong>初めてなら鯖江駅から徒歩約20分</strong>')
     expect(html).toContain('<figure class="hero">')
     expect(html).toContain('leaflet.min.js')
     expect(html).toContain('<tr class="pick">')
@@ -154,6 +154,7 @@ describe('記事の独自記法', () => {
     // 地図のないページには Leaflet を読み込まない
     const tickets = await (await SELF.fetch('https://example.com/guide/tickets')).text()
     expect(tickets).not.toContain('leaflet.min.js')
-    expect(tickets).toContain('<ol class="decision">')
+    expect(tickets).toContain('<h2 id="まずは公式サイトから探す">まずは公式サイトから探す</h2>')
+    expect(tickets).toContain('<aside class="callout callout-warn">')
   })
 })
