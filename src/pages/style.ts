@@ -1,5 +1,5 @@
 /**
- * サイト共通のスタイル。Material 3 のベースライン(seed #6750A4)をトークンとして持ち、
+ * サイト共通のスタイル。Material 3 のトークン(会場公式サイト寄せ: 黄地・白カード・濃紺。モック G 案)を持ち、
  * コンポーネントは必ずトークン経由で色を取る(ライト/ダーク/端末追従の3状態で崩れないため)。
  * 外部ライブラリは使わない。フォントだけ Google Fonts(Roboto + Noto Sans JP)を読む。
  */
@@ -19,11 +19,11 @@ export const SITE_FOOTER = `<footer class="site-f">
 export const SITE_CSS = `
 :root {
   color-scheme: light;
-  --primary: #6750A4; --on-primary: #FFFFFF; --primary-container: #EADDFF; --on-primary-container: #21005D;
-  --secondary-container: #E8DEF8; --on-secondary-container: #1D192B;
-  --surface: #FEF7FF;
-  --surface-container-low: #F7F2FA; --surface-container: #F3EDF7; --surface-container-highest: #E6E0E9;
-  --on-surface: #1D1B20; --on-surface-variant: #49454F; --outline: #79747E; --outline-variant: #CAC4D0;
+  --primary: #0B3D91; --on-primary: #FFFFFF; --primary-container: #FFE45C; --on-primary-container: #3D3000;
+  --secondary-container: #D6E3FF; --on-secondary-container: #001A45;
+  --surface: #F7D33B;
+  --surface-container-low: #FFFFFF; --surface-container: #FFF8DC; --surface-container-highest: #FFF3B3;
+  --on-surface: #1A1F2B; --on-surface-variant: #4E4A3B; --outline: #8E8560; --outline-variant: #EADA8F;
   --error-container: #F9DEDC; --on-error-container: #410E0B;
   --shadow-1: 0 1px 2px rgba(0,0,0,.30), 0 1px 3px 1px rgba(0,0,0,.15);
   --shadow-2: 0 1px 2px rgba(0,0,0,.30), 0 2px 6px 2px rgba(0,0,0,.15);
@@ -31,21 +31,21 @@ export const SITE_CSS = `
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --primary: #D0BCFF; --on-primary: #381E72; --primary-container: #4F378B; --on-primary-container: #EADDFF;
-    --secondary-container: #4A4458; --on-secondary-container: #E8DEF8;
-    --surface: #141218;
-    --surface-container-low: #1D1B20; --surface-container: #211F26; --surface-container-highest: #36343B;
-    --on-surface: #E6E0E9; --on-surface-variant: #CAC4D0; --outline: #938F99; --outline-variant: #49454F;
+    --primary: #B0C6FF; --on-primary: #002A73; --primary-container: #7A6400; --on-primary-container: #FFF3B3;
+    --secondary-container: #2F4370; --on-secondary-container: #D6E3FF;
+    --surface: #1C1A10;
+    --surface-container-low: #262318; --surface-container: #2B281B; --surface-container-highest: #3A362A;
+    --on-surface: #EDE7D6; --on-surface-variant: #CFC7A8; --outline: #98917A; --outline-variant: #4E4A3B;
     --error-container: #8C1D18; --on-error-container: #F9DEDC;
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --primary: #D0BCFF; --on-primary: #381E72; --primary-container: #4F378B; --on-primary-container: #EADDFF;
-  --secondary-container: #4A4458; --on-secondary-container: #E8DEF8;
-  --surface: #141218;
-  --surface-container-low: #1D1B20; --surface-container: #211F26; --surface-container-highest: #36343B;
-  --on-surface: #E6E0E9; --on-surface-variant: #CAC4D0; --outline: #938F99; --outline-variant: #49454F;
+  --primary: #B0C6FF; --on-primary: #002A73; --primary-container: #7A6400; --on-primary-container: #FFF3B3;
+  --secondary-container: #2F4370; --on-secondary-container: #D6E3FF;
+  --surface: #1C1A10;
+  --surface-container-low: #262318; --surface-container: #2B281B; --surface-container-highest: #3A362A;
+  --on-surface: #EDE7D6; --on-surface-variant: #CFC7A8; --outline: #98917A; --outline-variant: #4E4A3B;
   --error-container: #8C1D18; --on-error-container: #F9DEDC;
 }
 * { box-sizing: border-box; }
