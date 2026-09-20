@@ -108,8 +108,8 @@ export function buildRobots(siteUrl: string): string {
   return `User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${new URL('/sitemap.xml', siteUrl).toString()}\n`
 }
 
-/** 既定の OG 画像(会場写真 1200×630)。ページ固有の画像が無いときに使う */
-export const DEFAULT_OG_IMAGE = { path: '/img/og-default.jpg', width: 1200, height: 630, alt: 'サンドーム福井の外観' }
+/** 既定の OG 画像(会場写真 1200×628)。ページ固有の画像が無いときに使う */
+export const DEFAULT_OG_IMAGE = { path: '/img/og-default.jpg', width: 1200, height: 628, alt: 'サンドーム福井の外観' }
 
 /** 共通の <head> メタタグ(title, description, OGP, canonical) */
 export function buildHeadMeta(opts: {
