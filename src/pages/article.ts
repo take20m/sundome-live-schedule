@@ -69,6 +69,7 @@ ${a.extraHead ?? ''}
 ${SITE_HEADER}
 <main class="art">
 <nav class="crumb" aria-label="パンくず">${crumbs}</nav>
+<article class="sheet">
 ${a.kicker ? `<span class="kicker">${escapeHtml(a.kicker)}</span>` : ''}
 <h1 class="title">${escapeHtml(a.title)}</h1>
 ${a.lead ? `<p class="lead">${escapeHtml(a.lead)}</p>` : ''}
@@ -79,6 +80,7 @@ ${verdict}
 ${a.body}
 </div>
 ${a.footNote ? `<p class="foot-check">${escapeHtml(a.footNote)}</p>` : ''}
+</article>
 ${a.after ?? ''}
 </main>
 ${SITE_FOOTER}

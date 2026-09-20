@@ -171,20 +171,25 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
  * 部品は用途ごとに 1 種類: 囲み 3 色(黄=便利 / 青=現地メモ / 赤=重要)、数字、一覧(dl)、失敗、判断、出典
  */
 export const ARTICLE_CSS = `
-body.article { --surface: #FFFFFF; --surface-container-low: #FFFFFF; --surface-container: #F7F5EE; --surface-container-highest: #EFEBDD; --on-surface: #1A1F2B; --on-surface-variant: #4E4A3B; --outline-variant: #E6E1CF; --yellow: #F7D33B; --yellow-soft: #FFF3B3; --yellow-pale: #FFFBE6; --red: #B3261E; --red-soft: #FBE9E7; --blue: #1A5FB4; --blue-soft: #E8F0FB; --muted: #7A7563; font-size: 16px; line-height: 1.9; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body.article { --surface: #1C1A10; --surface-container-low: #262318; --surface-container: #2B281B; --surface-container-highest: #3A362A; --on-surface: #EDE7D6; --on-surface-variant: #CFC7A8; --outline-variant: #4E4A3B; --yellow-pale: #2E2A14; --yellow-soft: #4A4020; --red-soft: #3A1F1C; --blue-soft: #16273D; --blue: #8FB8F0; --red: #F2B8B5; --muted: #98917A; } }
-:root[data-theme="dark"] body.article { --surface: #1C1A10; --surface-container-low: #262318; --surface-container: #2B281B; --surface-container-highest: #3A362A; --on-surface: #EDE7D6; --on-surface-variant: #CFC7A8; --outline-variant: #4E4A3B; --yellow-pale: #2E2A14; --yellow-soft: #4A4020; --red-soft: #3A1F1C; --blue-soft: #16273D; --blue: #8FB8F0; --red: #F2B8B5; --muted: #98917A; }
-.article .appbar { background: var(--surface-container-low); }
-.article main.art { max-width: 720px; margin: 0 auto; padding: 0 16px 64px; }
-.article .crumb { font-size: 12px; color: var(--muted); margin: 20px 0 28px; letter-spacing: .3px; }
+/* 地は一覧と同じ黄。本文だけ白い紙面(sheet)に載せる。角丸は小さく影も薄く、UI カードではなく紙に見せる */
+.article main.art { max-width: 760px; margin: 0 auto; padding: 0 16px 64px; }
+.article .sheet { --paper: #FFFFFF; --surface-container-low: #FFFFFF; --surface-container: #F7F5EE; --surface-container-highest: #EFEBDD; --on-surface: #1A1F2B; --on-surface-variant: #4E4A3B; --outline-variant: #E6E1CF; --yellow: #F7D33B; --yellow-soft: #FFF3B3; --yellow-pale: #FFFBE6; --red: #B3261E; --red-soft: #FBE9E7; --blue: #1A5FB4; --blue-soft: #E8F0FB; --muted: #7A7563;
+  background: var(--paper); color: var(--on-surface); font-size: 16px; line-height: 1.9; border-radius: 4px; padding: 28px clamp(16px, 4vw, 44px) 40px; box-shadow: 0 1px 2px rgba(0,0,0,.14); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .article .sheet { --paper: #221F15; --surface-container-low: #262318; --surface-container: #2B281B; --surface-container-highest: #3A362A; --on-surface: #EDE7D6; --on-surface-variant: #CFC7A8; --outline-variant: #4E4A3B; --yellow-pale: #2E2A14; --yellow-soft: #4A4020; --red-soft: #3A1F1C; --blue-soft: #16273D; --blue: #8FB8F0; --red: #F2B8B5; --muted: #98917A; } }
+:root[data-theme="dark"] .article .sheet { --paper: #221F15; --surface-container-low: #262318; --surface-container: #2B281B; --surface-container-highest: #3A362A; --on-surface: #EDE7D6; --on-surface-variant: #CFC7A8; --outline-variant: #4E4A3B; --yellow-pale: #2E2A14; --yellow-soft: #4A4020; --red-soft: #3A1F1C; --blue-soft: #16273D; --blue: #8FB8F0; --red: #F2B8B5; --muted: #98917A; }
+.article .crumb { font-size: 12px; color: var(--on-surface-variant); margin: 16px 0 12px; letter-spacing: .3px; }
 .article .crumb a { color: inherit; text-decoration: none; }
 .article .crumb .sep { margin: 0 6px; }
+.article .sheet > .kicker:first-child { margin-top: 0; }
 .article .kicker { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .12em; color: #0B3D91; background: var(--yellow); padding: 2px 10px; border-radius: 2px; margin-bottom: 14px; }
 .article .title { font-family: "Noto Serif JP", "Hiragino Mincho ProN", serif; font-size: 30px; line-height: 1.4; font-weight: 700; margin: 0 0 12px; letter-spacing: .01em; text-wrap: balance; }
 .article .lead { font-family: "Noto Serif JP", "Hiragino Mincho ProN", serif; font-size: 17px; line-height: 1.9; color: var(--on-surface-variant); margin: 0 0 20px; }
 .article .byline { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--outline-variant); border-bottom: 1px solid var(--outline-variant); padding: 10px 0; margin: 0 0 28px; }
 .article .byline b { color: var(--on-surface-variant); font-weight: 500; }
 .article figure.hero { margin: 0 0 8px; }
+.article .sheet > figure.hero { margin-left: calc(clamp(16px, 4vw, 44px) * -1); margin-right: calc(clamp(16px, 4vw, 44px) * -1); }
+.article .sheet > figure.hero img { border-radius: 0; }
+.article .sheet > figure.hero figcaption { padding: 0 clamp(16px, 4vw, 44px); }
 .article figure.hero img { display: block; width: 100%; aspect-ratio: 21 / 9; object-fit: cover; border-radius: 4px; background: var(--surface-container-highest); }
 .article figure.hero figcaption { font-size: 12px; color: var(--muted); margin-top: 6px; }
 .article .verdict { margin: 36px 0 44px; padding: 20px 24px 20px 28px; background: var(--yellow-pale); border-left: 6px solid var(--yellow); }
@@ -249,7 +254,6 @@ body.article { --surface: #FFFFFF; --surface-container-low: #FFFFFF; --surface-c
 .leaflet-tooltip.map-label-venue::before { border-top-color: #0B3D91; }
 .leaflet-container { font: inherit; }
 /* 記事の後ろの公演カード(アーティストページ)。白地の上では枝線で区切る */
-.article .card { border: 1px solid var(--outline-variant); }
 .article .section { margin-top: 48px; }
 .article .section h2 { font-family: "Noto Serif JP", "Hiragino Mincho ProN", serif; font-size: 20px; font-weight: 700; }
 @media (max-width: 480px) {
