@@ -4,7 +4,7 @@ import type { EventWithLotteries } from '../lib/db'
 import { formatJst } from '../lib/format'
 import { groupConsecutive, mergeLotteries } from '../lib/group'
 import type { EventGroup, MergedLottery } from '../lib/group'
-import { escapeHtml } from '../lib/html'
+import { escapeHtml, safeHttpUrl } from '../lib/html'
 import { iconSvg } from '../lib/icon'
 import { buildHeadMeta, buildJsonLd, buildMetaDescription } from '../lib/seo'
 import type { LotteryStatus } from '../lib/status'
@@ -216,10 +216,11 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
   let actions = ''
   if (detail) {
     // 「コンサート情報」はアーティスト側のツアーページへ。未収集なら情報源(会場ページ)で代用
-    const infoUrl = focus.tour_url ?? focus.source_url
+    const infoUrl = safeHttpUrl(focus.tour_url) ?? safeHttpUrl(focus.source_url)
+    const artistUrl = safeHttpUrl(focus.artist_url)
     const links = [
-      focus.artist_url
-        ? `<a class="btn-text" href="${escapeHtml(focus.artist_url)}" rel="noopener" target="_blank">${escapeHtml(focus.artist)} 公式サイト${iconSvg('open_in_new')}</a>`
+      artistUrl
+        ? `<a class="btn-text" href="${escapeHtml(artistUrl)}" rel="noopener" target="_blank">${escapeHtml(focus.artist)} 公式サイト${iconSvg('open_in_new')}</a>`
         : '',
       infoUrl
         ? `<a class="btn-text" href="${escapeHtml(infoUrl)}" rel="noopener" target="_blank">コンサート情報${iconSvg('open_in_new')}</a>`
@@ -250,8 +251,8 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
   // ツアービジュアル(og:image の直リンク)。開いている日の画像を優先し、無ければ他の日のもの。
   // 読み込めなければ領域ごと閉じる(壊れた画像アイコンを見せない)
   // 画像のリンク先: 一覧では詳細へ、詳細では出典(ツアーページ)へ
-  const imageUrl = focus.image_url ?? events.map((e) => e.image_url).find((u) => u) ?? null
-  const mediaHref = detail ? focus.tour_url : `/e/${first.id}`
+  const imageUrl = safeHttpUrl(focus.image_url) ?? events.map((e) => safeHttpUrl(e.image_url)).find((u) => u) ?? null
+  const mediaHref = detail ? safeHttpUrl(focus.tour_url) : `/e/${first.id}`
   const img = imageUrl
     ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(first.title)}" loading="lazy" decoding="async" onerror="this.closest('.card-media').remove()">`
     : ''

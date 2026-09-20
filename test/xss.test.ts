@@ -39,3 +39,26 @@ describe('XSS耐性', () => {
     expect(html).not.toContain('"><img')
   })
 })
+
+describe('URL スキームの防御(描画側)', () => {
+  it('DB に javascript: スキームの URL が入っていても href / src に出さない', async () => {
+    const day = 24 * 60 * 60 * 1000
+    const date = new Date(Date.now() + 11 * day).toISOString().slice(0, 10)
+    await env.DB.prepare(
+      `INSERT INTO events (id, title, artist, date, source_url, artist_url, tour_url, image_url, confidence, updated_at)
+       VALUES (?, 'SCHEME TEST', 'スキーム検証', ?, 'javascript:alert(3)', 'javascript:alert(4)', 'javascript:alert(5)', 'javascript:alert(6)', 'inferred', ?)`,
+    )
+      .bind(`ev-${date}`, date, new Date().toISOString())
+      .run()
+    const top = await (await SELF.fetch('https://example.com/')).text()
+    const detail = await (await SELF.fetch(`https://example.com/e/ev-${date}`)).text()
+    for (const html of [top, detail]) {
+      expect(html).not.toMatch(/(href|src)="javascript:/)
+    }
+    // リンク自体が出ない(公式サイト・コンサート情報・画像)
+    expect(detail).not.toContain('公式サイト')
+    expect(detail).not.toContain('>コンサート情報')
+    // CSS にはクラス名が残るので、要素として出ていないことを見る
+    expect(detail).not.toContain('class="card-media"')
+  })
+})
