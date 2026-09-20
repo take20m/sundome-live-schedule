@@ -1,5 +1,5 @@
 /**
- * サイト共通のスタイル。Material 3 のベースライン(seed #6750A4)をトークンとして持ち、
+ * サイト共通のスタイル。Material 3 のトークン(インディゴ系。旧チケット半券デザインの色を継承)を持ち、
  * コンポーネントは必ずトークン経由で色を取る(ライト/ダーク/端末追従の3状態で崩れないため)。
  * 外部ライブラリは使わない。フォントだけ Google Fonts(Roboto + Noto Sans JP)を読む。
  */
@@ -12,18 +12,18 @@ export const SITE_HEADER = `<header class="appbar">
 </header>`
 
 export const SITE_FOOTER = `<footer class="site-f">
-<nav class="f-nav"><a href="/past">過去の公演</a><a href="/about">このサイトについて</a></nav>
+<a href="/about">このサイトについて</a>
 <span>© 2026 take20m</span>
 </footer>`
 
 export const SITE_CSS = `
 :root {
   color-scheme: light;
-  --primary: #6750A4; --on-primary: #FFFFFF; --primary-container: #EADDFF; --on-primary-container: #21005D;
-  --secondary-container: #E8DEF8; --on-secondary-container: #1D192B;
-  --surface: #FEF7FF;
-  --surface-container-low: #F7F2FA; --surface-container: #F3EDF7; --surface-container-highest: #E6E0E9;
-  --on-surface: #1D1B20; --on-surface-variant: #49454F; --outline: #79747E; --outline-variant: #CAC4D0;
+  --primary: #3A4FCB; --on-primary: #FFFFFF; --primary-container: #DEE0FF; --on-primary-container: #00105C;
+  --secondary-container: #DFE1F9; --on-secondary-container: #171B2C;
+  --surface: #FBF8FF;
+  --surface-container-low: #F5F2FF; --surface-container: #EFEDFA; --surface-container-highest: #E3E1EC;
+  --on-surface: #1B1B21; --on-surface-variant: #45464F; --outline: #767680; --outline-variant: #C6C5D0;
   --error-container: #F9DEDC; --on-error-container: #410E0B;
   --shadow-1: 0 1px 2px rgba(0,0,0,.30), 0 1px 3px 1px rgba(0,0,0,.15);
   --shadow-2: 0 1px 2px rgba(0,0,0,.30), 0 2px 6px 2px rgba(0,0,0,.15);
@@ -31,21 +31,21 @@ export const SITE_CSS = `
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --primary: #D0BCFF; --on-primary: #381E72; --primary-container: #4F378B; --on-primary-container: #EADDFF;
-    --secondary-container: #4A4458; --on-secondary-container: #E8DEF8;
-    --surface: #141218;
-    --surface-container-low: #1D1B20; --surface-container: #211F26; --surface-container-highest: #36343B;
-    --on-surface: #E6E0E9; --on-surface-variant: #CAC4D0; --outline: #938F99; --outline-variant: #49454F;
+    --primary: #BAC3FF; --on-primary: #00218F; --primary-container: #1F33B0; --on-primary-container: #DEE0FF;
+    --secondary-container: #444760; --on-secondary-container: #DFE1F9;
+    --surface: #131318;
+    --surface-container-low: #1B1B21; --surface-container: #1F1F25; --surface-container-highest: #35343A;
+    --on-surface: #E4E1E9; --on-surface-variant: #C6C5D0; --outline: #90909A; --outline-variant: #45464F;
     --error-container: #8C1D18; --on-error-container: #F9DEDC;
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --primary: #D0BCFF; --on-primary: #381E72; --primary-container: #4F378B; --on-primary-container: #EADDFF;
-  --secondary-container: #4A4458; --on-secondary-container: #E8DEF8;
-  --surface: #141218;
-  --surface-container-low: #1D1B20; --surface-container: #211F26; --surface-container-highest: #36343B;
-  --on-surface: #E6E0E9; --on-surface-variant: #CAC4D0; --outline: #938F99; --outline-variant: #49454F;
+  --primary: #BAC3FF; --on-primary: #00218F; --primary-container: #1F33B0; --on-primary-container: #DEE0FF;
+  --secondary-container: #444760; --on-secondary-container: #DFE1F9;
+  --surface: #131318;
+  --surface-container-low: #1B1B21; --surface-container: #1F1F25; --surface-container-highest: #35343A;
+  --on-surface: #E4E1E9; --on-surface-variant: #C6C5D0; --outline: #90909A; --outline-variant: #45464F;
   --error-container: #8C1D18; --on-error-container: #F9DEDC;
 }
 * { box-sizing: border-box; }
@@ -54,10 +54,10 @@ a { color: var(--primary); }
 .ic { width: 18px; height: 18px; flex: none; }
 
 /* Top app bar (small) */
-.appbar { display: flex; align-items: center; gap: 4px; height: 64px; max-width: 760px; margin: 0 auto; padding: 0 4px 0 16px; }
+.appbar { display: flex; align-items: center; gap: 4px; min-height: 64px; max-width: 760px; margin: 0 auto; padding: 8px 4px 8px 16px; }
 .brand { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; min-width: 0; }
 .logo { width: 28px; height: 28px; color: var(--primary); flex: none; }
-.appbar h1 { margin: 0; font-size: 22px; line-height: 28px; font-weight: 400; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.appbar h1 { margin: 0; font-size: 22px; line-height: 28px; font-weight: 400; letter-spacing: 0; text-wrap: balance; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .spacer { flex: 1; }
 .iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 24px; color: var(--on-surface-variant); text-decoration: none; }
 .iconbtn .ic { width: 24px; height: 24px; }
@@ -142,12 +142,12 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 /* フッター */
 .site-f { background: var(--surface-container); padding: 24px 16px 28px; display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--on-surface-variant); font-size: 12px; line-height: 16px; letter-spacing: .4px; }
 .site-f a { color: var(--on-surface); text-decoration: none; font-weight: 500; font-size: 14px; }
-.f-nav { display: flex; gap: 24px; }
 .more { margin: 24px 0 0 -12px; }
 .lot-summary { margin: 12px 0 0; padding-top: 12px; border-top: 1px solid var(--outline-variant); }
 .lot-summary a { text-decoration: none; font-weight: 500; }
 
 @media (max-width: 480px) {
+  .appbar h1 { font-size: 18px; line-height: 24px; }
   .card-main { padding: 12px; gap: 12px; }
   .tile { flex-basis: 60px; }
   .tile-d { font-size: 28px; line-height: 36px; }
