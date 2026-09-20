@@ -54,7 +54,8 @@ a { color: var(--primary); }
 .ic { width: 18px; height: 18px; flex: none; }
 
 /* Top app bar (small) */
-.appbar { display: flex; align-items: center; gap: 4px; min-height: 64px; max-width: 760px; margin: 0 auto; padding: 8px 4px 8px 16px; }
+/* 白の帯 + 上端に濃紺のライン(ヘッダー案「中間1」)。帯は全幅、中身はコンテンツ幅に揃える */
+.appbar { display: flex; align-items: center; gap: 4px; min-height: 64px; padding: 8px max(4px, calc((100% - 752px) / 2)) 8px max(16px, calc((100% - 728px) / 2)); background: var(--surface-container-low); border-top: 4px solid var(--primary); box-shadow: var(--shadow-1); position: relative; z-index: 1; }
 .brand { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; min-width: 0; }
 .logo { width: 28px; height: 28px; flex: none; border-radius: 7px; }
 .appbar h1 { margin: 0; font-size: 22px; line-height: 28px; font-weight: 400; letter-spacing: 0; }
@@ -66,7 +67,7 @@ a { color: var(--primary); }
 
 main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 /* 会場写真のバナー(PC 21:9 / スマホ 16:9)。写真は CC BY-SA、クレジットは about ページ(CC BY-SA 4.0 §3(a)(2) によりリンク先での表記で足りる) */
-.banner { display: block; margin: 4px 0 8px; border-radius: 12px; overflow: hidden; background: var(--surface-container-highest); aspect-ratio: 21 / 9; max-width: 100%; }
+.banner { display: block; margin: 16px 0 8px; border-radius: 12px; overflow: hidden; background: var(--surface-container-highest); aspect-ratio: 21 / 9; max-width: 100%; }
 .banner img { display: block; width: 100%; height: 100%; object-fit: cover; }
 @media (max-width: 480px) { .banner { aspect-ratio: 16 / 9; } }
 .section { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin: 24px 0 8px; }
