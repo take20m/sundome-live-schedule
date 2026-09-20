@@ -6,7 +6,7 @@
 import { LOGO_SVG, iconSvg } from '../lib/icon'
 
 export const SITE_HEADER = `<header class="appbar">
-<a class="brand" href="/">${LOGO_SVG}<h1>サンドーム福井 コンサート・ライブ情報</h1></a>
+<a class="brand" href="/">${LOGO_SVG}<h1><span>サンドーム福井</span> <span>コンサート・ライブ情報</span></h1></a>
 <span class="spacer"></span>
 <a class="iconbtn" href="/feed.xml" aria-label="RSS フィード" title="RSS">${iconSvg('rss_feed')}</a>
 </header>`
@@ -57,7 +57,8 @@ a { color: var(--primary); }
 .appbar { display: flex; align-items: center; gap: 4px; min-height: 64px; max-width: 760px; margin: 0 auto; padding: 8px 4px 8px 16px; }
 .brand { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; min-width: 0; }
 .logo { width: 28px; height: 28px; color: var(--primary); flex: none; }
-.appbar h1 { margin: 0; font-size: 22px; line-height: 28px; font-weight: 400; letter-spacing: 0; text-wrap: balance; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.appbar h1 { margin: 0; font-size: 22px; line-height: 28px; font-weight: 400; letter-spacing: 0; }
+.appbar h1 span { white-space: nowrap; }
 .spacer { flex: 1; }
 .iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 24px; color: var(--on-surface-variant); text-decoration: none; }
 .iconbtn .ic { width: 24px; height: 24px; }
