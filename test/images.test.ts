@@ -94,4 +94,57 @@ describe('images API と表示', () => {
     const noImg = await (await SELF.fetch(`https://example.com/e/ev-${noTour}`)).text()
     expect(noImg).toContain('<meta property="og:image" content="https://example.com/img/og-default.jpg">')
   })
+
+  it('manual: true は人が選んだ画像とツアーページを記録し、取り直し(all=1)の対象から外れる', async () => {
+    const res = await SELF.fetch('https://example.com/api/images', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        images: [
+          {
+            event_id: `ev-${past}`,
+            image_url: 'https://cdn.example.com/poster.jpg',
+            tour_url: 'https://example.com/live/hand-picked',
+            manual: true,
+          },
+        ],
+      }),
+    })
+    expect(res.status).toBe(200)
+    expect(((await res.json()) as { updated: number }).updated).toBe(1)
+    const row = await env.DB.prepare(
+      'SELECT image_url, image_manual, tour_url, tour_manual FROM events WHERE id = ?',
+    )
+      .bind(`ev-${past}`)
+      .first<{ image_url: string; image_manual: number; tour_url: string; tour_manual: number }>()
+    expect(row).toMatchObject({
+      image_url: 'https://cdn.example.com/poster.jpg',
+      image_manual: 1,
+      tour_url: 'https://example.com/live/hand-picked',
+      tour_manual: 1,
+    })
+    // 取り直しても人の選んだ画像は候補に出てこない(自動取得分の ev-withTour だけが残る)
+    const all = (await (await SELF.fetch('https://example.com/api/images/pending?all=1', { headers })).json()) as {
+      events: { event_id: string }[]
+    }
+    expect(all.events.map((e) => e.event_id)).toEqual([`ev-${withTour}`])
+  })
+
+  it('manual を付けない自動ジョブの更新は tour_url を書き換えない', async () => {
+    await SELF.fetch('https://example.com/api/images', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        images: [{ event_id: `ev-${withTour}`, image_url: 'https://cdn.example.com/kv2.jpg', tour_url: 'https://evil.example.com/' }],
+      }),
+    })
+    const row = await env.DB.prepare('SELECT image_url, image_manual, tour_url FROM events WHERE id = ?')
+      .bind(`ev-${withTour}`)
+      .first<{ image_url: string; image_manual: number; tour_url: string }>()
+    expect(row).toMatchObject({
+      image_url: 'https://cdn.example.com/kv2.jpg',
+      image_manual: 0,
+      tour_url: 'https://example.com/live/',
+    })
+  })
 })

@@ -6,7 +6,11 @@ import type { Bindings } from '../types'
 /**
  * ツアービジュアル(og:image)の取得ジョブ用 API。
  *   GET  /api/images/pending  tour_url があり画像未取得の今後の公演(?all=1 で過去・既取得も含む全件)
- *   POST /api/images          { images: [{ event_id, image_url }] } で image_url だけを更新
+ *   POST /api/images          { images: [{ event_id, image_url, tour_url?, manual? }] } で画像(と手動時はツアーURL)を更新
+ *
+ * manual: true は「人が選んだ値」の印。og:image が全ツアー共通のサイト(LDH LIVE SCHEDULE など)では
+ * 自動取得がロゴ画像しか拾えないため、人がツアービジュアルを直接入れる。印の付いた行は
+ * REFETCH_ALL の取り直し対象から外れ、tour_url は ingest の収集結果でも上書きされない。
  *
  * ingest とは別口にしている理由: ingest は lotteries の欠落を「見落とし」として数えるため、
  * 画像だけを送りたいジョブが ingest を叩くと抽選を消してしまう。
@@ -23,11 +27,13 @@ export type PendingImage = { event_id: string; artist: string; title: string; to
 export async function handlePendingImages(c: Context<{ Bindings: Bindings }>): Promise<Response> {
   const denied = unauthorized(c)
   if (denied) return denied
-  // all=1: 取り直し用。過去公演と既取得分も含めて tour_url のある全公演
+  // all=1: 取り直し用。過去公演と既取得分も含めて tour_url のある全公演(手動で入れた画像は除く)
   const all = c.req.query('all') === '1'
   const stmt = all
     ? c.env.DB.prepare(
-        `SELECT id AS event_id, artist, title, tour_url FROM events WHERE tour_url IS NOT NULL ORDER BY date ASC`,
+        `SELECT id AS event_id, artist, title, tour_url FROM events
+           WHERE tour_url IS NOT NULL AND image_manual = 0
+           ORDER BY date ASC`,
       )
     : c.env.DB
         .prepare(
@@ -80,9 +86,18 @@ export async function handleSetImages(c: Context<{ Bindings: Bindings }>): Promi
       skipped.push(`images[${i}] (${item.event_id}): image_url が不正または拒否ホスト`)
       continue
     }
-    const res = await c.env.DB.prepare('UPDATE events SET image_url = ?, updated_at = ? WHERE id = ?')
-      .bind(item.image_url, nowIso, item.event_id)
-      .run()
+    const manual = item.manual === true
+    // tour_url は手動投入のときだけ受け付ける(自動ジョブは tour_url を持っている側なので送ってこない)
+    const tourUrl = manual && isAcceptableImageUrl(item.tour_url) ? item.tour_url : null
+    const res = tourUrl
+      ? await c.env.DB.prepare(
+          'UPDATE events SET image_url = ?, image_manual = 1, tour_url = ?, tour_manual = 1, updated_at = ? WHERE id = ?',
+        )
+          .bind(item.image_url, tourUrl, nowIso, item.event_id)
+          .run()
+      : await c.env.DB.prepare('UPDATE events SET image_url = ?, image_manual = ?, updated_at = ? WHERE id = ?')
+          .bind(item.image_url, manual ? 1 : 0, nowIso, item.event_id)
+          .run()
     if (res.meta.changes === 0) {
       skipped.push(`images[${i}] (${item.event_id}): 公演が存在しない`)
       continue

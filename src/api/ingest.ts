@@ -354,7 +354,9 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
            ON CONFLICT(id) DO UPDATE SET
              title = excluded.title, artist = excluded.artist, date = excluded.date,
              open_time = excluded.open_time, start_time = excluded.start_time,
-             source_url = excluded.source_url, artist_url = excluded.artist_url, tour_url = excluded.tour_url,
+             source_url = excluded.source_url, artist_url = excluded.artist_url,
+             -- 人が調べて入れたツアーページは収集結果で上書きしない(og:image が使えず手動で補正した公演)
+             tour_url = CASE WHEN events.tour_manual = 1 THEN events.tour_url ELSE excluded.tour_url END,
              confidence = excluded.confidence, updated_at = excluded.updated_at`,
         )
         .bind(eventId, ev.title, ev.artist, ev.date, evm.open_time, evm.start_time, evm.source_url, evm.artist_url, evm.tour_url, evm.confidence, nowIso),

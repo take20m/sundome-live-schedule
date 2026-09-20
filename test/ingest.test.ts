@@ -512,6 +512,19 @@ describe('ingest API', () => {
       expect(row?.tour_url).toBe(null)
     })
 
+    it('人が入れた tour_url(tour_manual=1)は収集結果で上書きされない', async () => {
+      // og:image が全ツアー共通のサイトでは人がツアーページを調べて入れる。次の収集で消えると困る
+      await post({ events: [{ ...base, date: '2027-09-05', tour_url: 'https://example.com/live/collected' }] })
+      await env.DB.prepare("UPDATE events SET tour_url = ?, tour_manual = 1 WHERE id = 'ev-2027-09-05'")
+        .bind('https://example.com/live/hand-picked')
+        .run()
+      await post({ events: [{ ...base, date: '2027-09-05', tour_url: 'https://example.com/live/collected-again' }] })
+      const row = await env.DB.prepare("SELECT tour_url FROM events WHERE id = 'ev-2027-09-05'").first<{
+        tour_url: string | null
+      }>()
+      expect(row?.tour_url).toBe('https://example.com/live/hand-picked')
+    })
+
     it('ツアー専用ドメインのトップページは tour_url として受け入れる', async () => {
       // tour.mrchildren.jp / sekainoowari-tour.jp のような専用サイトはトップがツアーページそのもの
       const res = await post({
