@@ -89,7 +89,11 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 
 /* 公演カード: Elevated */
 .cards { display: grid; gap: 16px; }
-.card { display: flex; gap: 16px; padding: 16px; background: var(--surface-container-low); border-radius: 12px; box-shadow: var(--shadow-1); scroll-margin-top: 16px; }
+.card { display: flex; flex-direction: column; background: var(--surface-container-low); border-radius: 12px; box-shadow: var(--shadow-1); scroll-margin-top: 16px; overflow: hidden; }
+.card-main { display: flex; gap: 16px; padding: 16px; }
+/* ツアービジュアル(M3 card with media)。16:9 に揃えて上辺に敷く */
+.card-media { aspect-ratio: 16 / 9; max-width: 100%; background: var(--surface-container-highest); }
+.card-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .card:hover { box-shadow: var(--shadow-2); }
 /* 詳細から /#ev-... で戻ってきた直後、該当カードを一瞬強調して位置を示す */
 .card:target, .card:has(.anchor:target) { outline: 3px solid transparent; outline-offset: 3px; animation: card-arrive 2.4s ease-out; }
@@ -138,7 +142,7 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .site-f a { color: var(--on-surface); text-decoration: none; font-weight: 500; font-size: 14px; }
 
 @media (max-width: 480px) {
-  .card { padding: 12px; gap: 12px; }
+  .card-main { padding: 12px; gap: 12px; }
   .tile { flex-basis: 60px; }
   .tile-d { font-size: 28px; line-height: 36px; }
   .card-title { font-size: 20px; line-height: 26px; }

@@ -8,7 +8,7 @@ import { applySchema } from './helpers'
 function ev(date: string, artist = 'A', title = 'T', lotteries: LotteryRow[] = []): EventWithLotteries {
   return {
     id: `ev-${date}`, title, artist, date, open_time: null, start_time: null,
-    source_url: null, artist_url: null, tour_url: null, confidence: 'official', updated_at: '', lotteries,
+    source_url: null, artist_url: null, tour_url: null, image_url: null, confidence: 'official', updated_at: '', lotteries,
   }
 }
 function lot(event_id: string, name: string, starts_at: string | null, ends_at: string | null, url: string | null = null): LotteryRow {

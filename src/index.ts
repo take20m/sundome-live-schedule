@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { handleIngest } from './api/ingest'
+import { handlePendingImages, handleSetImages } from './api/images'
 import { handleMissing } from './api/missing'
 import { handleUnknownHosts } from './api/unknown-hosts'
 import { buildRss } from './feeds/rss'
@@ -63,5 +64,7 @@ app.get('/favicon.svg', (c) =>
 app.post('/api/ingest', handleIngest)
 app.get('/api/missing', handleMissing)
 app.get('/api/unknown-hosts', handleUnknownHosts)
+app.get('/api/images/pending', handlePendingImages)
+app.post('/api/images', handleSetImages)
 
 export default app

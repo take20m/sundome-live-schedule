@@ -15,6 +15,7 @@ export type EventRow = {
   source_url: string | null
   artist_url: string | null
   tour_url: string | null
+  image_url: string | null
   confidence: Confidence
   updated_at: string
 }

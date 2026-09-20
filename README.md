@@ -10,7 +10,7 @@ https://sundome.take20m.dev
 
 収集の実体は、GitHub Actions で毎晩3時半に `claude -p` を実行しているだけです。調査の手順は [collector/prompt.md](./collector/prompt.md) に日本語で書いてあります。ざっくり言うと、会場公式カレンダーで公演を確定させたあと、公演ごとにチケット受付期間を検索で逆引きし、さらに公式サイトにまだ載っていないツアー発表がないかも探します。
 
-結果は JSON にして Worker の取り込みAPIに送り、DB（Cloudflare D1）に保存します。表示側は Workers + Hono の小さな SSR で、公演一覧と RSS(`/feed.xml`)を返します。新規公演や抽選開始があった夜だけ RSS に流れるので、Slack の `/feed` に食わせておくと発表に気づけます。
+結果は JSON にして Worker の取り込みAPIに送り、DB（Cloudflare D1）に保存します。ツアーページの画像（og:image）だけは LLM を使わず、Node スクリプトが 1 公演 1 リクエストで meta タグから取り出して URL を保存します（画像そのものは保存せず直リンクで表示します）。表示側は Workers + Hono の小さな SSR で、公演一覧と RSS(`/feed.xml`)を返します。新規公演や抽選開始があった夜だけ RSS に流れるので、Slack の `/feed` に食わせておくと発表に気づけます。
 
 取り込みでいちばん気を使っているのは「一度取れた情報を、後日の雑な収集結果で壊さない」ことです。LLM の出力は夜ごとに揺れるので、
 
@@ -57,7 +57,8 @@ wrangler deploy
 `schema.sql` に列を足したときは、**Worker をデプロイする前に**本番 D1 へ列を追加します(新しい Worker の INSERT が新しい列を参照するため、順序が逆だと取り込みが失敗します)。`CREATE TABLE IF NOT EXISTS` は既存テーブルを変更しないので、`schema.sql` の再実行では列は増えません。
 
 ```sh
-wrangler d1 execute sundome-reminder --remote --command "ALTER TABLE events ADD COLUMN tour_url TEXT"
+# 例: image_url 列を足したとき
+wrangler d1 execute sundome-reminder --remote --command "ALTER TABLE events ADD COLUMN image_url TEXT"
 wrangler deploy
 ```
 

@@ -10,3 +10,7 @@ declare module '*.sql?raw' {
   const content: string
   export default content
 }
+
+declare module '*/og-image.mjs' {
+  export function extractOgImage(html: string, baseUrl: string): string | null
+}

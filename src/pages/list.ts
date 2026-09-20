@@ -242,8 +242,17 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
     .map((e) => `<span class="anchor" id="${escapeHtml(e.id)}"></span>`)
     .join('')
 
+  // ツアービジュアル(og:image の直リンク)。開いている日の画像を優先し、無ければ他の日のもの。
+  // 読み込めなければ領域ごと閉じる(壊れた画像アイコンを見せない)
+  const imageUrl = focus.image_url ?? events.map((e) => e.image_url).find((u) => u) ?? null
+  const media = imageUrl
+    ? `<div class="card-media"><img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(first.title)}" loading="lazy" decoding="async" onerror="this.parentNode.remove()"></div>`
+    : ''
+
   return `<article class="card${hasOpen ? ' is-open' : ''}${isToday ? ' is-today' : ''}" id="${escapeHtml(first.id)}">
   ${anchors}
+  ${media}
+  <div class="card-main">
   <div class="tile">
     ${soonLabel ? `<span class="tile-soon">${soonLabel}</span>` : `<span class="tile-m">${escapeHtml(tileYm)}</span>`}
     <span class="tile-d">${escapeHtml(tileD)}</span>
@@ -256,6 +265,7 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
     ${venue}
     ${actions}
     ${lots}
+  </div>
   </div>
 </article>`
 }

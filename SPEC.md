@@ -17,6 +17,7 @@
 - 手動補正の管理画面
 - チケット購入導線・リセール情報
 - サンドーム福井以外の会場
+- 画像の自前保存・リサイズ(著作物のコピーを持たない。og:image の直リンクのみ)
 
 ## アーキテクチャ
 
@@ -57,6 +58,7 @@
 | source_url | TEXT | 情報源URL(会場公式の公演ページ等) |
 | artist_url | TEXT | アーティスト公式サイトのトップ(nullable) |
 | tour_url | TEXT | アーティスト側のその公演・ツアーのページ。詳細の「コンサート情報」の飛び先。無ければ source_url で代用(nullable) |
+| image_url | TEXT | tour_url ページの og:image。カード上部に直リンクで表示。画像の自前保存はしない(nullable) |
 | confidence | TEXT | `official`(会場公式掲載) / `inferred`(逆引きのみ) |
 | updated_at | TEXT | 最終更新日時 |
 

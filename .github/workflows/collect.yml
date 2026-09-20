@@ -46,6 +46,13 @@ jobs:
           INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
         run: node collector/enrich.mjs 3
 
+      # 3段目: ツアーページの og:image を取得(LLM 不使用。1公演1リクエスト)
+      - name: Fetch tour images
+        env:
+          INGEST_URL: ${{ vars.INGEST_URL }}
+          INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
+        run: node collector/fetch-images.mjs
+
       # 購入ページと判定できなかったホストを報告する(新しい販売サイトに気づくため)
       - name: Report unknown ticket hosts
         if: always()
