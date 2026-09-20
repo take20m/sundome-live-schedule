@@ -141,7 +141,47 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 
 /* 固定ページ(about): 黄地に本文を直接置くと読みにくいので白カードに包む */
 .prose-card { background: var(--surface-container-low); border-radius: 16px; padding: 8px 24px 24px; box-shadow: var(--shadow-1); }
-@media (max-width: 480px) { .prose-card { padding: 4px 16px 16px; border-radius: 12px; } }
+.prose-card.has-hero { padding: 0 0 24px; overflow: hidden; }
+.prose-card.has-hero .prose-body { padding: 8px 24px 0; }
+.hero { display: block; aspect-ratio: 21 / 9; max-width: 100%; background: var(--surface-container-highest); }
+.hero img { display: block; width: 100%; height: 100%; object-fit: cover; }
+@media (max-width: 480px) { .prose-card { padding: 4px 16px 16px; border-radius: 12px; } .prose-card.has-hero { padding: 0 0 16px; } .prose-card.has-hero .prose-body { padding: 4px 16px 0; } .hero { aspect-ratio: 16 / 9; } }
+/* 目次 */
+.toc { margin: 16px 0 24px; padding: 12px 16px; background: var(--surface-container); border-radius: 12px; }
+.toc-title { margin: 0 0 4px; font-size: 12px; line-height: 16px; letter-spacing: .5px; font-weight: 500; color: var(--on-surface-variant); }
+.toc ol { margin: 0; padding-left: 1.4em; columns: 2; column-gap: 24px; }
+.toc li { break-inside: avoid; margin: 2px 0; }
+.toc a { text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+@media (max-width: 480px) { .toc ol { columns: 1; } }
+/* 囲み(注意 / ポイント / 体験談) */
+.callout { margin: 16px 0; padding: 12px 16px; border-radius: 12px; border-left: 4px solid var(--primary); background: var(--surface-container); }
+.callout p:last-child { margin-bottom: 0; }
+.callout-title { font-weight: 500; margin: 0 0 4px; }
+.callout-note { border-left-color: #B3261E; background: color-mix(in srgb, #B3261E 8%, var(--surface-container-low)); }
+.callout-tip { border-left-color: var(--primary); background: var(--secondary-container); color: var(--on-secondary-container); }
+.callout-story { border-left-color: #8E8560; background: var(--surface-container-highest); }
+/* 行き方カード */
+.routes { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin: 12px 0 20px; }
+.route { padding: 12px 14px; border-radius: 12px; background: var(--surface-container); display: flex; flex-direction: column; gap: 2px; }
+.route-name { font-weight: 500; }
+.route-how { color: var(--on-surface-variant); font-size: 13px; }
+.route-nums { display: flex; gap: 12px; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.route-time { font-size: 22px; line-height: 28px; color: var(--primary); font-weight: 500; }
+.route-dist { align-self: flex-end; color: var(--on-surface-variant); font-size: 13px; padding-bottom: 3px; }
+.route-note { margin-top: 6px; font-size: 12px; line-height: 16px; color: var(--on-surface-variant); }
+/* 地図 */
+.map-figure { margin: 12px 0 20px; }
+.map { height: 320px; border-radius: 12px; overflow: hidden; background: var(--surface-container-highest); }
+.map-figure figcaption { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin: 4px 0 0 -12px; }
+.map-credit { font-size: 11px; color: var(--on-surface-variant); }
+.map-credit a { color: inherit; }
+.leaflet-tooltip.map-label { font: 500 12px/16px Roboto, "Noto Sans JP", sans-serif; border-radius: 6px; }
+.leaflet-tooltip.map-label-venue { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+.leaflet-tooltip.map-label-venue::before { border-top-color: var(--primary); }
+.leaflet-container { font: inherit; }
+/* 表 */
+.table-wrap { overflow-x: auto; margin: 12px 0; }
 .prose h1 { font-size: 22px; line-height: 28px; font-weight: 400; margin: 16px 0 4px; text-wrap: balance; }
 .prose h2 { font-size: 16px; line-height: 24px; font-weight: 500; letter-spacing: .15px; margin: 32px 0 8px; }
 .prose h3 { font-size: 14px; line-height: 20px; font-weight: 500; margin: 20px 0 4px; }
@@ -149,7 +189,9 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .prose img { max-width: 100%; border-radius: 8px; }
 .prose blockquote { margin: 8px 0; padding: 4px 16px; border-left: 3px solid var(--outline-variant); color: var(--on-surface-variant); }
 .prose table { border-collapse: collapse; width: 100%; font-size: 13px; }
-.prose th, .prose td { border-bottom: 1px solid var(--outline-variant); padding: 6px 8px; text-align: left; }
+.prose th { background: var(--surface-container); font-weight: 500; }
+.prose th, .prose td { border-bottom: 1px solid var(--outline-variant); padding: 8px 10px; text-align: left; vertical-align: top; white-space: normal; }
+.prose li { margin-bottom: 4px; }
 .prose-card .lots { margin-top: 0; }
 .prose p, .prose li { margin: 0 0 8px; }
 .prose ul { padding-left: 1.3em; margin: 0 0 8px; }

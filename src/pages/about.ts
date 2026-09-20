@@ -30,6 +30,7 @@ ${SITE_HEADER}
 <ul>
 <li>本サイトは会員登録を必要とせず、個人情報を収集しません。Cookie も使用していません</li>
 <li>配信インフラ(Cloudflare)がサービス提供・セキュリティのためにアクセスログを処理することがあります</li>
+<li>会場ガイドの地図は OpenStreetMap の地図タイルを読み込んで表示しています(地図ライブラリ Leaflet は cdnjs から取得)。Cookie は使用しません</li>
 <li>表示用フォント(Roboto / Noto Sans JP)を Google Fonts から読み込んでいます。このとき、ブラウザから Google のサーバーへ IP アドレス等を含むリクエストが送られます。Google Fonts はこの配信で Cookie を使用しません</li>
 <li>今後、アクセス解析や第三者配信の広告を導入する場合は、本ページで利用サービスと Cookie の取り扱いを告知します</li>
 </ul>

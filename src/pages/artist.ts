@@ -1,5 +1,5 @@
 import type { Doc } from '../lib/content'
-import { renderMarkdown } from '../lib/content'
+import { MAP_HEAD, MAP_SCRIPT, renderDoc, renderToc } from '../lib/content'
 import type { EventWithLotteries } from '../lib/db'
 import { todayInJst } from '../lib/db'
 import { groupConsecutive } from '../lib/group'
@@ -29,6 +29,10 @@ export function renderArtistPage(
     doc?.meta.description ??
     `${displayName}のサンドーム福井(福井県越前市)公演の予定と、チケット先行・抽選の受付期間。過去の公演記録も掲載。`
   const image = upcoming.find((e) => e.image_url)?.image_url ?? events.find((e) => e.image_url)?.image_url ?? null
+  const rendered = doc ? renderDoc(doc.body) : null
+  const hero = image
+    ? `<div class="hero"><img src="${escapeHtml(image)}" alt="${escapeHtml(displayName)}" loading="eager" decoding="async" onerror="this.closest('.hero').remove()"></div>`
+    : ''
   const head = buildHeadMeta({
     title,
     description,
@@ -52,22 +56,27 @@ ${groupConsecutive(list)
 <meta name="viewport" content="width=device-width, initial-scale=1">
 ${head}
 <style>${SITE_CSS}</style>
+${rendered?.hasMap ? MAP_HEAD : ''}
 <script type="application/ld+json">${buildJsonLd(upcoming, canonical)}</script>
 </head>
 <body>
 ${SITE_HEADER}
 <main class="prose">
 <div class="back"><a class="btn-text" href="/">${iconSvg('arrow_back')}公演一覧</a></div>
-<article class="prose-card">
+<article class="prose-card${hero ? ' has-hero' : ''}">
+${hero}
+<div class="prose-body">
 <h1>${escapeHtml(displayName)}</h1>
 ${doc?.meta.updated ? `<p class="updated">最終更新 ${escapeHtml(doc.meta.updated)}</p>` : ''}
-${doc ? renderMarkdown(doc.body) : `<p>${escapeHtml(displayName)}のサンドーム福井公演の予定とチケット受付情報です。</p>`}
+${rendered ? renderToc(rendered.toc) + rendered.html : `<p>${escapeHtml(displayName)}のサンドーム福井公演の予定とチケット受付情報です。</p>`}
+</div>
 </article>
 ${section('今後の公演', upcoming, false)}
 ${section('過去の公演', past, true)}
 </main>
 ${SITE_FOOTER}
 ${COUNTDOWN_SCRIPT}
+${rendered?.hasMap ? MAP_SCRIPT : ''}
 </body>
 </html>`
 }
