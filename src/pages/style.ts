@@ -14,7 +14,6 @@ export const SITE_HEADER = `<header class="appbar">
 export const SITE_FOOTER = `<footer class="site-f">
 <a href="/about">このサイトについて</a>
 <span>© 2026 take20m</span>
-<p class="credit">写真: <a href="https://commons.wikimedia.org/wiki/File:Sundome_Fukui_2014-12-27_01.JPG" rel="noopener" target="_blank">賀正</a> / Wikimedia Commons / <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.ja" rel="noopener" target="_blank">CC BY-SA 4.0</a>(トリミング)</p>
 </footer>`
 
 export const SITE_CSS = `
@@ -66,7 +65,7 @@ a { color: var(--primary); }
 .iconbtn:hover { background: color-mix(in srgb, var(--on-surface-variant) 8%, transparent); }
 
 main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
-/* 会場写真のバナー(PC 21:9 / スマホ 16:9)。写真は CC BY-SA、クレジットはフッター */
+/* 会場写真のバナー(PC 21:9 / スマホ 16:9)。写真は CC BY-SA、クレジットは about ページ(CC BY-SA 4.0 §3(a)(2) によりリンク先での表記で足りる) */
 .banner { display: block; margin: 4px 0 8px; border-radius: 12px; overflow: hidden; background: var(--surface-container-highest); aspect-ratio: 21 / 9; max-width: 100%; }
 .banner img { display: block; width: 100%; height: 100%; object-fit: cover; }
 @media (max-width: 480px) { .banner { aspect-ratio: 16 / 9; } }
@@ -148,8 +147,6 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 /* フッター */
 .site-f { background: var(--surface-container); padding: 24px 16px 28px; display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--on-surface-variant); font-size: 12px; line-height: 16px; letter-spacing: .4px; }
 .site-f a { color: var(--on-surface); text-decoration: none; font-weight: 500; font-size: 14px; }
-.site-f .credit { margin: 0; font-size: 11px; line-height: 16px; }
-.site-f .credit a { font-size: 11px; font-weight: 400; color: var(--on-surface-variant); text-decoration: underline; }
 .more { margin: 24px 0 0 -12px; }
 .lot-summary { margin: 12px 0 0; padding-top: 12px; border-top: 1px solid var(--outline-variant); }
 .lot-summary a { text-decoration: none; font-weight: 500; }
