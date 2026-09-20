@@ -1,4 +1,4 @@
-/** チケットモチーフの SVG。favicon は M3 primary(#3A4FCB)で固定、ヘッダーのロゴは currentColor で描く */
+/** チケットモチーフの SVG。favicon は M3 primary(#6750A4)で固定、ヘッダーのロゴは currentColor で描く */
 function ticketSvg(fill: string, fg: string, cls = ''): string {
   return `<svg${cls ? ` class="${cls}"` : ''} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-hidden="true">
 <defs>
@@ -16,7 +16,7 @@ function ticketSvg(fill: string, fg: string, cls = ''): string {
 `
 }
 
-export const BRAND_COLOR = '#3A4FCB'
+export const BRAND_COLOR = '#6750A4'
 
 /** /favicon.svg。単体ファイルなので CSS 変数は使えず色を固定する */
 export const FAVICON_SVG = ticketSvg(BRAND_COLOR, '#FFFFFF')

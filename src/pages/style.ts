@@ -1,5 +1,5 @@
 /**
- * サイト共通のスタイル。Material 3 のトークン(インディゴ系。旧チケット半券デザインの色を継承)を持ち、
+ * サイト共通のスタイル。Material 3 のベースライン(seed #6750A4)をトークンとして持ち、
  * コンポーネントは必ずトークン経由で色を取る(ライト/ダーク/端末追従の3状態で崩れないため)。
  * 外部ライブラリは使わない。フォントだけ Google Fonts(Roboto + Noto Sans JP)を読む。
  */
@@ -19,11 +19,11 @@ export const SITE_FOOTER = `<footer class="site-f">
 export const SITE_CSS = `
 :root {
   color-scheme: light;
-  --primary: #3A4FCB; --on-primary: #FFFFFF; --primary-container: #DEE0FF; --on-primary-container: #00105C;
-  --secondary-container: #DFE1F9; --on-secondary-container: #171B2C;
-  --surface: #FBF8FF;
-  --surface-container-low: #F5F2FF; --surface-container: #EFEDFA; --surface-container-highest: #E3E1EC;
-  --on-surface: #1B1B21; --on-surface-variant: #45464F; --outline: #767680; --outline-variant: #C6C5D0;
+  --primary: #6750A4; --on-primary: #FFFFFF; --primary-container: #EADDFF; --on-primary-container: #21005D;
+  --secondary-container: #E8DEF8; --on-secondary-container: #1D192B;
+  --surface: #FEF7FF;
+  --surface-container-low: #F7F2FA; --surface-container: #F3EDF7; --surface-container-highest: #E6E0E9;
+  --on-surface: #1D1B20; --on-surface-variant: #49454F; --outline: #79747E; --outline-variant: #CAC4D0;
   --error-container: #F9DEDC; --on-error-container: #410E0B;
   --shadow-1: 0 1px 2px rgba(0,0,0,.30), 0 1px 3px 1px rgba(0,0,0,.15);
   --shadow-2: 0 1px 2px rgba(0,0,0,.30), 0 2px 6px 2px rgba(0,0,0,.15);
@@ -31,21 +31,21 @@ export const SITE_CSS = `
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --primary: #BAC3FF; --on-primary: #00218F; --primary-container: #1F33B0; --on-primary-container: #DEE0FF;
-    --secondary-container: #444760; --on-secondary-container: #DFE1F9;
-    --surface: #131318;
-    --surface-container-low: #1B1B21; --surface-container: #1F1F25; --surface-container-highest: #35343A;
-    --on-surface: #E4E1E9; --on-surface-variant: #C6C5D0; --outline: #90909A; --outline-variant: #45464F;
+    --primary: #D0BCFF; --on-primary: #381E72; --primary-container: #4F378B; --on-primary-container: #EADDFF;
+    --secondary-container: #4A4458; --on-secondary-container: #E8DEF8;
+    --surface: #141218;
+    --surface-container-low: #1D1B20; --surface-container: #211F26; --surface-container-highest: #36343B;
+    --on-surface: #E6E0E9; --on-surface-variant: #CAC4D0; --outline: #938F99; --outline-variant: #49454F;
     --error-container: #8C1D18; --on-error-container: #F9DEDC;
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --primary: #BAC3FF; --on-primary: #00218F; --primary-container: #1F33B0; --on-primary-container: #DEE0FF;
-  --secondary-container: #444760; --on-secondary-container: #DFE1F9;
-  --surface: #131318;
-  --surface-container-low: #1B1B21; --surface-container: #1F1F25; --surface-container-highest: #35343A;
-  --on-surface: #E4E1E9; --on-surface-variant: #C6C5D0; --outline: #90909A; --outline-variant: #45464F;
+  --primary: #D0BCFF; --on-primary: #381E72; --primary-container: #4F378B; --on-primary-container: #EADDFF;
+  --secondary-container: #4A4458; --on-secondary-container: #E8DEF8;
+  --surface: #141218;
+  --surface-container-low: #1D1B20; --surface-container: #211F26; --surface-container-highest: #36343B;
+  --on-surface: #E6E0E9; --on-surface-variant: #CAC4D0; --outline: #938F99; --outline-variant: #49454F;
   --error-container: #8C1D18; --on-error-container: #F9DEDC;
 }
 * { box-sizing: border-box; }
