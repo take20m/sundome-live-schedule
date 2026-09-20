@@ -68,22 +68,26 @@ describe('images API と表示', () => {
     expect(body.skipped.length).toBe(4)
     const row = await env.DB.prepare('SELECT image_url FROM events WHERE id = ?').bind(`ev-${withTour}`).first<{ image_url: string | null }>()
     expect(row?.image_url).toBe('https://cdn.example.com/kv.jpg')
-    // 保存済みは pending から消える
+    // 保存済みは pending から消える。all=1 なら過去・既取得も含めて tour_url のある全件
     const pending = (await (await SELF.fetch('https://example.com/api/images/pending', { headers })).json()) as { events: unknown[] }
     expect(pending.events.length).toBe(0)
+    const all = (await (await SELF.fetch('https://example.com/api/images/pending?all=1', { headers })).json()) as { events: { event_id: string }[] }
+    expect(all.events.map((e) => e.event_id).sort()).toEqual([`ev-${past}`, `ev-${withTour}`].sort())
   })
 
   it('画像がある公演だけカード上部にメディアが出て、JSON-LD にも image が載る', async () => {
     const html = await (await SELF.fetch('https://example.com/')).text()
     const cardOf = (id: string) => html.slice(html.indexOf(`id="${id}"`), html.indexOf('</article>', html.indexOf(`id="${id}"`)))
     const withImage = cardOf(`ev-${withTour}`)
-    expect(withImage).toContain('<div class="card-media"><img src="https://cdn.example.com/kv.jpg"')
-    expect(withImage).toContain('onerror="this.parentNode.remove()"')
+    // 一覧の画像は詳細へのリンク
+    expect(withImage).toContain(`<a class="card-media" href="/e/ev-${withTour}"><img src="https://cdn.example.com/kv.jpg"`)
+    expect(withImage).toContain(`onerror="this.closest('.card-media').remove()"`)
     expect(withImage).toContain('loading="lazy"')
     expect(cardOf(`ev-${noTour}`)).not.toContain('card-media')
     expect(html).toContain('"image":["https://cdn.example.com/kv.jpg"]')
 
+    // 詳細の画像は出典(ツアーページ)へのリンク
     const detail = await (await SELF.fetch(`https://example.com/e/ev-${withTour}`)).text()
-    expect(detail).toContain('<div class="card-media"><img src="https://cdn.example.com/kv.jpg"')
+    expect(detail).toContain('<a class="card-media" href="https://example.com/live/" rel="noopener" target="_blank"><img src="https://cdn.example.com/kv.jpg"')
   })
 })

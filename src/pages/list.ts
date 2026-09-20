@@ -120,7 +120,7 @@ function renderDeadlines(events: EventWithLotteries[], now: Date): string {
 </a>`
     })
     .join('\n')
-  return `<div class="section"><h2>販売中のチケット</h2><span class="sup">会員資格なしで申し込めるもの</span></div>
+  return `<div class="section"><h2>販売中のチケット</h2><span class="sup">一般申込み可能</span></div>
 <div class="list">
 ${items}
 </div>`
@@ -249,10 +249,17 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
 
   // ツアービジュアル(og:image の直リンク)。開いている日の画像を優先し、無ければ他の日のもの。
   // 読み込めなければ領域ごと閉じる(壊れた画像アイコンを見せない)
+  // 画像のリンク先: 一覧では詳細へ、詳細では出典(ツアーページ)へ
   const imageUrl = focus.image_url ?? events.map((e) => e.image_url).find((u) => u) ?? null
-  const media = imageUrl
-    ? `<div class="card-media"><img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(first.title)}" loading="lazy" decoding="async" onerror="this.parentNode.remove()"></div>`
+  const mediaHref = detail ? focus.tour_url : `/e/${first.id}`
+  const img = imageUrl
+    ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(first.title)}" loading="lazy" decoding="async" onerror="this.closest('.card-media').remove()">`
     : ''
+  const media = !img
+    ? ''
+    : mediaHref
+      ? `<a class="card-media" href="${escapeHtml(mediaHref)}"${detail ? ' rel="noopener" target="_blank"' : ''}>${img}</a>`
+      : `<div class="card-media">${img}</div>`
 
   return `<article class="card${hasOpen ? ' is-open' : ''}${isToday ? ' is-today' : ''}" id="${escapeHtml(first.id)}">
   ${anchors}

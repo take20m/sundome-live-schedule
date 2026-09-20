@@ -92,7 +92,8 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .card { display: flex; flex-direction: column; background: var(--surface-container-low); border-radius: 12px; box-shadow: var(--shadow-1); scroll-margin-top: 16px; overflow: hidden; }
 .card-main { display: flex; gap: 16px; padding: 16px; }
 /* ツアービジュアル(M3 card with media)。16:9 に揃えて上辺に敷く */
-.card-media { aspect-ratio: 16 / 9; max-width: 100%; background: var(--surface-container-highest); }
+.card-media { display: block; aspect-ratio: 16 / 9; max-width: 100%; background: var(--surface-container-highest); }
+.card-media:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
 .card-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .card:hover { box-shadow: var(--shadow-2); }
 /* 詳細から /#ev-... で戻ってきた直後、該当カードを一瞬強調して位置を示す */

@@ -5,7 +5,7 @@ import type { Bindings } from '../types'
 
 /**
  * ツアービジュアル(og:image)の取得ジョブ用 API。
- *   GET  /api/images/pending  tour_url があり画像未取得の今後の公演
+ *   GET  /api/images/pending  tour_url があり画像未取得の今後の公演(?all=1 で過去・既取得も含む全件)
  *   POST /api/images          { images: [{ event_id, image_url }] } で image_url だけを更新
  *
  * ingest とは別口にしている理由: ingest は lotteries の欠落を「見落とし」として数えるため、
@@ -23,13 +23,20 @@ export type PendingImage = { event_id: string; artist: string; title: string; to
 export async function handlePendingImages(c: Context<{ Bindings: Bindings }>): Promise<Response> {
   const denied = unauthorized(c)
   if (denied) return denied
-  const { results } = await c.env.DB.prepare(
-    `SELECT id AS event_id, artist, title, tour_url FROM events
-     WHERE date >= ? AND tour_url IS NOT NULL AND image_url IS NULL
-     ORDER BY date ASC`,
-  )
-    .bind(todayInJst())
-    .all<PendingImage>()
+  // all=1: 取り直し用。過去公演と既取得分も含めて tour_url のある全公演
+  const all = c.req.query('all') === '1'
+  const stmt = all
+    ? c.env.DB.prepare(
+        `SELECT id AS event_id, artist, title, tour_url FROM events WHERE tour_url IS NOT NULL ORDER BY date ASC`,
+      )
+    : c.env.DB
+        .prepare(
+          `SELECT id AS event_id, artist, title, tour_url FROM events
+           WHERE date >= ? AND tour_url IS NOT NULL AND image_url IS NULL
+           ORDER BY date ASC`,
+        )
+        .bind(todayInJst())
+  const { results } = await stmt.all<PendingImage>()
   return c.json({ events: results })
 }
 

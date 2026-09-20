@@ -2,6 +2,7 @@
 // tour_url があって画像未取得の公演について、ツアーページの og:image を取り出して保存する(3段目)。
 // LLM は使わない。1公演1リクエスト。失敗した公演は翌晩また対象になる(best effort)。
 // 使い方: INGEST_URL=... INGEST_TOKEN=... node collector/fetch-images.mjs [maxEvents]
+//   REFETCH_ALL=1 を付けると過去公演・既取得分も含めて全件取り直す(手動用)
 import { extractOgImage } from './og-image.mjs'
 
 const ingestUrl = process.env.INGEST_URL
@@ -16,7 +17,8 @@ if (!ingestUrl || !ingestToken) {
 }
 const auth = { authorization: `Bearer ${ingestToken}` }
 
-const pending = await fetch(new URL('/api/images/pending', ingestUrl), { headers: auth })
+const refetchAll = process.env.REFETCH_ALL === '1'
+const pending = await fetch(new URL(`/api/images/pending${refetchAll ? '?all=1' : ''}`, ingestUrl), { headers: auth })
 if (!pending.ok) {
   console.error(`fetch-images: /api/images/pending がエラー: ${pending.status}`)
   process.exit(1)
