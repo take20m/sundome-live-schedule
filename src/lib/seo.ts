@@ -108,15 +108,29 @@ export function buildRobots(siteUrl: string): string {
   return `User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${new URL('/sitemap.xml', siteUrl).toString()}\n`
 }
 
+/** 既定の OG 画像(会場写真 1200×630)。ページ固有の画像が無いときに使う */
+export const DEFAULT_OG_IMAGE = { path: '/img/og-default.jpg', width: 1200, height: 630, alt: 'サンドーム福井の外観' }
+
 /** 共通の <head> メタタグ(title, description, OGP, canonical) */
 export function buildHeadMeta(opts: {
   title: string
   description: string
   canonical: string
+  /** ページ固有の OG 画像(絶対 URL)。省略時は会場写真 */
+  image?: { url: string; alt: string } | null
 }): string {
   const t = escapeHtml(opts.title)
   const d = escapeHtml(opts.description)
   const canonical = escapeHtml(opts.canonical)
+  const image = opts.image ?? {
+    url: new URL(DEFAULT_OG_IMAGE.path, opts.canonical).toString(),
+    alt: DEFAULT_OG_IMAGE.alt,
+  }
+  // 会場写真はサイズが分かる。外部画像(ツアーの og:image)はサイズ不明なので width/height を出さない
+  const size =
+    opts.image == null
+      ? `\n<meta property="og:image:width" content="${DEFAULT_OG_IMAGE.width}">\n<meta property="og:image:height" content="${DEFAULT_OG_IMAGE.height}">`
+      : ''
   return `<title>${t}</title>
 <meta name="google-site-verification" content="Zqb1r-WsvcKYv5AbyATIlunK_PCtx7NgNemnjRPkXBg">
 <meta name="description" content="${d}">
@@ -130,7 +144,9 @@ export function buildHeadMeta(opts: {
 <meta property="og:title" content="${t}">
 <meta property="og:description" content="${d}">
 <meta property="og:url" content="${canonical}">
+<meta property="og:image" content="${escapeHtml(image.url)}">${size}
+<meta property="og:image:alt" content="${escapeHtml(image.alt)}">
 <meta property="og:site_name" content="サンドーム福井 コンサート・ライブ情報">
 <meta property="og:locale" content="ja_JP">
-<meta name="twitter:card" content="summary">`
+<meta name="twitter:card" content="summary_large_image">`
 }

@@ -1,5 +1,5 @@
 import type { EventRun, EventWithLotteries } from '../lib/db'
-import { escapeHtml } from '../lib/html'
+import { escapeHtml, safeHttpUrl } from '../lib/html'
 import { iconSvg } from '../lib/icon'
 import { buildHeadMeta, buildJsonLd } from '../lib/seo'
 import { COUNTDOWN_SCRIPT, formatDateJa, renderEventCard } from './list'
@@ -17,6 +17,8 @@ export function renderDetailPage(run: EventRun, now: Date, canonical: string): s
     title: `${e.artist}「${e.title}」チケット・抽選情報(${formatDateJa(e.date)} サンドーム福井)`,
     description: metaDescription(e),
     canonical,
+    // 共有カードにはツアービジュアルを出す。未取得なら会場写真(既定)
+    image: safeHttpUrl(e.image_url) ? { url: e.image_url!, alt: `${e.artist}「${e.title}」` } : null,
   })
   return `<!doctype html>
 <html lang="ja">

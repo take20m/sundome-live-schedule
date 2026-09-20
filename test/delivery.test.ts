@@ -118,6 +118,8 @@ describe('SEO', () => {
     expect(html).toContain('"@type":"MusicEvent"')
     expect(html).toContain('"organizer":{"@type":"MusicGroup","name":"SAMPLE ARTIST","url":"https://example.com/artist"}')
     expect(html).toContain('property="og:title"')
+    expect(html).toContain('<meta property="og:image" content="https://example.com/img/og-default.jpg">')
+    expect(html).toContain('<meta name="twitter:card" content="summary_large_image">')
     expect(html).toContain('rel="canonical"')
   })
 

@@ -89,5 +89,9 @@ describe('images API と表示', () => {
     // 詳細の画像は出典(ツアーページ)へのリンク
     const detail = await (await SELF.fetch(`https://example.com/e/ev-${withTour}`)).text()
     expect(detail).toContain('<a class="card-media" href="https://example.com/live/" rel="noopener" target="_blank"><img src="https://cdn.example.com/kv.jpg"')
+    // 共有カード(OG)にもツアー画像。画像の無い公演は会場写真
+    expect(detail).toContain('<meta property="og:image" content="https://cdn.example.com/kv.jpg">')
+    const noImg = await (await SELF.fetch(`https://example.com/e/ev-${noTour}`)).text()
+    expect(noImg).toContain('<meta property="og:image" content="https://example.com/img/og-default.jpg">')
   })
 })
