@@ -1,23 +1,32 @@
+import { isRestrictedLottery } from '../lib/audience'
 import { todayInJst } from '../lib/db'
 import type { EventWithLotteries } from '../lib/db'
 import { formatJst } from '../lib/format'
 import { escapeHtml } from '../lib/html'
+import { iconSvg } from '../lib/icon'
 import { buildHeadMeta, buildJsonLd, buildMetaDescription } from '../lib/seo'
 import type { LotteryStatus } from '../lib/status'
 import { lotteryStatus } from '../lib/status'
-import { isRestrictedLottery } from '../lib/audience'
 import { isPurchasePage } from '../lib/ticket-url'
 import type { LotteryRow } from '../types'
 import { SITE_CSS, SITE_FOOTER, SITE_HEADER } from './style'
 
 const WEEKDAYS_EN = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
+const WEEKDAYS_JA = ['日', '月', '火', '水', '木', '金', '土']
 
-/** チケット半券用の日付パーツ { y: '2027', md: '02.13', dw: 'SAT' } */
-export function stubDate(date: string): { y: string; md: string; dw: string } {
+/** 日付タイル用のパーツ { ym: '2027.02', d: '13', dw: 'SAT' } */
+export function dateParts(date: string): { ym: string; d: string; dw: string } {
   const [y, m, day] = date.split('-').map(Number)
-  if (!y || !m || !day) return { y: '', md: date, dw: '' }
+  if (!y || !m || !day) return { ym: '', d: date, dw: '' }
   const dw = WEEKDAYS_EN[new Date(Date.UTC(y, m - 1, day)).getUTCDay()]
-  return { y: String(y), md: `${String(m).padStart(2, '0')}.${String(day).padStart(2, '0')}`, dw }
+  return { ym: `${y}.${String(m).padStart(2, '0')}`, d: String(day), dw }
+}
+
+/** "2026年10月3日(土)" */
+export function formatDateJa(date: string): string {
+  const [y, m, d] = date.split('-').map(Number)
+  if (!y || !m || !d) return date
+  return `${y}年${m}月${d}日(${WEEKDAYS_JA[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]})`
 }
 
 const STATUS_LABEL: Record<LotteryStatus, string> = {
@@ -26,6 +35,10 @@ const STATUS_LABEL: Record<LotteryStatus, string> = {
   closed: '終了',
   soldout: '売り切れ',
   unknown: '期間不明',
+}
+
+function statusChip(status: LotteryStatus): string {
+  return `<span class="chip chip-${status}">${STATUS_LABEL[status]}</span>`
 }
 
 /** サーバー側の静的カウントダウン文字列(クライアントJSが30秒ごとに更新) */
@@ -98,15 +111,17 @@ function renderDeadlines(events: EventWithLotteries[], now: Date): string {
       const datesLabel = `${sortedDates[0].slice(0, 4)}/${sortedDates.map(md).join('・')}`
       const nameLabel = names.length > 1 ? `${names[0]} 他${names.length - 1}件` : names[0]
       const endLabel = hasEnd ? `〆${formatJst(lottery.ends_at)}` : '〆未定'
-      return `<a class="deadline${status === 'open' ? ' deadline-open' : ''}" href="/e/${escapeHtml(event.id)}">
-      <span class="countdown"${status === 'open' && hasEnd ? ` data-ends="${escapeHtml(lottery.ends_at!)}"` : ''}>${escapeHtml(countdown)}</span>
-      <span><span class="who">${escapeHtml(event.artist)}</span>
-      <span class="what">${escapeHtml(nameLabel)} · 公演 ${escapeHtml(datesLabel)} · ${escapeHtml(endLabel)}</span></span>
-      <span class="badge badge-${status}">${STATUS_LABEL[status]}</span>
-    </a>`
+      return `<a class="row${status === 'open' ? ' row-open' : ''}" href="/e/${escapeHtml(event.id)}">
+  <span class="cd"${status === 'open' && hasEnd ? ` data-ends="${escapeHtml(lottery.ends_at!)}"` : ''}>${escapeHtml(countdown)}</span>
+  <span class="row-text"><span class="row-h">${escapeHtml(event.artist)}</span><span class="row-s">${escapeHtml(nameLabel)} · 公演 ${escapeHtml(datesLabel)} · ${escapeHtml(endLabel)}</span></span>
+  ${statusChip(status)}
+</a>`
     })
     .join('\n')
-  return `<h2 class="section">販売中のチケット</h2>\n<div class="deadlines">${items}</div>`
+  return `<div class="section"><h2>販売中のチケット</h2><span class="sup">会員資格なしで申し込めるもの</span></div>
+<div class="list">
+${items}
+</div>`
 }
 
 export function renderLottery(l: LotteryRow, now: Date): string {
@@ -120,16 +135,16 @@ export function renderLottery(l: LotteryRow, now: Date): string {
     status === 'open' && isPurchasePage(url)
       ? `<a href="${escapeHtml(url)}" rel="noopener" target="_blank">${escapeHtml(l.name)}</a>`
       : escapeHtml(l.name)
-  return `<li class="lottery lottery-${status}">
-    <span class="badge badge-${status}">${STATUS_LABEL[status]}</span>
-    <span class="lottery-name">${name}</span>
-    <span class="lottery-period">${escapeHtml(period)}</span>
-  </li>`
+  return `<li class="lot lot-${status}">${statusChip(status)}<span class="lot-name">${name}</span><span class="lot-period">${escapeHtml(period)}</span></li>`
 }
 
 const SOON_LABEL = ['本日公演', '明日公演', '明後日公演']
 
-function renderEvent(e: EventWithLotteries, now: Date): string {
+/**
+ * 公演カード。一覧と詳細で共用する。
+ * detail=true のとき: タイトルをリンクにせず、日付・会場・公式サイト/コンサート情報のリンクを出す
+ */
+export function renderEventCard(e: EventWithLotteries, now: Date, detail = false): string {
   const hasOpen = e.lotteries.some((l) => lotteryStatus(l, now) === 'open')
   const daysAway = Math.round((Date.parse(e.date) - Date.parse(todayInJst(now))) / 86400000)
   const soonLabel = daysAway >= 0 && daysAway <= 2 ? SOON_LABEL[daysAway] : null
@@ -137,23 +152,51 @@ function renderEvent(e: EventWithLotteries, now: Date): string {
   const times = [e.open_time && `開場 ${e.open_time}`, e.start_time && `開演 ${e.start_time}`]
     .filter(Boolean)
     .join(' / ')
-  const d = stubDate(e.date)
-  return `<article class="tix${hasOpen ? ' open' : ''}${isToday ? ' is-today' : ''}" id="${escapeHtml(e.id)}">
-    <div class="stub">
-      ${soonLabel ? `<div class="today-label${isToday ? '' : ' soon'}">${soonLabel}</div>` : `<div class="y">${escapeHtml(d.y)}</div>`}
-      <div class="md">${escapeHtml(d.md)}</div>
-      <div class="dw">${escapeHtml(d.dw)}</div>
-    </div>
-    <div class="bod">
-    <h2 class="event-title"><a href="/e/${escapeHtml(e.id)}">${escapeHtml(e.artist)}</a></h2>
-    <div class="tour-title">${escapeHtml(e.title)}</div>
-    <div class="event-meta">
-      ${times ? `<span class="times">${escapeHtml(times)}</span>` : ''}
-    </div>
-    ${e.lotteries.length > 0 ? `<ul class="lotteries">${e.lotteries.map((l) => renderLottery(l, now)).join('')}</ul>` : '<p class="no-lottery">チケット情報は未収集です</p>'}
-    </div>
-    <div class="serial" aria-hidden="true">NO.${escapeHtml(e.id.toUpperCase())}</div>
-  </article>`
+  const d = dateParts(e.date)
+
+  const title = detail
+    ? escapeHtml(e.artist)
+    : `<a href="/e/${escapeHtml(e.id)}">${escapeHtml(e.artist)}</a>`
+  const meta = [
+    detail ? `<span class="meta-item">${escapeHtml(formatDateJa(e.date))}</span>` : '',
+    times ? `<span class="meta-item">${iconSvg('schedule')}${escapeHtml(times)}</span>` : '',
+    detail ? `<span class="meta-item">${iconSvg('place')}サンドーム福井(福井県越前市)</span>` : '',
+  ].join('')
+
+  let actions = ''
+  if (detail) {
+    // 「コンサート情報」はアーティスト側のツアーページへ。未収集なら情報源(会場ページ)で代用
+    const infoUrl = e.tour_url ?? e.source_url
+    const links = [
+      e.artist_url
+        ? `<a class="btn-text" href="${escapeHtml(e.artist_url)}" rel="noopener" target="_blank">${escapeHtml(e.artist)} 公式サイト${iconSvg('open_in_new')}</a>`
+        : '',
+      infoUrl
+        ? `<a class="btn-text" href="${escapeHtml(infoUrl)}" rel="noopener" target="_blank">コンサート情報${iconSvg('open_in_new')}</a>`
+        : '',
+    ].join('')
+    actions = links ? `<div class="actions">${links}</div>` : ''
+  }
+
+  const lots =
+    e.lotteries.length > 0
+      ? `<ul class="lots">${e.lotteries.map((l) => renderLottery(l, now)).join('')}</ul>`
+      : `<p class="none">${detail ? 'チケット情報は未収集です(毎晩自動で再調査しています)' : 'チケット情報は未収集です'}</p>`
+
+  return `<article class="card${hasOpen ? ' is-open' : ''}${isToday ? ' is-today' : ''}" id="${escapeHtml(e.id)}">
+  <div class="tile">
+    ${soonLabel ? `<span class="tile-soon">${soonLabel}</span>` : `<span class="tile-m">${escapeHtml(d.ym)}</span>`}
+    <span class="tile-d">${escapeHtml(d.d)}</span>
+    <span class="tile-w">${escapeHtml(d.dw)}</span>
+  </div>
+  <div class="card-body">
+    <h3 class="card-title">${title}</h3>
+    <p class="card-sub">${escapeHtml(e.title)}</p>
+    ${meta ? `<div class="meta">${meta}</div>` : ''}
+    ${actions}
+    ${lots}
+  </div>
+</article>`
 }
 
 export const COUNTDOWN_SCRIPT = `<script>
@@ -177,8 +220,8 @@ export const COUNTDOWN_SCRIPT = `<script>
 export function renderListPage(events: EventWithLotteries[], now: Date, canonical: string): string {
   const body =
     events.length > 0
-      ? events.map((e) => renderEvent(e, now)).join('\n')
-      : '<p class="empty">今後の公演情報はまだありません。</p>'
+      ? `<div class="cards">\n${events.map((e) => renderEventCard(e, now)).join('\n')}\n</div>`
+      : '<p class="none">今後の公演情報はまだありません。</p>'
   const head = buildHeadMeta({
     title: 'サンドーム福井 ライブ予定・チケット抽選情報',
     description: buildMetaDescription(events),
@@ -198,7 +241,7 @@ ${head}
 ${SITE_HEADER}
 <main>
 ${renderDeadlines(events, now)}
-<h2 class="section">今後の公演</h2>
+<div class="section"><h2>今後の公演</h2><span class="sup">${events.length} 公演</span></div>
 ${body}
 </main>
 ${SITE_FOOTER}

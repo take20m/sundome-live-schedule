@@ -30,14 +30,15 @@ describe('detail page', () => {
     const eventDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
     const res = await SELF.fetch(`https://example.com/e/ev-${eventDate}`)
     expect(res.status).toBe(200)
-    expect(await res.text()).toContain(`<a href="/#ev-${eventDate}">← 公演一覧</a>`)
+    const html = await res.text()
+    expect(html).toMatch(new RegExp(`<a class="btn-text" href="/#ev-${eventDate}">.*公演一覧</a>`))
   })
 
   it('「コンサート情報」は tour_url へ。無ければ source_url(会場ページ)で代用', async () => {
     const day = 24 * 60 * 60 * 1000
     const withTour = new Date(now.getTime() + 30 * day).toISOString().slice(0, 10)
     const html1 = await (await SELF.fetch(`https://example.com/e/ev-${withTour}`)).text()
-    expect(html1).toContain('<a href="https://example.com/artist/live/hello2026" rel="noopener" target="_blank">コンサート情報</a>')
+    expect(html1).toContain('href="https://example.com/artist/live/hello2026" rel="noopener" target="_blank">コンサート情報')
 
     const noTour = new Date(now.getTime() + 45 * day).toISOString().slice(0, 10)
     await env.DB.prepare(
@@ -47,6 +48,6 @@ describe('detail page', () => {
       .bind(`ev-${noTour}`, noTour, now.toISOString())
       .run()
     const html2 = await (await SELF.fetch(`https://example.com/e/ev-${noTour}`)).text()
-    expect(html2).toContain('<a href="https://sundome.sankan.jp/eventinfo/venue-only/" rel="noopener" target="_blank">コンサート情報</a>')
+    expect(html2).toContain('href="https://sundome.sankan.jp/eventinfo/venue-only/" rel="noopener" target="_blank">コンサート情報')
   })
 })

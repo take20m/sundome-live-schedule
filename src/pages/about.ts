@@ -1,3 +1,4 @@
+import { iconSvg } from '../lib/icon'
 import { buildHeadMeta } from '../lib/seo'
 import { SITE_CSS, SITE_FOOTER, SITE_HEADER } from './style'
 
@@ -15,11 +16,7 @@ export function renderAboutPage(canonical: string): string {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 ${head}
-<style>${SITE_CSS}
-.prose h2 { font-size: 1.05rem; margin: 2rem 0 .6rem; border-bottom: 1px solid var(--line); padding-bottom: .3rem; }
-.prose p, .prose li { font-size: .92rem; }
-.prose ul { padding-left: 1.3em; }
-</style>
+<style>${SITE_CSS}</style>
 </head>
 <body>
 ${SITE_HEADER}
@@ -32,6 +29,7 @@ ${SITE_HEADER}
 <ul>
 <li>本サイトは会員登録を必要とせず、個人情報を収集しません。Cookie も使用していません</li>
 <li>配信インフラ(Cloudflare)がサービス提供・セキュリティのためにアクセスログを処理することがあります</li>
+<li>表示用フォント(Roboto / Noto Sans JP)を Google Fonts から読み込んでいます。このとき、ブラウザから Google のサーバーへ IP アドレス等を含むリクエストが送られます。Google Fonts はこの配信で Cookie を使用しません</li>
 <li>今後、アクセス解析や第三者配信の広告を導入する場合は、本ページで利用サービスと Cookie の取り扱いを告知します</li>
 </ul>
 
@@ -41,7 +39,7 @@ ${SITE_HEADER}
 <li>連絡先: <a href="mailto:contact@take20m.dev">contact@take20m.dev</a></li>
 </ul>
 
-<p style="margin-top:2rem"><a href="/">← 公演一覧へ戻る</a></p>
+<div class="back" style="margin-top:32px"><a class="btn-text" href="/">${iconSvg('arrow_back')}公演一覧へ戻る</a></div>
 </main>
 ${SITE_FOOTER}
 </body>

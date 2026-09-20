@@ -1,5 +1,6 @@
 import type { EventWithLotteries } from './db'
 import { escapeHtml } from './html'
+import { BRAND_COLOR } from './icon'
 import { lotteryStatus } from './status'
 import { isPurchasePage } from './ticket-url'
 
@@ -112,8 +113,10 @@ export function buildHeadMeta(opts: {
   return `<title>${t}</title>
 <meta name="google-site-verification" content="Zqb1r-WsvcKYv5AbyATIlunK_PCtx7NgNemnjRPkXBg">
 <meta name="description" content="${d}">
-<meta name="theme-color" content="#2b47c4">
+<meta name="theme-color" content="${BRAND_COLOR}">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&amp;family=Noto+Sans+JP:wght@400;500;700&amp;display=swap">
 <link rel="apple-touch-icon" href="/favicon.svg">
 <link rel="canonical" href="${canonical}">
 <meta property="og:type" content="website">
