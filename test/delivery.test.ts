@@ -14,7 +14,7 @@ describe('一覧ページ', () => {
     const html = await res.text()
     expect(html).toContain('SAMPLE ARTIST LIVE TOUR 2026 &quot;HELLO&quot;')
     expect(html).toContain('受付中')
-    expect(html).toContain('FC先行(抽選)')
+    expect(html).toContain('オフィシャル先行(抽選)')
   })
 })
 
@@ -66,11 +66,11 @@ describe('締切セクションとカウントダウン', () => {
       .run()
     // 実運用同様「同一の申込」を再現するため、seed済み抽選と同じ期間文字列を使う
     const seeded = await env.DB.prepare(
-      "SELECT starts_at, ends_at FROM lotteries WHERE name = 'FC先行(抽選)' LIMIT 1",
+      "SELECT starts_at, ends_at FROM lotteries WHERE name = 'オフィシャル先行(抽選)' LIMIT 1",
     ).first<{ starts_at: string; ends_at: string }>()
     await env.DB.prepare(
       `INSERT INTO lotteries (id, event_id, name, starts_at, ends_at, confidence, updated_at)
-       VALUES (?, ?, 'FC先行(抽選)', ?, ?, 'inferred', ?)`,
+       VALUES (?, ?, 'オフィシャル先行(抽選)', ?, ?, 'inferred', ?)`,
     )
       .bind(`lot-ev-${date2}-deadbeef`, `ev-${date2}`, seeded!.starts_at, seeded!.ends_at, nowIso)
       .run()
@@ -84,11 +84,11 @@ describe('締切セクションとカウントダウン', () => {
 
   it('同一アーティスト・同一締切の複数受付は1行にまとまり「他N件」表示', async () => {
     const seeded = await env.DB.prepare(
-      "SELECT event_id, starts_at, ends_at FROM lotteries WHERE name = 'FC先行(抽選)' LIMIT 1",
+      "SELECT event_id, starts_at, ends_at FROM lotteries WHERE name = 'オフィシャル先行(抽選)' LIMIT 1",
     ).first<{ event_id: string; starts_at: string; ends_at: string }>()
     await env.DB.prepare(
       `INSERT INTO lotteries (id, event_id, name, starts_at, ends_at, confidence, updated_at)
-       VALUES (?, ?, 'FC先行(ステージサイド席)', ?, ?, 'inferred', ?)`,
+       VALUES (?, ?, 'オフィシャル先行(ステージサイド席)', ?, ?, 'inferred', ?)`,
     )
       .bind(`lot-${seeded!.event_id}-cafebabe`, seeded!.event_id, seeded!.starts_at, seeded!.ends_at, new Date().toISOString())
       .run()
@@ -160,7 +160,7 @@ describe('公演詳細ページ', () => {
     expect(res.status).toBe(200)
     const html = await res.text()
     expect(html).toContain('SAMPLE ARTIST LIVE TOUR 2026')
-    expect(html).toContain('FC先行(抽選)')
+    expect(html).toContain('オフィシャル先行(抽選)')
     expect(html).toContain('"@type":"MusicEvent"')
   })
 

@@ -44,7 +44,7 @@ export async function seedSample(db: D1Database, now: Date = new Date()): Promis
     .bind(
       `lot-ev-${eventDate}-deadbeef`,
       `ev-${eventDate}`,
-      'FC先行(抽選)',
+      'オフィシャル先行(抽選)',
       new Date(now.getTime() - 1 * day).toISOString(),
       new Date(now.getTime() + 3 * day).toISOString(),
       'https://example.com/lottery',

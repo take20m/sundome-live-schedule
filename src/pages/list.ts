@@ -5,6 +5,7 @@ import { escapeHtml } from '../lib/html'
 import { buildHeadMeta, buildJsonLd, buildMetaDescription } from '../lib/seo'
 import type { LotteryStatus } from '../lib/status'
 import { lotteryStatus } from '../lib/status'
+import { isRestrictedLottery } from '../lib/audience'
 import { isPurchasePage } from '../lib/ticket-url'
 import type { LotteryRow } from '../types'
 import { SITE_CSS, SITE_FOOTER, SITE_HEADER } from './style'
@@ -43,6 +44,8 @@ function renderDeadlines(events: EventWithLotteries[], now: Date): string {
   const entries: Entry[] = []
   for (const e of events) {
     for (const l of e.lotteries) {
+      // 会員限定・CD封入特典は、資格のない通りすがりの人には申し込めないので載せない
+      if (isRestrictedLottery(l.name)) continue
       const status = lotteryStatus(l, now)
       // 受付中(締切あり/終了未定とも)と受付前を載せる。売り切れ・終了・期間不明は除外
       if (status === 'open' || (status === 'upcoming' && l.ends_at)) {
