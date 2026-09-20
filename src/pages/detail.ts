@@ -43,7 +43,7 @@ ${head}
 <body>
 ${SITE_HEADER}
 <main>
-<p class="back"><a href="/">← 公演一覧</a></p>
+<p class="back"><a href="/#${escapeHtml(e.id)}">← 公演一覧</a></p>
 <article class="tix${hasOpen ? ' open' : ''}">
   <div class="stub">
     <div class="y">${escapeHtml(d.y)}</div>

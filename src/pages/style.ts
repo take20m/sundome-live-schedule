@@ -60,6 +60,9 @@ h2.section::after { content: ""; flex: 1; height: 1px; background: var(--line); 
 /* 公演カード(チケット半券) */
 .tix { display: flex; background: var(--card); border: 1px solid var(--line); border-radius: 3px; margin: .9rem 0; position: relative; scroll-margin-top: 1rem; }
 .tix.open { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+/* 詳細から /#ev-... で戻ってきた直後、該当カードを一瞬強調して位置を示す */
+.tix:target { outline: 3px solid transparent; outline-offset: 3px; animation: tix-arrive 2.4s ease-out; }
+@keyframes tix-arrive { 0%, 40% { outline-color: var(--accent); } 100% { outline-color: transparent; } }
 .stub { flex: 0 0 7.2rem; border-right: 2px dashed var(--line); padding: 1rem .7rem; text-align: center; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
 .tix.open .stub { background: var(--accent-soft); }
 .tix::before, .tix::after { content: ""; position: absolute; left: 6.65rem; width: 1.1rem; height: 1.1rem; border-radius: 50%; background: var(--bg); border: 1px solid var(--line); }
