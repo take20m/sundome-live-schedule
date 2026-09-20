@@ -4,10 +4,11 @@
  * 新しい記事を足すときは Markdown を置いてここに 1 行追加する。
  */
 import aimyon from './artists/あいみょん.md'
+import fujiiKaze from './artists/Fujii Kaze.md'
 import guideAccess from './guide/access.md'
 import guideTickets from './guide/tickets.md'
 
-export const ARTIST_DOCS: readonly string[] = [aimyon]
+export const ARTIST_DOCS: readonly string[] = [aimyon, fujiiKaze]
 
 export const GUIDE_DOCS: Readonly<Record<string, string>> = {
   access: guideAccess,
