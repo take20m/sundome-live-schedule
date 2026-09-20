@@ -1,13 +1,11 @@
 import type { Doc } from '../lib/content'
-import { MAP_HEAD, MAP_SCRIPT, renderDoc, renderToc } from '../lib/content'
 import type { EventWithLotteries } from '../lib/db'
 import { todayInJst } from '../lib/db'
 import { groupConsecutive } from '../lib/group'
 import { escapeHtml } from '../lib/html'
-import { iconSvg } from '../lib/icon'
 import { buildHeadMeta, buildJsonLd } from '../lib/seo'
+import { docToShellParts, renderArticle } from './article'
 import { COUNTDOWN_SCRIPT, renderEventCard } from './list'
-import { SITE_CSS, SITE_FOOTER, SITE_HEADER } from './style'
 
 /**
  * アーティストページ: 解説(content/artists/*.md、任意)+ サンドーム福井での公演(今後・過去)。
@@ -29,16 +27,9 @@ export function renderArtistPage(
     doc?.meta.description ??
     `${displayName}のサンドーム福井(福井県越前市)公演の予定と、チケット先行・抽選の受付期間。過去の公演記録も掲載。`
   const image = upcoming.find((e) => e.image_url)?.image_url ?? events.find((e) => e.image_url)?.image_url ?? null
-  const rendered = doc ? renderDoc(doc.body) : null
   const hero = image
-    ? `<div class="hero"><img src="${escapeHtml(image)}" alt="${escapeHtml(displayName)}" loading="eager" decoding="async" onerror="this.closest('.hero').remove()"></div>`
+    ? `<figure class="hero"><img src="${escapeHtml(image)}" alt="${escapeHtml(displayName)}" loading="eager" decoding="async" onerror="this.closest('.hero').remove()"><figcaption>ツアービジュアル(アーティスト公式サイトより)</figcaption></figure>`
     : ''
-  const head = buildHeadMeta({
-    title,
-    description,
-    canonical,
-    image: image ? { url: image, alt: displayName } : null,
-  })
   const section = (label: string, list: EventWithLotteries[], compact: boolean) =>
     list.length === 0
       ? ''
@@ -49,34 +40,18 @@ ${groupConsecutive(list)
   .map((g) => renderEventCard(g, now, compact ? { compact: true } : {}))
   .join('\n')}
 </div>`
-  return `<!doctype html>
-<html lang="ja">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-${head}
-<style>${SITE_CSS}</style>
-${rendered?.hasMap ? MAP_HEAD : ''}
-<script type="application/ld+json">${buildJsonLd(upcoming, canonical)}</script>
-</head>
-<body>
-${SITE_HEADER}
-<main class="prose">
-<div class="back"><a class="btn-text" href="/">${iconSvg('arrow_back')}公演一覧</a></div>
-<article class="prose-card${hero ? ' has-hero' : ''}">
-${hero}
-<div class="prose-body">
-<h1>${escapeHtml(displayName)}</h1>
-${doc?.meta.updated ? `<p class="updated">最終更新 ${escapeHtml(doc.meta.updated)}</p>` : ''}
-${rendered ? renderToc(rendered.toc) + rendered.html : `<p>${escapeHtml(displayName)}のサンドーム福井公演の予定とチケット受付情報です。</p>`}
-</div>
-</article>
-${section('今後の公演', upcoming, false)}
-${section('過去の公演', past, true)}
-</main>
-${SITE_FOOTER}
-${COUNTDOWN_SCRIPT}
-${rendered?.hasMap ? MAP_SCRIPT : ''}
-</body>
-</html>`
+  const parts = doc
+    ? docToShellParts(doc)
+    : { body: `<p>${escapeHtml(displayName)}のサンドーム福井公演の予定とチケット受付情報です。</p>`, hasMap: false }
+  return renderArticle({
+    head: buildHeadMeta({ title, description, canonical, image: image ? { url: image, alt: displayName } : null }),
+    crumbs: [{ label: '公演一覧', href: '/' }, { label: 'アーティスト' }, { label: displayName }],
+    kicker: 'アーティスト',
+    title: displayName,
+    hero,
+    ...parts,
+    after: `${section('今後の公演', upcoming, false)}\n${section('過去の公演', past, true)}`,
+    extraHead: `<script type="application/ld+json">${buildJsonLd(upcoming, canonical)}</script>`,
+    extraScripts: COUNTDOWN_SCRIPT,
+  })
 }

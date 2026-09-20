@@ -3,10 +3,17 @@
  * 文章はこのリポジトリのファイル(運営者が書く)なので信頼できるが、
  * Markdown 内の生 HTML は使わない前提で無効化しておく(誤って貼ったタグで崩れないように)。
  *
- * 独自記法(ガイド用):
- *   > [!NOTE] 見出し   … 注意の囲み(NOTE=注意 / TIP=ポイント / STORY=体験談)
- *   ```routes           … 行き方カード。1行 = 「駅名|手段|所要時間|距離|一言」
+ * 独自記法(記事用)。部品は「用途ごとに 1 種類」に絞る:
+ *   > [!TIP] 見出し     … 黄: 先に知っておくと便利
+ *   > [!FIELD] 見出し   … 青: 現地メモ・補足(体験談もここ)
+ *   > [!WARN] 見出し    … 赤: 間違えると困る重要注意(1 記事に 1〜2 個まで)
  *   ```map              … 地図(OpenStreetMap)。1行 = 「緯度,経度|ラベル|venue または station」
+ *   ```numbers          … 数字を大きく並べる。1行 = 「数字|ラベル」
+ *   ```facts            … 項目と値の一覧(dl)。1行 = 「項目|値」
+ *   ```fails            … よくある失敗。1行 = 「見出し|説明」
+ *   ```decision         … 判断チャート。1行 = 「条件|取る行動」
+ *   ```sources          … 出典。1行 = 「ラベル|URL|補足」
+ *   表のセルに [基本] / [おすすめ] と書くと、その行を強調しタグを付ける
  */
 import { marked } from 'marked'
 import type { Tokens } from 'marked'
@@ -45,24 +52,51 @@ export function slugify(text: string): string {
     .slice(0, 80)
 }
 
-const CALLOUT_LABEL: Record<string, string> = { NOTE: '注意', TIP: 'ポイント', STORY: '体験談' }
+const CALLOUT_LABEL: Record<string, string> = { TIP: '先に知っておくと便利', FIELD: '現地メモ', WARN: '重要' }
+/** 旧記法の互換(NOTE→WARN, STORY→FIELD) */
+const CALLOUT_ALIAS: Record<string, string> = { NOTE: 'WARN', STORY: 'FIELD' }
 
-function renderRoutes(text: string): string {
-  const cards = text
+/** 「a|b|c」形式の行を配列に。空行は飛ばす */
+function rows(text: string): string[][] {
+  return text
     .split('\n')
     .map((l) => l.trim())
     .filter(Boolean)
-    .map((line) => {
-      const [name = '', how = '', time = '', dist = '', note = ''] = line.split('|').map((s) => s.trim())
-      return `<div class="route">
-  <div class="route-name">${escapeHtml(name)}</div>
-  <div class="route-how">${escapeHtml(how)}</div>
-  <div class="route-nums">${time ? `<span class="route-time">${escapeHtml(time)}</span>` : ''}${dist ? `<span class="route-dist">${escapeHtml(dist)}</span>` : ''}</div>
-  ${note ? `<div class="route-note">${escapeHtml(note)}</div>` : ''}
-</div>`
+    .map((l) => l.split('|').map((c) => c.trim()))
+}
+
+function renderNumbers(text: string): string {
+  return `<div class="numbers">${rows(text)
+    .map(([n = '', label = '']) => `<div><span class="n">${escapeHtml(n)}</span><span class="l">${escapeHtml(label)}</span></div>`)
+    .join('')}</div>`
+}
+
+function renderFacts(text: string): string {
+  return `<dl class="facts">${rows(text)
+    .map(([k = '', v = '']) => `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(v)}</dd>`)
+    .join('')}</dl>`
+}
+
+function renderFails(text: string): string {
+  return `<ol class="fails">${rows(text)
+    .map(([head = '', body = '']) => `<li><b>${escapeHtml(head)}</b>${escapeHtml(body)}</li>`)
+    .join('')}</ol>`
+}
+
+function renderDecision(text: string): string {
+  return `<ol class="decision">${rows(text)
+    .map(([cond = '', act = '']) => `<li><span class="d-if">${escapeHtml(cond)}</span><span class="d-then">${escapeHtml(act)}</span></li>`)
+    .join('')}</ol>`
+}
+
+function renderSources(text: string): string {
+  return `<ul class="sources">${rows(text)
+    .map(([label = '', url = '', note = '']) => {
+      const safe = /^https?:\/\//.test(url) ? url : null
+      const a = safe ? `<a href="${escapeHtml(safe)}" rel="noopener" target="_blank">${escapeHtml(label)}</a>` : escapeHtml(label)
+      return `<li>${a}${note ? ` — ${escapeHtml(note)}` : ''}</li>`
     })
-    .join('\n')
-  return `<div class="routes">\n${cards}\n</div>`
+    .join('')}</ul>`
 }
 
 type MapPoint = { lat: number; lon: number; label: string; kind: 'venue' | 'station' }
@@ -98,15 +132,19 @@ marked.use({
       return `<h${token.depth} id="${escapeHtml(slugify(token.text))}">${inner}</h${token.depth}>\n`
     },
     code(token: Tokens.Code) {
-      if (token.lang === 'routes') return renderRoutes(token.text)
       if (token.lang === 'map') return renderMap(token.text)
+      if (token.lang === 'numbers') return renderNumbers(token.text)
+      if (token.lang === 'facts') return renderFacts(token.text)
+      if (token.lang === 'fails') return renderFails(token.text)
+      if (token.lang === 'decision') return renderDecision(token.text)
+      if (token.lang === 'sources') return renderSources(token.text)
       return `<pre><code>${escapeHtml(token.text)}</code></pre>\n`
     },
     blockquote(token: Tokens.Blockquote) {
       const first = token.tokens[0]
-      const m = first?.type === 'paragraph' ? first.raw.match(/^\[!(NOTE|TIP|STORY)\]([^\n]*)\n?([\s\S]*)$/) : null
+      const m = first?.type === 'paragraph' ? first.raw.match(/^\[!(NOTE|TIP|STORY|FIELD|WARN)\]([^\n]*)\n?([\s\S]*)$/) : null
       if (!m) return `<blockquote>\n${this.parser.parse(token.tokens)}</blockquote>\n`
-      const kind = m[1]
+      const kind = CALLOUT_ALIAS[m[1]] ?? m[1]
       const title = m[2].trim() || CALLOUT_LABEL[kind]
       const rest = [...marked.lexer(m[3]), ...token.tokens.slice(1)]
       return `<aside class="callout callout-${kind.toLowerCase()}"><p class="callout-title">${escapeHtml(title)}</p>\n${this.parser.parse(rest)}</aside>\n`
@@ -124,6 +162,12 @@ export function renderDoc(md: string): RenderedDoc {
   }
   let html = marked.parse(md, { async: false }) as string
   html = html.replaceAll('<table>', '<div class="table-wrap"><table>').replaceAll('</table>', '</table></div>')
+  // 表の行に [基本] / [おすすめ] があれば、その行を強調してタグ化する(編集者の判断を見せる)
+  html = html.replace(/<tr>([\s\S]*?)<\/tr>/g, (row, inner: string) => {
+    const m = inner.match(/\[(基本|おすすめ)\]/)
+    if (!m) return row
+    return `<tr class="pick">${inner.replace(/\[(基本|おすすめ)\]/g, '<span class="pick-tag">$1</span>')}</tr>`
+  })
   return { html, toc, hasMap: html.includes('class="map"') }
 }
 
@@ -132,13 +176,12 @@ export function renderMarkdown(md: string): string {
   return renderDoc(md).html
 }
 
-/** 目次(h2 のみ。h3 は多すぎるので出さない) */
-export function renderToc(toc: TocItem[]): string {
-  const items = toc.filter((t) => t.depth === 2)
-  if (items.length < 2) return ''
-  return `<nav class="toc" aria-label="目次"><p class="toc-title">この記事の内容</p><ol>${items
-    .map((t) => `<li><a href="#${escapeHtml(t.id)}">${escapeHtml(t.text)}</a></li>`)
-    .join('')}</ol></nav>`
+/** frontmatter の「a | b | c」を配列に */
+export function splitMeta(v: string | undefined): string[] {
+  return (v ?? '')
+    .split('|')
+    .map((s) => s.trim())
+    .filter(Boolean)
 }
 
 /** 地図(Leaflet + OpenStreetMap タイル)を動かす head/body 断片。地図があるページだけ読み込む */
