@@ -10,8 +10,6 @@
  *   ```map              … 地図(OpenStreetMap)。1行 = 「緯度,経度|ラベル|venue または station」
  *   ```numbers          … 数字を大きく並べる。1行 = 「数字|ラベル」
  *   ```facts            … 項目と値の一覧(dl)。1行 = 「項目|値」
- *   ```fails            … よくある失敗。1行 = 「見出し|説明」
- *   ```decision         … 判断チャート。1行 = 「条件|取る行動」
  *   ```sources          … 出典。1行 = 「ラベル|URL|補足」
  *   表のセルに [基本] / [おすすめ] と書くと、その行を強調しタグを付ける
  */
@@ -77,18 +75,6 @@ function renderFacts(text: string): string {
     .join('')}</dl>`
 }
 
-function renderFails(text: string): string {
-  return `<ol class="fails">${rows(text)
-    .map(([head = '', body = '']) => `<li><b>${escapeHtml(head)}</b>${escapeHtml(body)}</li>`)
-    .join('')}</ol>`
-}
-
-function renderDecision(text: string): string {
-  return `<ol class="decision">${rows(text)
-    .map(([cond = '', act = '']) => `<li><span class="d-if">${escapeHtml(cond)}</span><span class="d-then">${escapeHtml(act)}</span></li>`)
-    .join('')}</ol>`
-}
-
 function renderSources(text: string): string {
   return `<ul class="sources">${rows(text)
     .map(([label = '', url = '', note = '']) => {
@@ -135,8 +121,6 @@ marked.use({
       if (token.lang === 'map') return renderMap(token.text)
       if (token.lang === 'numbers') return renderNumbers(token.text)
       if (token.lang === 'facts') return renderFacts(token.text)
-      if (token.lang === 'fails') return renderFails(token.text)
-      if (token.lang === 'decision') return renderDecision(token.text)
       if (token.lang === 'sources') return renderSources(token.text)
       return `<pre><code>${escapeHtml(token.text)}</code></pre>\n`
     },

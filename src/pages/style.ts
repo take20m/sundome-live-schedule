@@ -230,17 +230,6 @@ export const ARTICLE_CSS = `
 .article dl.facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 20px; margin: 8px 0 16px; font-size: 15px; }
 .article dl.facts dt { color: var(--muted); font-weight: 500; }
 .article dl.facts dd { margin: 0; }
-/* 失敗 */
-.article .fails { margin: 8px 0 16px; padding: 0; list-style: none; counter-reset: f; }
-.article .fails li { position: relative; padding: 10px 0 10px 40px; border-bottom: 1px solid var(--outline-variant); counter-increment: f; margin: 0; }
-.article .fails li::before { content: counter(f, decimal-leading-zero); position: absolute; left: 0; top: 10px; font-family: Roboto, sans-serif; font-weight: 700; color: var(--yellow); font-size: 20px; line-height: 1.2; -webkit-text-stroke: .5px var(--primary); }
-.article .fails li b { display: block; }
-/* 判断チャート */
-.article .decision { margin: 8px 0 16px; padding: 0; list-style: none; }
-.article .decision li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--outline-variant); margin: 0; }
-.article .d-if { color: var(--on-surface-variant); }
-.article .d-if::before { content: "▸ "; color: var(--yellow); font-weight: 700; }
-.article .d-then { font-weight: 500; }
 /* 出典・最終確認 */
 .article .sources { font-size: 13.5px; }
 .article .foot-check { font-size: 12.5px; color: var(--muted); margin: 24px 0 0; }
@@ -263,6 +252,5 @@ export const ARTICLE_CSS = `
   .article figure.hero img { aspect-ratio: 16 / 9; }
   .article dl.facts { grid-template-columns: 1fr; gap: 0; }
   .article dl.facts dt { margin-top: 8px; }
-  .article .decision li { grid-template-columns: 1fr; gap: 2px; }
 }
 `

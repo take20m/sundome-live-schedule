@@ -105,8 +105,6 @@ describe('記事の独自記法', () => {
       '',
       '```numbers\n約1,400台|無料駐車場\n```',
       '```facts\nロッカー|30箱\n```',
-      '```fails\n見出し|説明\n```',
-      '```decision\n条件|行動\n```',
       '```sources\n会場公式|https://sundome.sankan.jp/|出典\n怪しい|javascript:x|捨てる\n```',
       '```map\n35.93,136.18|サンドーム福井|venue\n```',
       '',
@@ -123,8 +121,6 @@ describe('記事の独自記法', () => {
     expect(html).toContain('<aside class="callout callout-warn"><p class="callout-title">重要</p>')
     expect(html).toContain('<span class="n">約1,400台</span><span class="l">無料駐車場</span>')
     expect(html).toContain('<dl class="facts"><dt>ロッカー</dt><dd>30箱</dd></dl>')
-    expect(html).toContain('<ol class="fails"><li><b>見出し</b>説明</li></ol>')
-    expect(html).toContain('<span class="d-if">条件</span><span class="d-then">行動</span>')
     expect(html).toContain('<a href="https://sundome.sankan.jp/" rel="noopener" target="_blank">会場公式</a> — 出典')
     expect(html).not.toContain('javascript:')
     expect(html).toContain('<tr class="pick">')
