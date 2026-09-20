@@ -159,6 +159,8 @@ const md = (date: string) => {
 export type CardOptions = {
   /** 詳細ページで開いている公演日。指定すると詳細表示(リンク・会場・当日の強調)になる */
   focusDate?: string
+  /** 過去の公演ページ用。抽選は一覧せず件数だけにする */
+  compact?: boolean
 }
 
 /**
@@ -227,8 +229,11 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
   }
 
   const merged: MergedLottery[] = mergeLotteries(group)
-  const lots =
-    merged.length > 0
+  const lots = opts.compact
+    ? merged.length > 0
+      ? `<p class="lot-summary"><a href="/e/${escapeHtml(first.id)}">先行・抽選 ${merged.length} 件の記録</a></p>`
+      : ''
+    : merged.length > 0
       ? `<ul class="lots">${merged
           .map((m) => {
             const partial = m.dates.length < events.length
@@ -314,6 +319,7 @@ ${SITE_HEADER}
 ${renderDeadlines(events, now)}
 <div class="section"><h2>今後の公演</h2><span class="sup">${events.length} 公演</span></div>
 ${body}
+<p class="more"><a class="btn-text" href="/past">過去の公演を見る${iconSvg('arrow_forward')}</a></p>
 </main>
 ${SITE_FOOTER}
 ${COUNTDOWN_SCRIPT}

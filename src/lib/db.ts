@@ -40,6 +40,31 @@ export async function listEvents(db: D1Database, fromDate: string): Promise<Even
   return events.map((e) => ({ ...e, lotteries: byEvent.get(e.id) ?? [] }))
 }
 
+/** beforeDate (YYYY-MM-DD) より前の公演を、紐づく抽選と合わせて新しい順に返す(過去の公演ページ用) */
+export async function listPastEvents(db: D1Database, beforeDate: string): Promise<EventWithLotteries[]> {
+  const { results: events } = await db
+    .prepare('SELECT * FROM events WHERE date < ? ORDER BY date DESC')
+    .bind(beforeDate)
+    .all<EventRow>()
+  if (events.length === 0) return []
+  const { results: lotteries } = await db
+    .prepare(
+      `SELECT l.* FROM lotteries l
+       JOIN events e ON e.id = l.event_id
+       WHERE e.date < ?
+       ORDER BY l.starts_at ASC`,
+    )
+    .bind(beforeDate)
+    .all<LotteryRow>()
+  const byEvent = new Map<string, LotteryRow[]>()
+  for (const l of lotteries) {
+    const list = byEvent.get(l.event_id) ?? []
+    list.push(l)
+    byEvent.set(l.event_id, list)
+  }
+  return events.map((e) => ({ ...e, lotteries: byEvent.get(e.id) ?? [] }))
+}
+
 /** 公演詳細ページ用: 過去公演もIDで引ける */
 export async function getEventWithLotteries(
   db: D1Database,

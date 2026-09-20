@@ -4,12 +4,13 @@ import { handlePendingImages, handleSetImages } from './api/images'
 import { handleMissing } from './api/missing'
 import { handleUnknownHosts } from './api/unknown-hosts'
 import { buildRss } from './feeds/rss'
-import { getEventRun, listAllEventIds, listEvents, listRecentChanges, todayInJst } from './lib/db'
+import { getEventRun, listAllEventIds, listEvents, listPastEvents, listRecentChanges, todayInJst } from './lib/db'
 import { FAVICON_SVG } from './lib/icon'
 import { buildRobots, buildSitemap } from './lib/seo'
 import { renderAboutPage } from './pages/about'
 import { renderDetailPage } from './pages/detail'
 import { renderListPage } from './pages/list'
+import { renderPastPage } from './pages/past'
 import type { Bindings } from './types'
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -28,6 +29,12 @@ app.get('/e/:id', async (c) => {
   const run = await getEventRun(c.env.DB, id)
   if (!run) return c.notFound()
   return c.html(renderDetailPage(run, new Date(), siteUrl(c.req.url, `/e/${id}`)))
+})
+
+app.get('/past', async (c) => {
+  const now = new Date()
+  const events = await listPastEvents(c.env.DB, todayInJst(now))
+  return c.html(renderPastPage(events, now, siteUrl(c.req.url, '/past')))
 })
 
 app.get('/about', (c) => c.html(renderAboutPage(siteUrl(c.req.url, '/about'))))

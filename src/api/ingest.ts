@@ -446,7 +446,8 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
     //   ②期間付きの既存行は、今回の収集も期間情報を取れている場合のみ対象
     //   ③1回見落とされただけでは消さない。2回連続で現れなかった行だけ削除する
     //     (1回で消すと翌晩の再発見が「新規」通知になり、購読者に誤通知が飛ぶ)
-    if (ev.lotteries.length > 0) {
+    //   ④開催済みの公演では削除しない。受付はもう終わっており、どんな先行があったかの履歴として残す
+    if (!eventInPast && ev.lotteries.length > 0) {
       for (const row of existingLotRows) {
         if (incomingLotteryIds.has(row.id)) continue
         const rowHasPeriod = row.starts_at !== null || row.ends_at !== null

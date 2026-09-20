@@ -99,7 +99,7 @@ export function buildSitemap(siteUrl: string, lastmod: string, extraPaths: strin
   const url = (path: string) => `  <url><loc>${new URL(path, siteUrl).toString()}</loc><lastmod>${lastmod}</lastmod></url>`
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${['/', '/about', ...extraPaths].map(url).join('\n')}
+${['/', '/past', '/about', ...extraPaths].map(url).join('\n')}
 </urlset>
 `
 }

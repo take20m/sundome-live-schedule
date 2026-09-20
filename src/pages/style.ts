@@ -12,7 +12,7 @@ export const SITE_HEADER = `<header class="appbar">
 </header>`
 
 export const SITE_FOOTER = `<footer class="site-f">
-<a href="/about">このサイトについて</a>
+<nav class="f-nav"><a href="/past">過去の公演</a><a href="/about">このサイトについて</a></nav>
 <span>© 2026 take20m</span>
 </footer>`
 
@@ -141,6 +141,10 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 /* フッター */
 .site-f { background: var(--surface-container); padding: 24px 16px 28px; display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--on-surface-variant); font-size: 12px; line-height: 16px; letter-spacing: .4px; }
 .site-f a { color: var(--on-surface); text-decoration: none; font-weight: 500; font-size: 14px; }
+.f-nav { display: flex; gap: 24px; }
+.more { margin: 24px 0 0 -12px; }
+.lot-summary { margin: 12px 0 0; padding-top: 12px; border-top: 1px solid var(--outline-variant); }
+.lot-summary a { text-decoration: none; font-weight: 500; }
 
 @media (max-width: 480px) {
   .card-main { padding: 12px; gap: 12px; }
