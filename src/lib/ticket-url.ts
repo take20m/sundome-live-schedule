@@ -104,7 +104,13 @@ export function isVenueHost(rawUrl: string | null | undefined): boolean {
   return host !== null && VENUE_HOSTS.some((h) => matchesHost(host, h))
 }
 
-/** サイトのトップページ(パスなし)か。公演を特定できないので tour_url としては無価値 */
+/** 既知プレイガイドのホストか(パスは見ない) */
+export function isPlayguideHost(rawUrl: string | null | undefined): boolean {
+  const host = hostOf(rawUrl)
+  return host !== null && (matchesHost(host, PIA_HOST) || PLAYGUIDE_HOSTS.some((h) => matchesHost(host, h)))
+}
+
+/** サイトのトップページ(パスなし)か */
 export function isTopPage(rawUrl: string | null | undefined): boolean {
   const u = parseHttpUrl(rawUrl)
   return u !== null && u.pathname.replace(/\//g, '') === ''

@@ -497,16 +497,32 @@ describe('ingest API', () => {
     it.each([
       ['会場公式ページ', 'https://sundome.sankan.jp/eventinfo/mc/'],
       ['会場公式(別ドメイン)', 'https://www.sundome.jp/event/2027/'],
-      ['サイトのトップページ', 'https://example.com/'],
+      ['公式サイトのトップ(artist_url と同じホスト)', 'https://www.example.com/'],
+      ['プレイガイドのトップ', 'https://eplus.jp/'],
       ['転売サイト', 'https://ticketjam.jp/magazine/x'],
     ])('%s は tour_url として捨てられ skipped に載る', async (_label, url) => {
-      const res = await post({ events: [{ ...base, date: '2027-09-02', tour_url: url }] })
+      const res = await post({
+        events: [{ ...base, date: '2027-09-02', artist_url: 'https://example.com/', tour_url: url }],
+      })
       const body = (await res.json()) as { skipped: string[] }
       expect(body.skipped.some((s) => s.includes('tour_url') && s.includes(url))).toBe(true)
       const row = await env.DB.prepare("SELECT tour_url FROM events WHERE id = 'ev-2027-09-02'").first<{
         tour_url: string | null
       }>()
       expect(row?.tour_url).toBe(null)
+    })
+
+    it('ツアー専用ドメインのトップページは tour_url として受け入れる', async () => {
+      // tour.mrchildren.jp / sekainoowari-tour.jp のような専用サイトはトップがツアーページそのもの
+      const res = await post({
+        events: [{ ...base, date: '2027-09-04', artist_url: 'https://www.example.com/', tour_url: 'https://tour.example-band.jp/' }],
+      })
+      const body = (await res.json()) as { skipped: string[] }
+      expect(body.skipped).toEqual([])
+      const row = await env.DB.prepare("SELECT tour_url FROM events WHERE id = 'ev-2027-09-04'").first<{
+        tour_url: string | null
+      }>()
+      expect(row?.tour_url).toBe('https://tour.example-band.jp/')
     })
 
     it('null の再送で既知の tour_url は消えない(ラチェット)。ただし会場ページが残っていれば消える', async () => {

@@ -1,7 +1,7 @@
 import type { Context } from 'hono'
 import { todayInJst } from '../lib/db'
 import { formatJst } from '../lib/format'
-import { isDeniedHost, isTopPage, isVenueHost } from '../lib/ticket-url'
+import { hostOf, isDeniedHost, isPlayguideHost, isTopPage, isVenueHost } from '../lib/ticket-url'
 import type { Bindings, Confidence, LotteryRow } from '../types'
 
 type IncomingLottery = {
@@ -70,18 +70,27 @@ function dropDenied(url: string | null | undefined): string | null {
 
 /**
  * tour_url は「アーティスト側の、その公演・ツアーのページ」。会場ページ(source_url と同じもの)や
- * 公式トップ(artist_url と同じもの)を入れられても「コンサート情報」の飛び先として意味がないので捨てる
+ * 公式トップ(artist_url と同じもの)を入れられても「コンサート情報」の飛び先として意味がないので捨てる。
+ *
+ * トップページ(パスなし)を捨てるのは、公式サイト(artist_url と同じホスト)かプレイガイドのときだけ。
+ * tour.mrchildren.jp や sekainoowari-tour.jp のようなツアー専用ドメインは、トップがそのままツアーページ
+ * (実データでこの2組を取りこぼしたので条件を緩めた)
  */
-function unfitTourUrlReason(url: string): string | null {
+function unfitTourUrlReason(url: string, artistUrl: string | null): string | null {
   if (isDeniedHost(url)) return '転売・まとめサイトのため破棄'
   if (isVenueHost(url)) return '会場公式ページのため tour_url としては破棄'
-  if (isTopPage(url)) return 'サイトのトップページのため tour_url としては破棄'
+  if (isTopPage(url)) {
+    if (isPlayguideHost(url)) return 'プレイガイドのトップページのため tour_url としては破棄'
+    if (artistUrl !== null && hostOf(url) === hostOf(artistUrl)) {
+      return '公式サイトのトップページ(artist_url と同じ)のため tour_url としては破棄'
+    }
+  }
   return null
 }
 
-function keepTourUrl(url: string | null, label: string, skipped: string[]): string | null {
+function keepTourUrl(url: string | null, artistUrl: string | null, label: string, skipped: string[]): string | null {
   if (url === null) return null
-  const reason = unfitTourUrlReason(url)
+  const reason = unfitTourUrlReason(url, artistUrl)
   if (reason) {
     skipped.push(`${label}: ${reason} (${url})`)
     return null
@@ -90,8 +99,8 @@ function keepTourUrl(url: string | null, label: string, skipped: string[]): stri
 }
 
 /** ラチェットで残る既存の tour_url にも同じ検査をかける(過去に入った不適切な値を消すため) */
-function dropUnfitTourUrl(url: string | null | undefined): string | null {
-  return url != null && unfitTourUrlReason(url) === null ? url : null
+function dropUnfitTourUrl(url: string | null | undefined, artistUrl: string | null): string | null {
+  return url != null && unfitTourUrlReason(url, artistUrl) === null ? url : null
 }
 
 /** 不正な項目は捨てる(SPEC: 誤表示より欠落を優先)。捨てた理由は skipped に積む */
@@ -134,6 +143,11 @@ function sanitize(raw: unknown, skipped: string[]): IncomingEvent[] {
         sold_out: lo.sold_out === true,
       })
     }
+    const artistUrl = keepUrl(
+      isUrlOrNull(ev.artist_url ?? null) ? ((ev.artist_url as string | null) ?? null) : null,
+      `events[${i}].artist_url`,
+      skipped,
+    )
     out.push({
       title: ev.title.trim(),
       artist: ev.artist.trim(),
@@ -145,13 +159,10 @@ function sanitize(raw: unknown, skipped: string[]): IncomingEvent[] {
         `events[${i}].source_url`,
         skipped,
       ),
-      artist_url: keepUrl(
-        isUrlOrNull(ev.artist_url ?? null) ? ((ev.artist_url as string | null) ?? null) : null,
-        `events[${i}].artist_url`,
-        skipped,
-      ),
+      artist_url: artistUrl,
       tour_url: keepTourUrl(
         isUrlOrNull(ev.tour_url ?? null) ? ((ev.tour_url as string | null) ?? null) : null,
+        artistUrl,
         `events[${i}].tour_url`,
         skipped,
       ),
@@ -316,7 +327,7 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
       // ラチェットに守られて消えない
       source_url: ev.source_url ?? dropDenied(existingEv?.source_url),
       artist_url: ev.artist_url ?? dropDenied(existingEv?.artist_url),
-      tour_url: ev.tour_url ?? dropUnfitTourUrl(existingEv?.tour_url),
+      tour_url: ev.tour_url ?? dropUnfitTourUrl(existingEv?.tour_url, ev.artist_url ?? existingEv?.artist_url ?? null),
       confidence: existingEv?.confidence === 'official' ? 'official' : ev.confidence,
     }
     // ハッシュ対象は「通知する価値のある変化」だけに絞る。
