@@ -6,7 +6,7 @@
 import { LOGO_SVG, iconSvg } from '../lib/icon'
 
 export const SITE_HEADER = `<header class="appbar">
-<a class="brand" href="/">${LOGO_SVG}<h1>サンドーム福井 ライブ情報</h1></a>
+<a class="brand" href="/">${LOGO_SVG}<h1>サンドーム福井 コンサート・ライブ情報</h1></a>
 <span class="spacer"></span>
 <a class="iconbtn" href="/feed.xml" aria-label="RSS フィード" title="RSS">${iconSvg('rss_feed')}</a>
 </header>`
@@ -103,7 +103,8 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .tile-m, .tile-w { font-size: 11px; line-height: 16px; letter-spacing: .5px; font-weight: 500; }
 .tile-soon { font-size: 11px; line-height: 16px; letter-spacing: .5px; font-weight: 700; color: var(--primary); }
 .card.is-today .tile-soon { color: var(--on-primary-container); }
-.tile-d { font-size: 32px; line-height: 40px; font-weight: 400; }
+.tile-d { font-size: 32px; line-height: 40px; font-weight: 400; white-space: nowrap; }
+.tile-d.range { font-size: 24px; letter-spacing: -.5px; }
 .card-body { flex: 1; min-width: 0; }
 .card-title { margin: 0; font-size: 22px; line-height: 28px; font-weight: 400; letter-spacing: 0; text-wrap: balance; }
 .card-title a { color: inherit; text-decoration: none; }
@@ -145,6 +146,7 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
   .card-main { padding: 12px; gap: 12px; }
   .tile { flex-basis: 60px; }
   .tile-d { font-size: 28px; line-height: 36px; }
+  .tile-d.range { font-size: 22px; }
   .card-title { font-size: 20px; line-height: 26px; }
   .cd { flex-basis: 6em; font-size: 14px; }
   .row { gap: 12px; padding: 12px; }

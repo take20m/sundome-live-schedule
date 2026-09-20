@@ -42,6 +42,12 @@ export function buildJsonLd(events: EventWithLotteries[], siteUrl: string): stri
       name: e.artist,
       ...(e.artist_url ? { sameAs: e.artist_url } : {}),
     },
+    // 主催者(プロモーター)は収集していないため、アーティスト公式を organizer として載せる
+    organizer: {
+      '@type': 'MusicGroup',
+      name: e.artist,
+      ...(e.artist_url ? { url: e.artist_url } : {}),
+    },
     ...(e.tour_url ?? e.source_url ? { url: e.tour_url ?? e.source_url } : {}),
     ...(e.image_url ? { image: [e.image_url] } : {}),
     offers: e.lotteries
@@ -70,7 +76,7 @@ export function buildJsonLd(events: EventWithLotteries[], siteUrl: string): stri
     '@graph': [
       {
         '@type': 'WebSite',
-        name: 'サンドーム福井 ライブ情報',
+        name: 'サンドーム福井 コンサート・ライブ情報',
         url: siteUrl,
       },
       ...items,
@@ -124,7 +130,7 @@ export function buildHeadMeta(opts: {
 <meta property="og:title" content="${t}">
 <meta property="og:description" content="${d}">
 <meta property="og:url" content="${canonical}">
-<meta property="og:site_name" content="サンドーム福井 ライブ情報">
+<meta property="og:site_name" content="サンドーム福井 コンサート・ライブ情報">
 <meta property="og:locale" content="ja_JP">
 <meta name="twitter:card" content="summary">`
 }

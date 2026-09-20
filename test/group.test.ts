@@ -98,6 +98,7 @@ describe('連日公演の表示', () => {
     expect(cards).toContain(`<span class="anchor" id="ev-${d2}"></span>`)
     expect(cards).toContain('開場 17:00 / 開演 18:00')
     expect(cards).toContain('開場 16:00 / 開演 17:00')
+    expect(cards).toContain('<span class="tile-d range">')
     // 両日共通の受付は1行、片日だけの受付には注記
     expect(cards.match(/オフィシャル先行/g)?.length).toBe(1)
     expect(cards).toContain(`${md(d2)} のみ`)

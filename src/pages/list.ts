@@ -255,7 +255,7 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
   <div class="card-main">
   <div class="tile">
     ${soonLabel ? `<span class="tile-soon">${soonLabel}</span>` : `<span class="tile-m">${escapeHtml(tileYm)}</span>`}
-    <span class="tile-d">${escapeHtml(tileD)}</span>
+    <span class="tile-d${multi ? ' range' : ''}">${escapeHtml(tileD)}</span>
     <span class="tile-w">${escapeHtml(tileW)}</span>
   </div>
   <div class="card-body">

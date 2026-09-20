@@ -116,6 +116,7 @@ describe('SEO', () => {
     const html = await res.text()
     expect(html).toContain('application/ld+json')
     expect(html).toContain('"@type":"MusicEvent"')
+    expect(html).toContain('"organizer":{"@type":"MusicGroup","name":"SAMPLE ARTIST","url":"https://example.com/artist"}')
     expect(html).toContain('property="og:title"')
     expect(html).toContain('rel="canonical"')
   })

@@ -32,7 +32,7 @@ export function buildRss(changes: ChangeRow[], siteUrl: string): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
   <channel>
-    <title>サンドーム福井 ライブ情報 更新</title>
+    <title>サンドーム福井 コンサート・ライブ情報 更新</title>
     <link>${escapeXml(siteUrl)}</link>
     <description>新規公演・チケット抽選情報の更新通知</description>
     <language>ja</language>
