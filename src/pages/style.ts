@@ -139,7 +139,6 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .btn-text:focus-visible, .iconbtn:focus-visible, .row:focus-visible, .card-title a:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 /* 固定ページ(about): 黄地に本文を直接置くと読みにくいので白カードに包む */
-.prose { max-width: 65ch; }
 .prose-card { background: var(--surface-container-low); border-radius: 16px; padding: 8px 24px 24px; box-shadow: var(--shadow-1); }
 @media (max-width: 480px) { .prose-card { padding: 4px 16px 16px; border-radius: 12px; } }
 .prose h2 { font-size: 16px; line-height: 24px; font-weight: 500; letter-spacing: .15px; margin: 32px 0 8px; }
