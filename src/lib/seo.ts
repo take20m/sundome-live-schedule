@@ -118,6 +118,11 @@ export function buildHeadMeta(opts: {
   canonical: string
   /** ページ固有の OG 画像(絶対 URL)。省略時は会場写真 */
   image?: { url: string; alt: string } | null
+  /**
+   * 検索インデックスに載せない。中身が定型文だけの薄いページ(解説のないアーティストページ)に付ける。
+   * follow は残すので、そこから公演詳細へのリンクはたどられる
+   */
+  noindex?: boolean
 }): string {
   const t = escapeHtml(opts.title)
   const d = escapeHtml(opts.description)
@@ -133,6 +138,7 @@ export function buildHeadMeta(opts: {
       : ''
   return `<title>${t}</title>
 <meta name="google-site-verification" content="Zqb1r-WsvcKYv5AbyATIlunK_PCtx7NgNemnjRPkXBg">
+${opts.noindex ? '<meta name="robots" content="noindex,follow">\n' : ''}
 <meta name="description" content="${d}">
 <meta name="theme-color" content="${BRAND_COLOR}">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">

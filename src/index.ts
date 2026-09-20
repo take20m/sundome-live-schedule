@@ -68,15 +68,14 @@ app.get('/feed.xml', async (c) => {
 
 app.get('/sitemap.xml', async (c) => {
   const ids = await listAllEventIds(c.env.DB)
-  const { results: artists } = await c.env.DB.prepare('SELECT DISTINCT artist FROM events ORDER BY artist').all<{ artist: string }>()
-  const artistNames = new Set([...artists.map((a) => a.artist), ...artistDocNames()])
+  // 解説のあるアーティストページだけを sitemap に載せる。定型文だけのページは noindex にしてある
   return c.body(
     buildSitemap(
       siteUrl(c.req.url),
       new Date().toISOString().slice(0, 10),
       [
         ...guideSlugs().map((s) => `/guide/${s}`),
-        ...[...artistNames].map((a) => `/a/${encodeURIComponent(a)}`),
+        ...artistDocNames().map((a) => `/a/${encodeURIComponent(a)}`),
         ...ids.map(({ id }) => `/e/${id}`),
       ],
     ),

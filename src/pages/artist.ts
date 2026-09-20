@@ -44,7 +44,14 @@ ${groupConsecutive(list)
     ? docToShellParts(doc)
     : { body: `<p>${escapeHtml(displayName)}のサンドーム福井公演の予定とチケット受付情報です。</p>`, hasMap: false }
   return renderArticle({
-    head: buildHeadMeta({ title, description, canonical, image: image ? { url: image, alt: displayName } : null }),
+    // 解説がないページは定型文と公演カードだけなので、検索には載せない(書いたら載る)
+    head: buildHeadMeta({
+      title,
+      description,
+      canonical,
+      image: image ? { url: image, alt: displayName } : null,
+      noindex: doc === null,
+    }),
     crumbs: [{ label: '公演一覧', href: '/' }, { label: 'アーティスト' }, { label: displayName }],
     kicker: 'アーティスト',
     title: displayName,

@@ -54,11 +54,16 @@ describe('アーティストページとガイド', () => {
     expect(html).toContain(`<link rel="canonical" href="https://example.com/a/${encodeURIComponent('あいみょん')}">`)
   })
 
-  it('解説なしでも公演があればページになる。公演も解説も無ければ 404', async () => {
+  it('解説なしでも公演があればページになるが、検索には載せない(noindex)', async () => {
     const ok = await SELF.fetch(`https://example.com/a/${encodeURIComponent('解説なし')}`)
     expect(ok.status).toBe(200)
-    expect(await ok.text()).toContain('NO DOC TOUR')
+    const html = await ok.text()
+    expect(html).toContain('NO DOC TOUR')
+    expect(html).toContain('<meta name="robots" content="noindex,follow">')
     expect((await SELF.fetch(`https://example.com/a/${encodeURIComponent('誰でもない')}`)).status).toBe(404)
+    // 解説のあるページは載せる
+    const withDoc = await (await SELF.fetch(`https://example.com/a/${encodeURIComponent('あいみょん')}`)).text()
+    expect(withDoc).not.toContain('noindex')
   })
 
   it('ガイドページが描画され、トップと sitemap からリンクされる', async () => {
@@ -74,6 +79,8 @@ describe('アーティストページとガイド', () => {
     const sitemap = await (await SELF.fetch('https://example.com/sitemap.xml')).text()
     expect(sitemap).toContain('/guide/access</loc>')
     expect(sitemap).toContain(`/a/${encodeURIComponent('あいみょん')}</loc>`)
+    // 解説のないアーティストは sitemap に載せない
+    expect(sitemap).not.toContain(`/a/${encodeURIComponent('解説なし')}</loc>`)
   })
 
   it('詳細ページのアーティスト名はアーティストページへリンクする', async () => {
