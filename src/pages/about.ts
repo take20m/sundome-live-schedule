@@ -21,6 +21,7 @@ ${head}
 <body>
 ${SITE_HEADER}
 <main class="prose">
+<div class="prose-card">
 <h2>このサイトについて</h2>
 <p>「サンドーム福井 コンサート・ライブ情報」は、<a href="https://sundome.sankan.jp/" rel="noopener" target="_blank">サンドーム福井</a>(福井県越前市)で開催されるライブ・コンサートの開催予定と、チケットの先行・抽選・一般発売の受付期間をまとめている非公式の個人運営サイトです。会場・アーティスト・チケット販売各社とは関係ありません。</p>
 <p>掲載情報は公式に発表された公開情報をもとに毎日更新していますが、誤り・遅れが生じる場合があります。<strong>チケットの申込前に必ず公式サイトをご確認ください</strong>。本サイトの情報に起因する損害について運営者は責任を負いません。掲載に問題がある場合はご連絡ください。すみやかに対応します。</p>
@@ -45,7 +46,8 @@ ${SITE_HEADER}
 <li>連絡先: <a href="mailto:contact@take20m.dev">contact@take20m.dev</a></li>
 </ul>
 
-<div class="back" style="margin-top:32px"><a class="btn-text" href="/">${iconSvg('arrow_back')}公演一覧へ戻る</a></div>
+</div>
+<div class="back" style="margin-top:16px"><a class="btn-text" href="/">${iconSvg('arrow_back')}公演一覧へ戻る</a></div>
 </main>
 ${SITE_FOOTER}
 </body>
