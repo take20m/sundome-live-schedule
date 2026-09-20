@@ -54,6 +54,13 @@ wrangler secret put INGEST_TOKEN           # openssl rand -hex 32 あたりで
 wrangler deploy
 ```
 
+`schema.sql` に列を足したときは、**Worker をデプロイする前に**本番 D1 へ列を追加します(新しい Worker の INSERT が新しい列を参照するため、順序が逆だと取り込みが失敗します)。`CREATE TABLE IF NOT EXISTS` は既存テーブルを変更しないので、`schema.sql` の再実行では列は増えません。
+
+```sh
+wrangler d1 execute sundome-reminder --remote --command "ALTER TABLE events ADD COLUMN tour_url TEXT"
+wrangler deploy
+```
+
 あとは GitHub リポジトリに Secrets として `CLAUDE_CODE_OAUTH_TOKEN`(`claude setup-token` で発行)と `INGEST_TOKEN`、Variables として `INGEST_URL`(デプロイした Worker のURL)を設定すれば、Actions の collect workflow が毎晩動きます。初回は workflow_dispatch で手動実行して確認するのがおすすめです。
 
 ## ライセンス

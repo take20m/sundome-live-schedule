@@ -41,7 +41,7 @@ export function buildJsonLd(events: EventWithLotteries[], siteUrl: string): stri
       name: e.artist,
       ...(e.artist_url ? { sameAs: e.artist_url } : {}),
     },
-    ...(e.source_url ? { url: e.source_url } : {}),
+    ...(e.tour_url ?? e.source_url ? { url: e.tour_url ?? e.source_url } : {}),
     offers: e.lotteries
       .filter((l) => l.url || l.starts_at || l.ends_at)
       .map((l) => {

@@ -54,7 +54,9 @@
 | artist | TEXT | アーティスト名 |
 | date | TEXT | 公演日(ISO 8601) |
 | open_time / start_time | TEXT | 開場・開演(nullable) |
-| source_url | TEXT | 情報源URL |
+| source_url | TEXT | 情報源URL(会場公式の公演ページ等) |
+| artist_url | TEXT | アーティスト公式サイトのトップ(nullable) |
+| tour_url | TEXT | アーティスト側のその公演・ツアーのページ。詳細の「コンサート情報」の飛び先。無ければ source_url で代用(nullable) |
 | confidence | TEXT | `official`(会場公式掲載) / `inferred`(逆引きのみ) |
 | updated_at | TEXT | 最終更新日時 |
 

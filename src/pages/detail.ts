@@ -25,6 +25,8 @@ export function renderDetailPage(e: EventWithLotteries, now: Date, canonical: st
   const times = [e.open_time && `開場 ${e.open_time}`, e.start_time && `開演 ${e.start_time}`]
     .filter(Boolean)
     .join(' / ')
+  // 「コンサート情報」はアーティスト側のツアーページへ。未収集なら情報源(会場ページ)で代用
+  const infoUrl = e.tour_url ?? e.source_url
   const head = buildHeadMeta({
     title: `${e.artist}「${e.title}」チケット・抽選情報(${formatDateJa(e.date)} サンドーム福井)`,
     description: metaDescription(e),
@@ -58,7 +60,7 @@ ${SITE_HEADER}
     ${times ? `<span class="times">${escapeHtml(times)}</span>` : ''}
     <span>サンドーム福井(福井県越前市)</span>
     ${e.artist_url ? `<a href="${escapeHtml(e.artist_url)}" rel="noopener" target="_blank">${escapeHtml(e.artist)} 公式サイト</a>` : ''}
-    ${e.source_url ? `<a href="${escapeHtml(e.source_url)}" rel="noopener" target="_blank">コンサート情報</a>` : ''}
+    ${infoUrl ? `<a href="${escapeHtml(infoUrl)}" rel="noopener" target="_blank">コンサート情報</a>` : ''}
   </div>
   ${
     e.lotteries.length > 0

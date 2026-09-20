@@ -1,7 +1,7 @@
 import type { Context } from 'hono'
 import { todayInJst } from '../lib/db'
 import { formatJst } from '../lib/format'
-import { isDeniedHost } from '../lib/ticket-url'
+import { isDeniedHost, isTopPage, isVenueHost } from '../lib/ticket-url'
 import type { Bindings, Confidence, LotteryRow } from '../types'
 
 type IncomingLottery = {
@@ -21,6 +21,7 @@ type IncomingEvent = {
   start_time: string | null
   source_url: string | null
   artist_url: string | null
+  tour_url: string | null
   confidence: Confidence
   lotteries: IncomingLottery[]
 }
@@ -65,6 +66,32 @@ function keepUrl(url: string | null, label: string, skipped: string[]): string |
  */
 function dropDenied(url: string | null | undefined): string | null {
   return url != null && !isDeniedHost(url) ? url : null
+}
+
+/**
+ * tour_url は「アーティスト側の、その公演・ツアーのページ」。会場ページ(source_url と同じもの)や
+ * 公式トップ(artist_url と同じもの)を入れられても「コンサート情報」の飛び先として意味がないので捨てる
+ */
+function unfitTourUrlReason(url: string): string | null {
+  if (isDeniedHost(url)) return '転売・まとめサイトのため破棄'
+  if (isVenueHost(url)) return '会場公式ページのため tour_url としては破棄'
+  if (isTopPage(url)) return 'サイトのトップページのため tour_url としては破棄'
+  return null
+}
+
+function keepTourUrl(url: string | null, label: string, skipped: string[]): string | null {
+  if (url === null) return null
+  const reason = unfitTourUrlReason(url)
+  if (reason) {
+    skipped.push(`${label}: ${reason} (${url})`)
+    return null
+  }
+  return url
+}
+
+/** ラチェットで残る既存の tour_url にも同じ検査をかける(過去に入った不適切な値を消すため) */
+function dropUnfitTourUrl(url: string | null | undefined): string | null {
+  return url != null && unfitTourUrlReason(url) === null ? url : null
 }
 
 /** 不正な項目は捨てる(SPEC: 誤表示より欠落を優先)。捨てた理由は skipped に積む */
@@ -121,6 +148,11 @@ function sanitize(raw: unknown, skipped: string[]): IncomingEvent[] {
       artist_url: keepUrl(
         isUrlOrNull(ev.artist_url ?? null) ? ((ev.artist_url as string | null) ?? null) : null,
         `events[${i}].artist_url`,
+        skipped,
+      ),
+      tour_url: keepTourUrl(
+        isUrlOrNull(ev.tour_url ?? null) ? ((ev.tour_url as string | null) ?? null) : null,
+        `events[${i}].tour_url`,
         skipped,
       ),
       confidence: isConfidence(ev.confidence) ? ev.confidence : 'inferred',
@@ -267,13 +299,14 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
 
     // ラチェット: 収集漏れ(null)で既知の値を上書きしない。official は inferred に格下げしない
     const existingEv = await db
-      .prepare('SELECT open_time, start_time, source_url, artist_url, confidence FROM events WHERE id = ?')
+      .prepare('SELECT open_time, start_time, source_url, artist_url, tour_url, confidence FROM events WHERE id = ?')
       .bind(eventId)
       .first<{
         open_time: string | null
         start_time: string | null
         source_url: string | null
         artist_url: string | null
+        tour_url: string | null
         confidence: Confidence
       }>()
     const evm = {
@@ -283,6 +316,7 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
       // ラチェットに守られて消えない
       source_url: ev.source_url ?? dropDenied(existingEv?.source_url),
       artist_url: ev.artist_url ?? dropDenied(existingEv?.artist_url),
+      tour_url: ev.tour_url ?? dropUnfitTourUrl(existingEv?.tour_url),
       confidence: existingEv?.confidence === 'official' ? 'official' : ev.confidence,
     }
     // ハッシュ対象は「通知する価値のある変化」だけに絞る。
@@ -304,15 +338,15 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
           : `公演更新: ${ev.artist}「${ev.title}」(${ev.date})`,
       db
         .prepare(
-          `INSERT INTO events (id, title, artist, date, open_time, start_time, source_url, artist_url, confidence, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `INSERT INTO events (id, title, artist, date, open_time, start_time, source_url, artist_url, tour_url, confidence, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(id) DO UPDATE SET
              title = excluded.title, artist = excluded.artist, date = excluded.date,
              open_time = excluded.open_time, start_time = excluded.start_time,
-             source_url = excluded.source_url, artist_url = excluded.artist_url,
+             source_url = excluded.source_url, artist_url = excluded.artist_url, tour_url = excluded.tour_url,
              confidence = excluded.confidence, updated_at = excluded.updated_at`,
         )
-        .bind(eventId, ev.title, ev.artist, ev.date, evm.open_time, evm.start_time, evm.source_url, evm.artist_url, evm.confidence, nowIso),
+        .bind(eventId, ev.title, ev.artist, ev.date, evm.open_time, evm.start_time, evm.source_url, evm.artist_url, evm.tour_url, evm.confidence, nowIso),
       nowIso,
       batch,
       // 開催済みの公演はサイトに表示されないため、通知もしない

@@ -476,6 +476,61 @@ describe('ingest API', () => {
     expect(evRow?.source_url).toBe(null)
   })
 
+  describe('tour_url(アーティスト側のツアーページ)', () => {
+    const base = {
+      title: 'TOUR URL TOUR',
+      artist: 'ツアーページ',
+      confidence: 'official',
+      lotteries: [],
+    }
+
+    it('公式サイトのツアーページは記録される', async () => {
+      await post({
+        events: [{ ...base, date: '2027-09-01', tour_url: 'https://example.com/live/tour2027' }],
+      })
+      const row = await env.DB.prepare("SELECT tour_url FROM events WHERE id = 'ev-2027-09-01'").first<{
+        tour_url: string | null
+      }>()
+      expect(row?.tour_url).toBe('https://example.com/live/tour2027')
+    })
+
+    it.each([
+      ['会場公式ページ', 'https://sundome.sankan.jp/eventinfo/mc/'],
+      ['会場公式(別ドメイン)', 'https://www.sundome.jp/event/2027/'],
+      ['サイトのトップページ', 'https://example.com/'],
+      ['転売サイト', 'https://ticketjam.jp/magazine/x'],
+    ])('%s は tour_url として捨てられ skipped に載る', async (_label, url) => {
+      const res = await post({ events: [{ ...base, date: '2027-09-02', tour_url: url }] })
+      const body = (await res.json()) as { skipped: string[] }
+      expect(body.skipped.some((s) => s.includes('tour_url') && s.includes(url))).toBe(true)
+      const row = await env.DB.prepare("SELECT tour_url FROM events WHERE id = 'ev-2027-09-02'").first<{
+        tour_url: string | null
+      }>()
+      expect(row?.tour_url).toBe(null)
+    })
+
+    it('null の再送で既知の tour_url は消えない(ラチェット)。ただし会場ページが残っていれば消える', async () => {
+      await post({
+        events: [{ ...base, date: '2027-09-03', tour_url: 'https://example.com/live/tour2027' }],
+      })
+      await post({ events: [{ ...base, date: '2027-09-03', tour_url: null }] })
+      const kept = await env.DB.prepare("SELECT tour_url FROM events WHERE id = 'ev-2027-09-03'").first<{
+        tour_url: string | null
+      }>()
+      expect(kept?.tour_url).toBe('https://example.com/live/tour2027')
+
+      // 検査導入前に会場ページが入ってしまった状態を再現 → 次の収集で消える
+      await env.DB.prepare(
+        "UPDATE events SET tour_url = 'https://sundome.sankan.jp/eventinfo/mc/' WHERE id = 'ev-2027-09-03'",
+      ).run()
+      await post({ events: [{ ...base, date: '2027-09-03', tour_url: null }] })
+      const dropped = await env.DB.prepare("SELECT tour_url FROM events WHERE id = 'ev-2027-09-03'").first<{
+        tour_url: string | null
+      }>()
+      expect(dropped?.tour_url).toBe(null)
+    })
+  })
+
   it('不正な日付の公演は破棄され skipped に載る', async () => {
     const res = await post({
       events: [

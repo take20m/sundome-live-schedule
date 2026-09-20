@@ -36,6 +36,7 @@ for (const [i, ev] of data.events.entries()) {
   check(ev.start_time == null || TIME_RE.test(ev.start_time), `events[${i}].start_time`)
   check(ev.source_url == null || URL_RE.test(ev.source_url), `events[${i}].source_url`)
   check(ev.artist_url == null || URL_RE.test(ev.artist_url), `events[${i}].artist_url`)
+  check(ev.tour_url == null || URL_RE.test(ev.tour_url), `events[${i}].tour_url`)
   check(['official', 'inferred'].includes(ev.confidence), `events[${i}].confidence`)
   check(Array.isArray(ev.lotteries), `events[${i}].lotteries`)
   for (const [j, l] of (ev.lotteries ?? []).entries()) {

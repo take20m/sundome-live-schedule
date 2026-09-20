@@ -92,6 +92,24 @@ export const DENIED_HOSTS: readonly string[] = [
   'livefans.jp', // ライブ情報まとめ
 ]
 
+/**
+ * 会場(サンドーム福井)公式サイト。events.source_url としては正しいが、
+ * tour_url(アーティスト側のページ)としては受け付けない。
+ * 収集 LLM が source_url をそのままコピーしてくる事故を ingest で止めるために使う
+ */
+export const VENUE_HOSTS: readonly string[] = ['sundome.jp', 'sundome.sankan.jp']
+
+export function isVenueHost(rawUrl: string | null | undefined): boolean {
+  const host = hostOf(rawUrl)
+  return host !== null && VENUE_HOSTS.some((h) => matchesHost(host, h))
+}
+
+/** サイトのトップページ(パスなし)か。公演を特定できないので tour_url としては無価値 */
+export function isTopPage(rawUrl: string | null | undefined): boolean {
+  const u = parseHttpUrl(rawUrl)
+  return u !== null && u.pathname.replace(/\//g, '') === ''
+}
+
 /** 申込先・情報源として記録してはいけないURLか */
 export function isDeniedHost(rawUrl: string | null | undefined): boolean {
   const host = hostOf(rawUrl)
