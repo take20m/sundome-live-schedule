@@ -140,7 +140,9 @@ describe('記事の独自記法', () => {
     expect(html).toContain('<span class="kicker">会場ガイド</span>')
     expect(html).toContain('<h1 class="title">サンドーム福井への行き方と、帰りで困らないための準備</h1>')
     expect(html).toContain('<p class="lead">')
-    expect(html).toContain('確認元 <b>会場公式サイト・FAQ、ハピラインふくい</b>')
+    expect(html).toContain('確認元 <b>会場公式サイト・FAQ、ハピラインふくい、編集者の来場(2026年8月)</b>')
+    // 実際に行って確かめたことは現地メモ枠で公開情報と区別する
+    expect(html).toContain('<aside class="callout callout-field"><p class="callout-title">現地メモ(2026年8月・編集者)</p>')
     expect(html).toContain('<section class="verdict"><h2>まず結論</h2><ol><li><strong>初めてなら鯖江駅から徒歩約20分</strong>')
     expect(html).toContain('<figure class="hero">')
     expect(html).toContain('leaflet.min.js')
