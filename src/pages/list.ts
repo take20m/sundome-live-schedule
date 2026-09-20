@@ -2,6 +2,8 @@ import { isRestrictedLottery } from '../lib/audience'
 import { todayInJst } from '../lib/db'
 import type { EventWithLotteries } from '../lib/db'
 import { formatJst } from '../lib/format'
+import { groupConsecutive, mergeLotteries } from '../lib/group'
+import type { EventGroup, MergedLottery } from '../lib/group'
 import { escapeHtml } from '../lib/html'
 import { iconSvg } from '../lib/icon'
 import { buildHeadMeta, buildJsonLd, buildMetaDescription } from '../lib/seo'
@@ -124,7 +126,8 @@ ${items}
 </div>`
 }
 
-export function renderLottery(l: LotteryRow, now: Date): string {
+/** 抽選 1 行。note は連結カードで一部の公演日にしか紐づかない受付への注記("10/4 のみ") */
+export function renderLottery(l: LotteryRow, now: Date, note = ''): string {
   const status = lotteryStatus(l, now)
   const period =
     l.starts_at || l.ends_at ? `${formatJst(l.starts_at)} 〜 ${formatJst(l.ends_at)}` : '期間未確認'
@@ -135,41 +138,86 @@ export function renderLottery(l: LotteryRow, now: Date): string {
     status === 'open' && isPurchasePage(url)
       ? `<a href="${escapeHtml(url)}" rel="noopener" target="_blank">${escapeHtml(l.name)}</a>`
       : escapeHtml(l.name)
-  return `<li class="lot lot-${status}">${statusChip(status)}<span class="lot-name">${name}</span><span class="lot-period">${escapeHtml(period)}</span></li>`
+  const noteHtml = note ? `<span class="lot-note">${escapeHtml(note)}</span>` : ''
+  return `<li class="lot lot-${status}">${statusChip(status)}<span class="lot-name">${name}</span>${noteHtml}<span class="lot-period">${escapeHtml(period)}</span></li>`
 }
 
 const SOON_LABEL = ['本日公演', '明日公演', '明後日公演']
 
+/** "10/3(土)" */
+function dayLabel(date: string): string {
+  const [y, m, d] = date.split('-').map(Number)
+  if (!y || !m || !d) return date
+  return `${m}/${d}(${WEEKDAYS_JA[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]})`
+}
+
+const md = (date: string) => {
+  const [, m, d] = date.split('-').map(Number)
+  return `${m}/${d}`
+}
+
+export type CardOptions = {
+  /** 詳細ページで開いている公演日。指定すると詳細表示(リンク・会場・当日の強調)になる */
+  focusDate?: string
+}
+
 /**
- * 公演カード。一覧と詳細で共用する。
- * detail=true のとき: タイトルをリンクにせず、日付・会場・公式サイト/コンサート情報のリンクを出す
+ * 公演カード。連日公演は 1 グループ = 1 枚で、一覧と詳細で共用する。
+ * カードの id は初日の公演 ID。2 日目以降は空アンカーを置き、/#ev-<日付> のどれからでも着地できるようにする
  */
-export function renderEventCard(e: EventWithLotteries, now: Date, detail = false): string {
-  const hasOpen = e.lotteries.some((l) => lotteryStatus(l, now) === 'open')
-  const daysAway = Math.round((Date.parse(e.date) - Date.parse(todayInJst(now))) / 86400000)
-  const soonLabel = daysAway >= 0 && daysAway <= 2 ? SOON_LABEL[daysAway] : null
-  const isToday = daysAway === 0
-  const times = [e.open_time && `開場 ${e.open_time}`, e.start_time && `開演 ${e.start_time}`]
-    .filter(Boolean)
-    .join(' / ')
-  const d = dateParts(e.date)
+export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions = {}): string {
+  const { events, first, last } = group
+  const detail = opts.focusDate !== undefined
+  const focus = events.find((e) => e.date === opts.focusDate) ?? first
+  const multi = events.length > 1
+  const hasOpen = events.some((e) => e.lotteries.some((l) => lotteryStatus(l, now) === 'open'))
+
+  const today = todayInJst(now)
+  const daysAway = (e: EventWithLotteries) => Math.round((Date.parse(e.date) - Date.parse(today)) / 86400000)
+  // 「本日/明日/明後日」は区間内で今日以降の直近の日で判定する
+  const upcoming = events.find((e) => daysAway(e) >= 0) ?? last
+  const da = daysAway(upcoming)
+  const soonLabel = da >= 0 && da <= 2 ? SOON_LABEL[da] : null
+  const isToday = events.some((e) => daysAway(e) === 0)
+
+  const f = dateParts(first.date)
+  const l = dateParts(last.date)
+  const tileYm = multi && f.ym !== l.ym ? `${f.ym}–${l.ym.slice(5)}` : f.ym
+  const tileD = multi ? `${f.d}–${l.d}` : f.d
+  const tileW = multi ? events.map((e) => dateParts(e.date).dw).join('·') : f.dw
 
   const title = detail
-    ? escapeHtml(e.artist)
-    : `<a href="/e/${escapeHtml(e.id)}">${escapeHtml(e.artist)}</a>`
-  const meta = [
-    detail ? `<span class="meta-item">${escapeHtml(formatDateJa(e.date))}</span>` : '',
-    times ? `<span class="meta-item">${iconSvg('schedule')}${escapeHtml(times)}</span>` : '',
-    detail ? `<span class="meta-item">${iconSvg('place')}サンドーム福井(福井県越前市)</span>` : '',
-  ].join('')
+    ? escapeHtml(first.artist)
+    : `<a href="/e/${escapeHtml(first.id)}">${escapeHtml(first.artist)}</a>`
+
+  const timesOf = (e: EventWithLotteries) =>
+    [e.open_time && `開場 ${e.open_time}`, e.start_time && `開演 ${e.start_time}`].filter(Boolean).join(' / ')
+  let schedule = ''
+  if (multi || detail) {
+    // 日ごとに開場・開演を並べる(同一ツアーでも曜日で時刻が違う)。詳細では開いている日を強調
+    schedule = `<div class="days">${events
+      .map((e) => {
+        const t = timesOf(e)
+        const isFocus = detail && e.date === focus.date
+        const tag = isFocus && multi ? '<span class="day-tag">このページの公演日</span>' : ''
+        return `<span class="meta-item day${isFocus ? ' day-focus' : ''}">${iconSvg('schedule')}<span>${escapeHtml(dayLabel(e.date))}${t ? ` ${escapeHtml(t)}` : ''}</span>${tag}</span>`
+      })
+      .join('')}</div>`
+  } else {
+    const t = timesOf(first)
+    schedule = t ? `<div class="meta"><span class="meta-item">${iconSvg('schedule')}${escapeHtml(t)}</span></div>` : ''
+  }
+  const venue = detail
+    ? `<div class="meta"><span class="meta-item">${iconSvg('place')}サンドーム福井(福井県越前市)</span></div>`
+    : ''
 
   let actions = ''
   if (detail) {
     // 「コンサート情報」はアーティスト側のツアーページへ。未収集なら情報源(会場ページ)で代用
-    const infoUrl = e.tour_url ?? e.source_url
+    const infoUrl = focus.tour_url ?? focus.source_url
     const links = [
-      e.artist_url
-        ? `<a class="btn-text" href="${escapeHtml(e.artist_url)}" rel="noopener" target="_blank">${escapeHtml(e.artist)} 公式サイト${iconSvg('open_in_new')}</a>`
+      focus.artist_url
+        ? `<a class="btn-text" href="${escapeHtml(focus.artist_url)}" rel="noopener" target="_blank">${escapeHtml(focus.artist)} 公式サイト${iconSvg('open_in_new')}</a>`
         : '',
       infoUrl
         ? `<a class="btn-text" href="${escapeHtml(infoUrl)}" rel="noopener" target="_blank">コンサート情報${iconSvg('open_in_new')}</a>`
@@ -178,21 +226,34 @@ export function renderEventCard(e: EventWithLotteries, now: Date, detail = false
     actions = links ? `<div class="actions">${links}</div>` : ''
   }
 
+  const merged: MergedLottery[] = mergeLotteries(group)
   const lots =
-    e.lotteries.length > 0
-      ? `<ul class="lots">${e.lotteries.map((l) => renderLottery(l, now)).join('')}</ul>`
+    merged.length > 0
+      ? `<ul class="lots">${merged
+          .map((m) => {
+            const partial = m.dates.length < events.length
+            return renderLottery(m, now, partial ? `${m.dates.map(md).join('・')} のみ` : '')
+          })
+          .join('')}</ul>`
       : `<p class="none">${detail ? 'チケット情報は未収集です(毎晩自動で再調査しています)' : 'チケット情報は未収集です'}</p>`
 
-  return `<article class="card${hasOpen ? ' is-open' : ''}${isToday ? ' is-today' : ''}" id="${escapeHtml(e.id)}">
+  const anchors = events
+    .slice(1)
+    .map((e) => `<span class="anchor" id="${escapeHtml(e.id)}"></span>`)
+    .join('')
+
+  return `<article class="card${hasOpen ? ' is-open' : ''}${isToday ? ' is-today' : ''}" id="${escapeHtml(first.id)}">
+  ${anchors}
   <div class="tile">
-    ${soonLabel ? `<span class="tile-soon">${soonLabel}</span>` : `<span class="tile-m">${escapeHtml(d.ym)}</span>`}
-    <span class="tile-d">${escapeHtml(d.d)}</span>
-    <span class="tile-w">${escapeHtml(d.dw)}</span>
+    ${soonLabel ? `<span class="tile-soon">${soonLabel}</span>` : `<span class="tile-m">${escapeHtml(tileYm)}</span>`}
+    <span class="tile-d">${escapeHtml(tileD)}</span>
+    <span class="tile-w">${escapeHtml(tileW)}</span>
   </div>
   <div class="card-body">
     <h3 class="card-title">${title}</h3>
-    <p class="card-sub">${escapeHtml(e.title)}</p>
-    ${meta ? `<div class="meta">${meta}</div>` : ''}
+    <p class="card-sub">${escapeHtml(first.title)}</p>
+    ${schedule}
+    ${venue}
     ${actions}
     ${lots}
   </div>
@@ -220,7 +281,7 @@ export const COUNTDOWN_SCRIPT = `<script>
 export function renderListPage(events: EventWithLotteries[], now: Date, canonical: string): string {
   const body =
     events.length > 0
-      ? `<div class="cards">\n${events.map((e) => renderEventCard(e, now)).join('\n')}\n</div>`
+      ? `<div class="cards">\n${groupConsecutive(events).map((g) => renderEventCard(g, now)).join('\n')}\n</div>`
       : '<p class="none">今後の公演情報はまだありません。</p>'
   const head = buildHeadMeta({
     title: 'サンドーム福井 ライブ予定・チケット抽選情報',

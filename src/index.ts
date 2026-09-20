@@ -3,7 +3,7 @@ import { handleIngest } from './api/ingest'
 import { handleMissing } from './api/missing'
 import { handleUnknownHosts } from './api/unknown-hosts'
 import { buildRss } from './feeds/rss'
-import { getEventWithLotteries, listAllEventIds, listEvents, listRecentChanges, todayInJst } from './lib/db'
+import { getEventRun, listAllEventIds, listEvents, listRecentChanges, todayInJst } from './lib/db'
 import { FAVICON_SVG } from './lib/icon'
 import { buildRobots, buildSitemap } from './lib/seo'
 import { renderAboutPage } from './pages/about'
@@ -24,9 +24,9 @@ app.get('/', async (c) => {
 app.get('/e/:id', async (c) => {
   const id = c.req.param('id')
   if (!/^ev-\d{4}-\d{2}-\d{2}$/.test(id)) return c.notFound()
-  const event = await getEventWithLotteries(c.env.DB, id)
-  if (!event) return c.notFound()
-  return c.html(renderDetailPage(event, new Date(), siteUrl(c.req.url, `/e/${id}`)))
+  const run = await getEventRun(c.env.DB, id)
+  if (!run) return c.notFound()
+  return c.html(renderDetailPage(run, new Date(), siteUrl(c.req.url, `/e/${id}`)))
 })
 
 app.get('/about', (c) => c.html(renderAboutPage(siteUrl(c.req.url, '/about'))))

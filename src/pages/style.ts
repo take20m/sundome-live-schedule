@@ -92,7 +92,7 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .card { display: flex; gap: 16px; padding: 16px; background: var(--surface-container-low); border-radius: 12px; box-shadow: var(--shadow-1); scroll-margin-top: 16px; }
 .card:hover { box-shadow: var(--shadow-2); }
 /* 詳細から /#ev-... で戻ってきた直後、該当カードを一瞬強調して位置を示す */
-.card:target { outline: 3px solid transparent; outline-offset: 3px; animation: card-arrive 2.4s ease-out; }
+.card:target, .card:has(.anchor:target) { outline: 3px solid transparent; outline-offset: 3px; animation: card-arrive 2.4s ease-out; }
 @keyframes card-arrive { 0%, 40% { outline-color: var(--primary); } 100% { outline-color: transparent; } }
 .tile { flex: 0 0 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; align-self: flex-start; padding: 10px 4px; border-radius: 8px; background: var(--surface-container-highest); color: var(--on-surface-variant); font-variant-numeric: tabular-nums; text-align: center; }
 .card.is-open .tile, .card.is-today .tile { background: var(--primary-container); color: var(--on-primary-container); }
@@ -112,6 +112,13 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .lot-closed .lot-name, .lot-closed .lot-period { color: var(--outline); }
 .lot-period { margin-left: auto; color: var(--on-surface-variant); font-size: 12px; line-height: 16px; letter-spacing: .4px; font-variant-numeric: tabular-nums; }
 .none { margin: 12px 0 0; color: var(--on-surface-variant); }
+/* 連日公演: 日ごとの開場・開演。詳細では開いている日を強調 */
+.days { display: grid; gap: 2px; margin-top: 8px; color: var(--on-surface-variant); }
+.day-focus { color: var(--on-surface); font-weight: 500; }
+.day-tag { margin-left: 8px; font-size: 11px; line-height: 16px; letter-spacing: .5px; font-weight: 500; color: var(--primary); }
+.lot-note { font-size: 12px; line-height: 16px; letter-spacing: .4px; color: var(--on-surface-variant); }
+/* 2日目以降の /#ev-<日付> 着地点。カード内の先頭に置き、カード自身がスクロール先になる */
+.anchor { display: block; height: 0; scroll-margin-top: 16px; }
 
 /* Text button(詳細のリンク・戻る) */
 .actions { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 0 -12px; }
@@ -143,6 +150,6 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
   .card, .row, .btn-text, .iconbtn { transition: background-color .15s, box-shadow .15s; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .card:target { animation: none; outline-color: var(--primary); }
+  .card:target, .card:has(.anchor:target) { animation: none; outline-color: var(--primary); }
 }
 `

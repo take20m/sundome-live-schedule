@@ -1,4 +1,4 @@
-import type { EventWithLotteries } from '../lib/db'
+import type { EventRun, EventWithLotteries } from '../lib/db'
 import { escapeHtml } from '../lib/html'
 import { iconSvg } from '../lib/icon'
 import { buildHeadMeta, buildJsonLd } from '../lib/seo'
@@ -11,7 +11,8 @@ function metaDescription(e: EventWithLotteries): string {
   return `${e.artist}のサンドーム福井公演「${e.title}」(${formatDateJa(e.date)})の${lotPart}を自動収集して掲載。締切カウントダウン付き。`
 }
 
-export function renderDetailPage(e: EventWithLotteries, now: Date, canonical: string): string {
+export function renderDetailPage(run: EventRun, now: Date, canonical: string): string {
+  const e = run.focus
   const head = buildHeadMeta({
     title: `${e.artist}「${e.title}」チケット・抽選情報(${formatDateJa(e.date)} サンドーム福井)`,
     description: metaDescription(e),
@@ -32,7 +33,7 @@ ${SITE_HEADER}
 <main>
 <div class="back"><a class="btn-text" href="/#${escapeHtml(e.id)}">${iconSvg('arrow_back')}公演一覧</a></div>
 <div class="cards">
-${renderEventCard(e, now, true)}
+${renderEventCard(run.group, now, { focusDate: e.date })}
 </div>
 </main>
 ${SITE_FOOTER}

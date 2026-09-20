@@ -1,4 +1,6 @@
 import type { EventRow, LotteryRow } from '../types'
+import type { EventGroup } from './group'
+import { groupConsecutive } from './group'
 
 export type EventWithLotteries = EventRow & { lotteries: LotteryRow[] }
 
@@ -50,6 +52,34 @@ export async function getEventWithLotteries(
     .bind(id)
     .all<LotteryRow>()
   return { ...event, lotteries }
+}
+
+/** 詳細ページ用: その公演と、同一アーティスト・同一タイトルで日付が連続する公演のまとまり */
+export type EventRun = { focus: EventWithLotteries; group: EventGroup }
+
+export async function getEventRun(db: D1Database, id: string): Promise<EventRun | null> {
+  const focus = await getEventWithLotteries(db, id)
+  if (!focus) return null
+  const { results: siblings } = await db
+    .prepare('SELECT * FROM events WHERE artist = ? ORDER BY date ASC')
+    .bind(focus.artist)
+    .all<EventRow>()
+  const ids = siblings.map((s) => s.id)
+  const { results: lotteries } = await db
+    .prepare(
+      `SELECT * FROM lotteries WHERE event_id IN (${ids.map(() => '?').join(',')}) ORDER BY starts_at ASC`,
+    )
+    .bind(...ids)
+    .all<LotteryRow>()
+  const byEvent = new Map<string, LotteryRow[]>()
+  for (const l of lotteries) {
+    const list = byEvent.get(l.event_id) ?? []
+    list.push(l)
+    byEvent.set(l.event_id, list)
+  }
+  const withLots = siblings.map((e) => ({ ...e, lotteries: byEvent.get(e.id) ?? [] }))
+  const group = groupConsecutive(withLots).find((g) => g.events.some((e) => e.id === id))
+  return { focus, group: group ?? { events: [focus], first: focus, last: focus } }
 }
 
 export async function listAllEventIds(db: D1Database): Promise<{ id: string; date: string }[]> {
