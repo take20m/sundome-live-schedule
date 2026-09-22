@@ -27,6 +27,7 @@ const DARK_TOKENS = `color-scheme: dark;
   --surface-container-low: #1C1C1C; --surface-container: #212121; --surface-container-highest: #2C2C2C;
   --on-surface: #E9E9E6; --on-surface-variant: #A3A29C; --outline: #8C8B85; --outline-variant: #2C2C2C;
   --brand-yellow: #F7D33B;
+  --tile-bar: #151515; --on-tile-bar: #E9E9E6;
   --error-container: #8C1D18; --on-error-container: #F9DEDC;`
 
 const DARK_SHEET_TOKENS = `--paper: #1A1A1A; --surface-container-low: #1C1C1C; --surface-container: #212121; --surface-container-highest: #2C2C2C; --on-surface: #E9E9E6; --on-surface-variant: #A3A29C; --outline-variant: #2C2C2C; --yellow-pale: #2A2614; --yellow-soft: #453D1E; --red-soft: #38201D; --blue-soft: #15263B; --blue: #8FB8F0; --red: #F2B8B5; --muted: #8C8B85;`
@@ -40,6 +41,8 @@ export const SITE_CSS = `
   --surface-container-low: #FFFFFF; --surface-container: #FAF9F6; --surface-container-highest: #F0EEE8;
   --on-surface: #1B1B18; --on-surface-variant: #5C594F; --outline: #8A8578; --outline-variant: #E6E3DC;
   --brand-yellow: #F7D33B;
+  /* 日付タイルの年月帯。ダークで --primary をそのまま使うと明るい青になり黄地と彩度が競合するので別トークンにする */
+  --tile-bar: #0B3D91; --on-tile-bar: #FFFFFF;
   --error-container: #F9DEDC; --on-error-container: #410E0B;
   --shadow-1: 0 1px 2px rgba(0,0,0,.30), 0 1px 3px 1px rgba(0,0,0,.15);
   --shadow-2: 0 1px 2px rgba(0,0,0,.30), 0 2px 6px 2px rgba(0,0,0,.15);
@@ -111,13 +114,21 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 /* 詳細から /#ev-... で戻ってきた直後、該当カードを一瞬強調して位置を示す */
 .card:target, .card:has(.anchor:target) { outline: 3px solid transparent; outline-offset: 3px; animation: card-arrive 2.4s ease-out; }
 @keyframes card-arrive { 0%, 40% { outline-color: var(--primary); } 100% { outline-color: transparent; } }
-.tile { flex: 0 0 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; align-self: flex-start; padding: 10px 4px; border-radius: 8px; background: var(--surface-container-highest); color: var(--on-surface-variant); font-variant-numeric: tabular-nums; text-align: center; }
+/* 日付タイル。年月を帯に切り離した券面。帯は「本日公演」の告知枠も兼ねる */
+.tile { flex: 0 0 72px; display: flex; flex-direction: column; align-items: center; align-self: flex-start; padding: 0; border-radius: 8px; overflow: hidden; background: var(--surface-container-highest); color: var(--on-surface-variant); font-variant-numeric: tabular-nums; text-align: center; }
 .card.is-open .tile, .card.is-today .tile { background: var(--primary-container); color: var(--on-primary-container); }
-.tile-m, .tile-w { font-size: 11px; line-height: 16px; letter-spacing: .5px; font-weight: 500; }
-.tile-soon { font-size: 11px; line-height: 16px; letter-spacing: .5px; font-weight: 700; color: var(--primary); }
-.card.is-today .tile-soon { color: var(--on-primary-container); }
-.tile-d { font-size: 32px; line-height: 40px; font-weight: 400; white-space: nowrap; }
-.tile-d.range { font-size: 24px; letter-spacing: -.5px; }
+.tile-bar { display: block; width: 100%; background: var(--tile-bar); color: var(--on-tile-bar); font-size: 11px; line-height: 20px; letter-spacing: .2px; font-weight: 500; white-space: nowrap; }
+.tile-bar.soon { font-weight: 700; }
+.tile-body { display: flex; flex-direction: column; align-items: center; padding: 6px 4px 9px; }
+.tile-d { font-size: 30px; line-height: 38px; font-weight: 400; white-space: nowrap; }
+/* 24px は「28・29」(2桁+中黒+2桁)が 72px の枠に収まる上限 */
+.tile-d.range { font-size: 24px; letter-spacing: 0; }
+.tile-w { font-size: 12px; line-height: 16px; letter-spacing: 0; font-weight: 500; white-space: nowrap; }
+/* 区切りは減光せずサイズだけ落とす(黄地の上で減光すると 4.5:1 を切る)。帯は紺地なので 70% でも 5.9:1 出る */
+.tile-d .sep { font-size: 13px; margin: 0 -2px; vertical-align: 2px; }
+.tile-d .sep-en { font-size: 16px; margin: 0 1px; vertical-align: 3px; }
+.tile-w .sep { font-size: 10px; margin: 0 -2px; }
+.tile-bar .sep-en { opacity: .7; }
 .card-body { flex: 1; min-width: 0; }
 .card-title { margin: 0; font-size: 22px; line-height: 28px; font-weight: 400; letter-spacing: 0; text-wrap: balance; }
 .card-title a { color: inherit; text-decoration: none; }
@@ -157,8 +168,14 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
   .appbar h1 span + span { font-size: 9.5px; letter-spacing: 3.4px; }
   .card-main { padding: 12px; gap: 12px; }
   .tile { flex-basis: 60px; }
-  .tile-d { font-size: 28px; line-height: 36px; }
-  .tile-d.range { font-size: 22px; }
+  /* 60px 幅では 2026.10–11 が 11px/字間.5px だと収まらないので帯を詰める */
+  .tile-bar { font-size: 10px; line-height: 18px; letter-spacing: 0; }
+  .tile-body { padding: 5px 3px 8px; }
+  .tile-d { font-size: 26px; line-height: 34px; }
+  .tile-d.range { font-size: 20px; }
+  .tile-d .sep { font-size: 11px; }
+  .tile-d .sep-en { font-size: 13px; }
+  .tile-w { font-size: 11px; }
   .card-title { font-size: 20px; line-height: 26px; }
   .cd { flex-basis: 6em; font-size: 14px; }
   .row { gap: 12px; padding: 12px; }
