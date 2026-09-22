@@ -106,6 +106,17 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .cards { display: grid; gap: 16px; }
 .card { display: flex; flex-direction: column; background: var(--surface-container-low); border-radius: 12px; box-shadow: var(--shadow-1); scroll-margin-top: 16px; overflow: hidden; }
 .card-main { display: flex; gap: 16px; padding: 16px; }
+/* 一覧・アーティストページ: タイトルのリンクを card-main いっぱいに引き伸ばして当たり判定にする */
+.card-main.tap { position: relative; cursor: pointer; }
+.card-main.tap .card-title a::after { content: ""; position: absolute; inset: 0; }
+/* 抽選リストは card-body の中、つまり引き伸ばしたリンクの下にある。ここだけ上に出さないと
+   受付中の外部チケットリンクが押せず、期間の日時も選択できなくなる */
+.card-main.tap .lots { position: relative; z-index: 1; cursor: auto; }
+/* 抽選リストの上にいるときはカードの当たり判定ではないので、色も付けない */
+.card-main.tap:hover:not(:has(.lots:hover)) { background: color-mix(in srgb, var(--on-surface) 8%, transparent); }
+/* フォーカスリングは文字ではなく実際の当たり判定に出す */
+.card-main.tap:has(.card-title a:focus-visible) { outline: 2px solid var(--primary); outline-offset: -2px; }
+.card-main.tap .card-title a:focus-visible { outline: none; }
 /* ツアービジュアル(M3 card with media)。16:9 に揃えて上辺に敷く */
 .card-media { display: block; aspect-ratio: 16 / 9; max-width: 100%; background: var(--surface-container-highest); }
 .card-media:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }

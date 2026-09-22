@@ -275,10 +275,14 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
       ? `<a class="card-media" href="${escapeHtml(mediaHref)}"${detail ? ' rel="noopener" target="_blank"' : ''}>${img}</a>`
       : `<div class="card-media">${img}</div>`
 
+  // 一覧とアーティストページでは card-main 全体を詳細への当たり判定にする(タイトルの <a> を CSS で引き伸ばす)。
+  // 抽選リストは外に置いたまま ─ 中の外部チケットリンクが <a> の入れ子になるのと、期間の日時が選択できなくなるのを避ける
+  const tap = !detail && !opts.compact
+
   return `<article class="card${hasOpen ? ' is-open' : ''}${isToday ? ' is-today' : ''}" id="${escapeHtml(first.id)}">
   ${anchors}
   ${media}
-  <div class="card-main">
+  <div class="card-main${tap ? ' tap' : ''}">
   <div class="tile">
     <span class="tile-bar${soonLabel ? ' soon' : ''}">${soonLabel ?? tileYm}</span>
     <span class="tile-body">

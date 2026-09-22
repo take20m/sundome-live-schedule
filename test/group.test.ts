@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import type { EventWithLotteries } from '../src/lib/db'
 import { groupConsecutive, mergeLotteries, nextDay } from '../src/lib/group'
 import { renderEventCard } from '../src/pages/list'
+import { SITE_CSS } from '../src/pages/style'
 import type { LotteryRow } from '../src/types'
 import { applySchema } from './helpers'
 
@@ -117,6 +118,40 @@ describe('連日公演の表示', () => {
     expect(html.match(/"@type":"MusicEvent"/g)?.length).toBe(1)
     expect(html).toContain(`"startDate":"${d2}T17:00:00+09:00"`)
     expect(html).toContain('href="https://example.com/live/two" rel="noopener" target="_blank">コンサート情報')
+  })
+})
+
+describe('カードの当たり判定', () => {
+  const now = new Date('2026-10-03T03:00:00Z')
+  const card = (opts?: Parameters<typeof renderEventCard>[2]) => {
+    const [g] = groupConsecutive([
+      ev('2026-11-07', 'A', 'T', [
+        lot('ev-2026-11-07', '一般発売', '2026-10-01T10:00:00+09:00', '2026-12-01T23:59:00+09:00', 'https://eplus.jp/x/'),
+      ]),
+    ])
+    return renderEventCard(g, now, opts)
+  }
+
+  it('一覧とアーティストページでは card-main 全体が詳細への当たり判定になる', () => {
+    const html = card()
+    expect(html).toContain('<div class="card-main tap">')
+    expect(html).toContain('<a href="/e/ev-2026-11-07">')
+  })
+
+  it('詳細ページと過去公演(compact)では広げない', () => {
+    expect(card({ focusDate: '2026-11-07' })).toContain('<div class="card-main">')
+    expect(card({ compact: true })).toContain('<div class="card-main">')
+  })
+
+  it('抽選リストは card-main の中にあるので、CSS で引き伸ばしたリンクより上に出す', () => {
+    // マークアップ上 lots は card-body の中 = 当たり判定の下。この 1 行が消えると
+    // 受付中の外部チケットリンクがオーバーレイに覆われて押せなくなる(ブラウザで実測して判明)
+    expect(card()).toContain('<ul class="lots">')
+    expect(SITE_CSS).toContain('.card-main.tap .lots { position: relative; z-index: 1;')
+  })
+
+  it('受付中の抽選は外部リンクのまま残る', () => {
+    expect(card()).toContain('<a href="https://eplus.jp/x/" rel="noopener" target="_blank">')
   })
 })
 
