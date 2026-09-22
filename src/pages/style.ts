@@ -21,13 +21,13 @@ export const SITE_FOOTER = `<footer class="site-f">
  * 書き写すと片方だけ古くなるので 1 か所にまとめて両方へ埋め込む。記事(.sheet)側も同じ理由で下に持つ
  */
 const DARK_TOKENS = `color-scheme: dark;
-  --primary: #9FC0FF; --on-primary: #002A73; --primary-container: #F7D33B; --on-primary-container: #1A1600;
+  --primary: #9FC0FF; --on-primary: #002A73; --primary-container: #6C5B13; --on-primary-container: #F2E7B0;
   --secondary-container: #12314F; --on-secondary-container: #BDD6FF;
   --surface: #121212;
   --surface-container-low: #1C1C1C; --surface-container: #212121; --surface-container-highest: #2C2C2C;
   --on-surface: #E9E9E6; --on-surface-variant: #A3A29C; --outline: #8C8B85; --outline-variant: #2C2C2C;
   --brand-yellow: #F7D33B;
-  --tile-bar: #151515; --on-tile-bar: #E9E9E6;
+  --tile-bar: #3A3216; --on-tile-bar: #E0D6A8;
   --error-container: #8C1D18; --on-error-container: #F9DEDC;`
 
 const DARK_SHEET_TOKENS = `--paper: #1A1A1A; --surface-container-low: #1C1C1C; --surface-container: #212121; --surface-container-highest: #2C2C2C; --on-surface: #E9E9E6; --on-surface-variant: #A3A29C; --outline-variant: #2C2C2C; --yellow-pale: #2A2614; --yellow-soft: #453D1E; --red-soft: #38201D; --blue-soft: #15263B; --blue: #8FB8F0; --red: #F2B8B5; --muted: #8C8B85;`
@@ -35,14 +35,16 @@ const DARK_SHEET_TOKENS = `--paper: #1A1A1A; --surface-container-low: #1C1C1C; -
 export const SITE_CSS = `
 :root {
   color-scheme: light;
-  --primary: #0B3D91; --on-primary: #FFFFFF; --primary-container: #F7D33B; --on-primary-container: #2A2100;
+  /* 日付タイルの地。--brand-yellow より淡い。彩度を落としても受付前(#F0EEE8)との明度比 1.21 を残してある
+     ─ 第2色覚では色相が頼りにならないので、明るさの差で受付中と受付前を分ける */
+  --primary: #0B3D91; --on-primary: #FFFFFF; --primary-container: #EADA9A; --on-primary-container: #2A2100;
   --secondary-container: #E4EAF6; --on-secondary-container: #0B3D91;
   --surface: #F7F6F2;
   --surface-container-low: #FFFFFF; --surface-container: #FAF9F6; --surface-container-highest: #F0EEE8;
   --on-surface: #1B1B18; --on-surface-variant: #5C594F; --outline: #8A8578; --outline-variant: #E6E3DC;
   --brand-yellow: #F7D33B;
-  /* 日付タイルの年月帯。ダークで --primary をそのまま使うと明るい青になり黄地と彩度が競合するので別トークンにする */
-  --tile-bar: #0B3D91; --on-tile-bar: #FFFFFF;
+  /* 年月帯。タイル地と明度を近づけて券面の主張を抑える。本日公演だけ .tile-bar.today が --primary を使う */
+  --tile-bar: #E8E4D8; --on-tile-bar: #4A4639;
   --error-container: #F9DEDC; --on-error-container: #410E0B;
   --shadow-1: 0 1px 2px rgba(0,0,0,.30), 0 1px 3px 1px rgba(0,0,0,.15);
   --shadow-2: 0 1px 2px rgba(0,0,0,.30), 0 2px 6px 2px rgba(0,0,0,.15);
@@ -130,16 +132,17 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .card.is-open .tile, .card.is-today .tile { background: var(--primary-container); color: var(--on-primary-container); }
 .tile-bar { display: block; width: 100%; background: var(--tile-bar); color: var(--on-tile-bar); font-size: 11px; line-height: 20px; letter-spacing: .2px; font-weight: 500; white-space: nowrap; }
 .tile-bar.soon { font-weight: 700; }
+/* 本日公演だけ帯を紺に。明日・明後日は太字のまま通常の帯色で、近さの順に段が付く */
+.tile-bar.today { background: var(--primary); color: var(--on-primary); }
 .tile-body { display: flex; flex-direction: column; align-items: center; padding: 6px 4px 9px; }
 .tile-d { font-size: 30px; line-height: 38px; font-weight: 400; white-space: nowrap; }
 /* 24px は「28・29」(2桁+中黒+2桁)が 72px の枠に収まる上限 */
 .tile-d.range { font-size: 24px; letter-spacing: 0; }
 .tile-w { font-size: 12px; line-height: 16px; letter-spacing: 0; font-weight: 500; white-space: nowrap; }
-/* 区切りは減光せずサイズだけ落とす(黄地の上で減光すると 4.5:1 を切る)。帯は紺地なので 70% でも 5.9:1 出る */
+/* 区切りは減光せずサイズだけ落とす。地が淡いと 45% で 2.4:1、70% でも 3.6:1 しか出ないため */
 .tile-d .sep { font-size: 13px; margin: 0 -2px; vertical-align: 2px; }
 .tile-d .sep-en { font-size: 16px; margin: 0 1px; vertical-align: 3px; }
 .tile-w .sep { font-size: 10px; margin: 0 -2px; }
-.tile-bar .sep-en { opacity: .7; }
 .card-body { flex: 1; min-width: 0; }
 .card-title { margin: 0; font-size: 22px; line-height: 28px; font-weight: 400; letter-spacing: 0; text-wrap: balance; }
 .card-title a { color: inherit; text-decoration: none; }
