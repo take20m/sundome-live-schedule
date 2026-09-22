@@ -194,10 +194,12 @@ describe('日付タイル', () => {
     expect(t).toContain('<span class="tile-w">土<span class="sep">・</span>日</span>')
   })
 
-  it('本日・明日・明後日は帯が告知に置き換わる', () => {
-    expect(tileOf(['2026-10-03', '2026-10-04'])).toContain('<span class="tile-bar soon">本日公演</span>')
+  it('本日・明日・明後日は帯が告知に置き換わり、本日だけ紺になる', () => {
+    expect(tileOf(['2026-10-03', '2026-10-04'])).toContain('<span class="tile-bar soon today">本日公演</span>')
     expect(tileOf(['2026-10-04'])).toContain('<span class="tile-bar soon">明日公演</span>')
     expect(tileOf(['2026-10-05'])).toContain('<span class="tile-bar soon">明後日公演</span>')
+    // 通常の帯は年月のまま。today は本日以外には付かない
+    expect(tileOf(['2026-11-07'])).toContain('<span class="tile-bar">2026.11</span>')
   })
 
   it('タイルは HTML を組み立てるので、日付が壊れていてもエスケープされる', () => {

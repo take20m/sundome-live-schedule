@@ -284,7 +284,7 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
   ${media}
   <div class="card-main${tap ? ' tap' : ''}">
   <div class="tile">
-    <span class="tile-bar${soonLabel ? ' soon' : ''}">${soonLabel ?? tileYm}</span>
+    <span class="tile-bar${soonLabel ? ' soon' : ''}${isToday ? ' today' : ''}">${soonLabel ?? tileYm}</span>
     <span class="tile-body">
       <span class="tile-d${multi ? ' range' : ''}">${tileD}</span>
       <span class="tile-w">${tileW}</span>
