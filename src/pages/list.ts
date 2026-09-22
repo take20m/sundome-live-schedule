@@ -274,7 +274,7 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
           .join('')}</ul>`
       : events[events.length - 1].date < todayInJst(now)
         ? '' // 開催済みの公演はもう収集しないので、「未収集」とは言わない
-        : `<p class="none">${detail ? 'チケット情報は未収集です(毎晩自動で再調査しています)' : 'チケット情報は未収集です'}</p>`
+        : `<p class="none">${detail ? 'チケット情報は未収集です(毎晩調べ直しています)' : 'チケット情報は未収集です'}</p>`
 
   const anchors = events
     .slice(1)

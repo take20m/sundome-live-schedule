@@ -9,7 +9,7 @@ import { SITE_CSS, SITE_FOOTER, SITE_HEADER } from './style'
 function metaDescription(e: EventWithLotteries, dates: string): string {
   const names = e.lotteries.map((l) => l.name).slice(0, 3)
   const lotPart = names.length > 0 ? `${names.join('、')}などの受付期間・申込先` : 'チケット受付情報'
-  return `${e.artist}のサンドーム福井公演「${e.title}」(${dates})の${lotPart}を自動収集して掲載。締切カウントダウン付き。`
+  return `${e.artist}のサンドーム福井公演「${e.title}」(${dates})の${lotPart}を毎日更新して掲載。締切カウントダウン付き。`
 }
 
 export function renderDetailPage(run: EventRun, now: Date, canonical: string): string {

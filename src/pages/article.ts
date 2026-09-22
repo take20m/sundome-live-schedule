@@ -1,7 +1,7 @@
 /**
  * 記事ページ(ガイド・アーティスト・about)の共通の器。
  * 一覧はカード UI なので黄地だが、記事は読み物なので白地・明朝見出しにし、黄は要点にだけ使う。
- * 「編集者が何を重要と判断したか」をレイアウトで見せる: リード文 → 更新日・確認元 → 写真 → まず結論 → 本文 → 最終確認日
+ * 「編集者が何を重要と判断したか」をレイアウトで見せる: リード文 → 更新日・確認元 → 写真 → 要点 → 本文 → 最終確認日
  */
 import type { Doc } from '../lib/content'
 import { MAP_HEAD, MAP_SCRIPT, renderDoc, splitMeta } from '../lib/content'
@@ -24,7 +24,7 @@ export type ArticleShell = {
   byline?: { updated?: string; checked?: string; editor?: string }
   /** 先頭の写真(HTML 断片) */
   hero?: string
-  /** まず結論(1 行ずつ) */
+  /** 要点(1 行ずつ) */
   verdict?: string[]
   /** 本文 HTML */
   body: string
@@ -52,7 +52,7 @@ export function renderArticle(a: ArticleShell): string {
       : ''
   const verdict =
     a.verdict && a.verdict.length > 0
-      ? `<section class="verdict"><h2>まず結論</h2><ol>${a.verdict.map((v) => `<li>${renderInline(v)}</li>`).join('')}</ol></section>`
+      ? `<section class="verdict"><h2>要点</h2><ol>${a.verdict.map((v) => `<li>${renderInline(v)}</li>`).join('')}</ol></section>`
       : ''
   return `<!doctype html>
 <html lang="ja">
