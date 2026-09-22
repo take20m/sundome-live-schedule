@@ -102,6 +102,10 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .chip-open { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
 .chip-upcoming { background: var(--secondary-container); border-color: transparent; color: var(--on-secondary-container); }
 .chip-soldout { background: var(--error-container); border-color: transparent; color: var(--on-error-container); }
+/* 過去の公演の年タブ */
+.years { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; }
+.years .chip { height: 32px; padding: 0 14px; font-size: 13px; text-decoration: none; }
+.years .chip:not(.chip-open):hover { background: color-mix(in srgb, var(--on-surface-variant) 8%, transparent); }
 .chip-closed, .chip-unknown { color: var(--outline); border-color: var(--outline-variant); }
 
 /* 公演カード: Elevated */
