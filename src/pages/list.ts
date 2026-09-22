@@ -13,16 +13,23 @@ import { isPurchasePage } from '../lib/ticket-url'
 import type { LotteryRow } from '../types'
 import { SITE_CSS, SITE_FOOTER, SITE_HEADER } from './style'
 
-const WEEKDAYS_EN = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 const WEEKDAYS_JA = ['日', '月', '火', '水', '木', '金', '土']
 
-/** 日付タイル用のパーツ { ym: '2027.02', d: '13', dw: 'SAT' } */
+/** 日付タイル用のパーツ { ym: '2027.02', d: '13', dw: '土' } */
 export function dateParts(date: string): { ym: string; d: string; dw: string } {
   const [y, m, day] = date.split('-').map(Number)
   if (!y || !m || !day) return { ym: '', d: date, dw: '' }
-  const dw = WEEKDAYS_EN[new Date(Date.UTC(y, m - 1, day)).getUTCDay()]
+  const dw = WEEKDAYS_JA[new Date(Date.UTC(y, m - 1, day)).getUTCDay()]
   return { ym: `${y}.${String(m).padStart(2, '0')}`, d: String(day), dw }
 }
+
+/**
+ * タイル内の区切り。連日は中黒(3・4)、月の範囲と3日以上は en dash(10–11 / 3–5)。
+ * 中黒は「並列」、en dash は「範囲」で意味が違うため字種を分ける。
+ * 色は落とさない ─ 黄地(--primary-container)の上で 4.5:1 を満たせないので、階層はサイズ差で作る
+ */
+const SEP_NAKAGURO = '<span class="sep">・</span>'
+const SEP_DASH = '<span class="sep-en">–</span>'
 
 /** "2026年10月3日(土)" */
 export function formatDateJa(date: string): string {
@@ -182,11 +189,16 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
   const soonLabel = da >= 0 && da <= 2 ? SOON_LABEL[da] : null
   const isToday = events.some((e) => daysAway(e) === 0)
 
+  // 以下 3 つは組み立て済みの HTML。dateParts は不正な日付でそのまま date を d に返すのでパーツ単位でエスケープする
   const f = dateParts(first.date)
   const l = dateParts(last.date)
-  const tileYm = multi && f.ym !== l.ym ? `${f.ym}–${l.ym.slice(5)}` : f.ym
-  const tileD = multi ? `${f.d}–${l.d}` : f.d
-  const tileW = multi ? events.map((e) => dateParts(e.date).dw).join('·') : f.dw
+  const tileYm =
+    multi && f.ym !== l.ym ? `${escapeHtml(f.ym)}${SEP_DASH}${escapeHtml(l.ym.slice(5))}` : escapeHtml(f.ym)
+  // 2 日は中黒で並列に。3 日以上は中黒だと「3 と 5」に読めるので範囲の en dash へ倒し、
+  // 曜日も中日を畳んで初日–最終日だけにする(全部並べると 72px / 60px の枠に収まらない)
+  const rangeSep = events.length === 2 ? SEP_NAKAGURO : SEP_DASH
+  const tileD = multi ? `${escapeHtml(f.d)}${rangeSep}${escapeHtml(l.d)}` : escapeHtml(f.d)
+  const tileW = multi ? `${escapeHtml(f.dw)}${rangeSep}${escapeHtml(l.dw)}` : escapeHtml(f.dw)
 
   // 一覧: カードタイトルは詳細へ。詳細: タイトルはアーティストページへ(そのアーティストの他公演と解説)
   const title = detail
@@ -268,9 +280,11 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
   ${media}
   <div class="card-main">
   <div class="tile">
-    ${soonLabel ? `<span class="tile-soon">${soonLabel}</span>` : `<span class="tile-m">${escapeHtml(tileYm)}</span>`}
-    <span class="tile-d${multi ? ' range' : ''}">${escapeHtml(tileD)}</span>
-    <span class="tile-w">${escapeHtml(tileW)}</span>
+    <span class="tile-bar${soonLabel ? ' soon' : ''}">${soonLabel ?? tileYm}</span>
+    <span class="tile-body">
+      <span class="tile-d${multi ? ' range' : ''}">${tileD}</span>
+      <span class="tile-w">${tileW}</span>
+    </span>
   </div>
   <div class="card-body">
     <h3 class="card-title">${title}</h3>

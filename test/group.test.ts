@@ -2,6 +2,7 @@ import { env, SELF } from 'cloudflare:test'
 import { beforeAll, describe, expect, it } from 'vitest'
 import type { EventWithLotteries } from '../src/lib/db'
 import { groupConsecutive, mergeLotteries, nextDay } from '../src/lib/group'
+import { renderEventCard } from '../src/pages/list'
 import type { LotteryRow } from '../src/types'
 import { applySchema } from './helpers'
 
@@ -98,7 +99,9 @@ describe('連日公演の表示', () => {
     expect(cards).toContain(`<span class="anchor" id="ev-${d2}"></span>`)
     expect(cards).toContain('開場 17:00 / 開演 18:00')
     expect(cards).toContain('開場 16:00 / 開演 17:00')
-    expect(cards).toContain('<span class="tile-d range">')
+    expect(cards).toContain(
+      `<span class="tile-d range">${Number(d1.slice(8, 10))}<span class="sep">・</span>${Number(d2.slice(8, 10))}</span>`,
+    )
     // 両日共通の受付は1行、片日だけの受付には注記
     expect(cards.match(/オフィシャル先行/g)?.length).toBe(1)
     expect(cards).toContain(`${md(d2)} のみ`)
@@ -114,5 +117,57 @@ describe('連日公演の表示', () => {
     expect(html.match(/"@type":"MusicEvent"/g)?.length).toBe(1)
     expect(html).toContain(`"startDate":"${d2}T17:00:00+09:00"`)
     expect(html).toContain('href="https://example.com/live/two" rel="noopener" target="_blank">コンサート情報')
+  })
+})
+
+describe('日付タイル', () => {
+  // JST 2026-10-03(土) 12:00。2026-10-03 が土曜、10-31 も土曜になる
+  const now = new Date('2026-10-03T03:00:00Z')
+  const tileOf = (dates: string[]) => {
+    const [g] = groupConsecutive(dates.map((d) => ev(d)))
+    const html = renderEventCard(g, now)
+    return html.slice(html.indexOf('<div class="tile">'), html.indexOf('<div class="card-body">'))
+  }
+
+  it('連日2日は日も曜日も中黒でつなぐ', () => {
+    const t = tileOf(['2026-11-07', '2026-11-08'])
+    expect(t).toContain('<span class="tile-bar">2026.11</span>')
+    expect(t).toContain('<span class="tile-d range">7<span class="sep">・</span>8</span>')
+    expect(t).toContain('<span class="tile-w">土<span class="sep">・</span>日</span>')
+  })
+
+  it('単日は区切りを出さない', () => {
+    const t = tileOf(['2026-11-07'])
+    expect(t).toContain('<span class="tile-bar">2026.11</span>')
+    expect(t).toContain('<span class="tile-d">7</span>')
+    expect(t).toContain('<span class="tile-w">土</span>')
+    expect(t).not.toContain('class="sep"')
+    expect(t).not.toContain('class="sep-en"')
+  })
+
+  it('3日以上は中黒だと「7と9」に読めるので範囲の en dash に倒す', () => {
+    const t = tileOf(['2026-11-07', '2026-11-08', '2026-11-09'])
+    expect(t).toContain('<span class="tile-d range">7<span class="sep-en">–</span>9</span>')
+    // 曜日も中日を畳む(土・日・月 は 72px / 60px の枠に収まらない)
+    expect(t).toContain('<span class="tile-w">土<span class="sep-en">–</span>月</span>')
+  })
+
+  it('月またぎは帯だけ en dash、日は中黒のまま', () => {
+    const t = tileOf(['2026-10-31', '2026-11-01'])
+    expect(t).toContain('<span class="tile-bar">2026.10<span class="sep-en">–</span>11</span>')
+    expect(t).toContain('<span class="tile-d range">31<span class="sep">・</span>1</span>')
+    expect(t).toContain('<span class="tile-w">土<span class="sep">・</span>日</span>')
+  })
+
+  it('本日・明日・明後日は帯が告知に置き換わる', () => {
+    expect(tileOf(['2026-10-03', '2026-10-04'])).toContain('<span class="tile-bar soon">本日公演</span>')
+    expect(tileOf(['2026-10-04'])).toContain('<span class="tile-bar soon">明日公演</span>')
+    expect(tileOf(['2026-10-05'])).toContain('<span class="tile-bar soon">明後日公演</span>')
+  })
+
+  it('タイルは HTML を組み立てるので、日付が壊れていてもエスケープされる', () => {
+    const t = tileOf(['2026-10-03"><script>alert(1)</script>'])
+    expect(t).not.toContain('<script>')
+    expect(t).toContain('&lt;script&gt;')
   })
 })
