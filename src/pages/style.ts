@@ -16,6 +16,21 @@ export const SITE_FOOTER = `<footer class="site-f">
 <span>© 2026 take20m</span>
 </footer>`
 
+/**
+ * ダーク時のトークン。OS 追従(@media)と手動切り替え([data-theme="dark"])の両方に同じ値が必要で、
+ * 書き写すと片方だけ古くなるので 1 か所にまとめて両方へ埋め込む。記事(.sheet)側も同じ理由で下に持つ
+ */
+const DARK_TOKENS = `color-scheme: dark;
+  --primary: #9FC0FF; --on-primary: #002A73; --primary-container: #F7D33B; --on-primary-container: #1A1600;
+  --secondary-container: #12314F; --on-secondary-container: #BDD6FF;
+  --surface: #121212;
+  --surface-container-low: #1C1C1C; --surface-container: #212121; --surface-container-highest: #2C2C2C;
+  --on-surface: #E9E9E6; --on-surface-variant: #A3A29C; --outline: #8C8B85; --outline-variant: #2C2C2C;
+  --brand-yellow: #F7D33B;
+  --error-container: #8C1D18; --on-error-container: #F9DEDC;`
+
+const DARK_SHEET_TOKENS = `--paper: #1A1A1A; --surface-container-low: #1C1C1C; --surface-container: #212121; --surface-container-highest: #2C2C2C; --on-surface: #E9E9E6; --on-surface-variant: #A3A29C; --outline-variant: #2C2C2C; --yellow-pale: #2A2614; --yellow-soft: #453D1E; --red-soft: #38201D; --blue-soft: #15263B; --blue: #8FB8F0; --red: #F2B8B5; --muted: #8C8B85;`
+
 export const SITE_CSS = `
 :root {
   color-scheme: light;
@@ -31,25 +46,11 @@ export const SITE_CSS = `
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --primary: #9FC0FF; --on-primary: #002A73; --primary-container: #F7D33B; --on-primary-container: #1A1600;
-    --secondary-container: #12314F; --on-secondary-container: #BDD6FF;
-    --surface: #121212;
-    --surface-container-low: #1C1C1C; --surface-container: #212121; --surface-container-highest: #2C2C2C;
-    --on-surface: #E9E9E6; --on-surface-variant: #A3A29C; --outline: #8C8B85; --outline-variant: #2C2C2C;
-    --brand-yellow: #F7D33B;
-    --error-container: #8C1D18; --on-error-container: #F9DEDC;
+  ${DARK_TOKENS}
   }
 }
 :root[data-theme="dark"] {
-  color-scheme: dark;
-  --primary: #9FC0FF; --on-primary: #002A73; --primary-container: #F7D33B; --on-primary-container: #1A1600;
-  --secondary-container: #12314F; --on-secondary-container: #BDD6FF;
-  --surface: #121212;
-  --surface-container-low: #1C1C1C; --surface-container: #212121; --surface-container-highest: #2C2C2C;
-  --on-surface: #E9E9E6; --on-surface-variant: #A3A29C; --outline: #8C8B85; --outline-variant: #2C2C2C;
-  --brand-yellow: #F7D33B;
-  --error-container: #8C1D18; --on-error-container: #F9DEDC;
+  ${DARK_TOKENS}
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--surface); color: var(--on-surface); font-family: Roboto, "Noto Sans JP", "Hiragino Sans", sans-serif; font-size: 14px; line-height: 20px; letter-spacing: .25px; -webkit-font-smoothing: antialiased; }
@@ -181,8 +182,8 @@ export const ARTICLE_CSS = `
 .article main.art { max-width: 760px; margin: 0 auto; padding: 0 16px 64px; }
 .article .sheet { --paper: #FFFFFF; --surface-container-low: #FFFFFF; --surface-container: #FAF9F6; --surface-container-highest: #F0EEE8; --on-surface: #1B1B18; --on-surface-variant: #5C594F; --outline-variant: #E6E3DC; --yellow: #F7D33B; --yellow-soft: #FFF3B3; --yellow-pale: #FFFBE6; --red: #B3261E; --red-soft: #FBE9E7; --blue: #1A5FB4; --blue-soft: #E8F0FB; --muted: #6F6C63;
   background: var(--paper); color: var(--on-surface); font-size: 16px; line-height: 1.9; border-radius: 4px; padding: 28px clamp(16px, 4vw, 44px) 40px; box-shadow: 0 1px 2px rgba(0,0,0,.14); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .article .sheet { --paper: #1A1A1A; --surface-container-low: #1C1C1C; --surface-container: #212121; --surface-container-highest: #2C2C2C; --on-surface: #E9E9E6; --on-surface-variant: #A3A29C; --outline-variant: #2C2C2C; --yellow-pale: #2A2614; --yellow-soft: #453D1E; --red-soft: #38201D; --blue-soft: #15263B; --blue: #8FB8F0; --red: #F2B8B5; --muted: #8C8B85; } }
-:root[data-theme="dark"] .article .sheet { --paper: #1A1A1A; --surface-container-low: #1C1C1C; --surface-container: #212121; --surface-container-highest: #2C2C2C; --on-surface: #E9E9E6; --on-surface-variant: #A3A29C; --outline-variant: #2C2C2C; --yellow-pale: #2A2614; --yellow-soft: #453D1E; --red-soft: #38201D; --blue-soft: #15263B; --blue: #8FB8F0; --red: #F2B8B5; --muted: #8C8B85; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .article .sheet { ${DARK_SHEET_TOKENS} } }
+:root[data-theme="dark"] .article .sheet { ${DARK_SHEET_TOKENS} }
 .article .crumb { font-size: 12px; color: var(--on-surface-variant); margin: 16px 0 12px; letter-spacing: .3px; }
 .article .crumb a { color: inherit; text-decoration: none; }
 .article .crumb .sep { margin: 0 6px; }
