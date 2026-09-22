@@ -19,11 +19,12 @@ export const SITE_FOOTER = `<footer class="site-f">
 export const SITE_CSS = `
 :root {
   color-scheme: light;
-  --primary: #0B3D91; --on-primary: #FFFFFF; --primary-container: #FFE45C; --on-primary-container: #3D3000;
-  --secondary-container: #D6E3FF; --on-secondary-container: #001A45;
-  --surface: #F7D33B;
-  --surface-container-low: #FFFFFF; --surface-container: #FFF8DC; --surface-container-highest: #FFF3B3;
-  --on-surface: #1A1F2B; --on-surface-variant: #4E4A3B; --outline: #8E8560; --outline-variant: #EADA8F;
+  --primary: #0B3D91; --on-primary: #FFFFFF; --primary-container: #F7D33B; --on-primary-container: #2A2100;
+  --secondary-container: #E4EAF6; --on-secondary-container: #0B3D91;
+  --surface: #F7F6F2;
+  --surface-container-low: #FFFFFF; --surface-container: #FAF9F6; --surface-container-highest: #F0EEE8;
+  --on-surface: #1B1B18; --on-surface-variant: #5C594F; --outline: #8A8578; --outline-variant: #E6E3DC;
+  --brand-yellow: #F7D33B;
   --error-container: #F9DEDC; --on-error-container: #410E0B;
   --shadow-1: 0 1px 2px rgba(0,0,0,.30), 0 1px 3px 1px rgba(0,0,0,.15);
   --shadow-2: 0 1px 2px rgba(0,0,0,.30), 0 2px 6px 2px rgba(0,0,0,.15);
@@ -31,21 +32,23 @@ export const SITE_CSS = `
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --primary: #B0C6FF; --on-primary: #002A73; --primary-container: #7A6400; --on-primary-container: #FFF3B3;
-    --secondary-container: #2F4370; --on-secondary-container: #D6E3FF;
-    --surface: #1C1A10;
-    --surface-container-low: #262318; --surface-container: #2B281B; --surface-container-highest: #3A362A;
-    --on-surface: #EDE7D6; --on-surface-variant: #CFC7A8; --outline: #98917A; --outline-variant: #4E4A3B;
+    --primary: #9FC0FF; --on-primary: #002A73; --primary-container: #F7D33B; --on-primary-container: #1A1600;
+    --secondary-container: #12314F; --on-secondary-container: #BDD6FF;
+    --surface: #121212;
+    --surface-container-low: #1C1C1C; --surface-container: #212121; --surface-container-highest: #2C2C2C;
+    --on-surface: #E9E9E6; --on-surface-variant: #A3A29C; --outline: #8C8B85; --outline-variant: #2C2C2C;
+    --brand-yellow: #F7D33B;
     --error-container: #8C1D18; --on-error-container: #F9DEDC;
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --primary: #B0C6FF; --on-primary: #002A73; --primary-container: #7A6400; --on-primary-container: #FFF3B3;
-  --secondary-container: #2F4370; --on-secondary-container: #D6E3FF;
-  --surface: #1C1A10;
-  --surface-container-low: #262318; --surface-container: #2B281B; --surface-container-highest: #3A362A;
-  --on-surface: #EDE7D6; --on-surface-variant: #CFC7A8; --outline: #98917A; --outline-variant: #4E4A3B;
+  --primary: #9FC0FF; --on-primary: #002A73; --primary-container: #F7D33B; --on-primary-container: #1A1600;
+  --secondary-container: #12314F; --on-secondary-container: #BDD6FF;
+  --surface: #121212;
+  --surface-container-low: #1C1C1C; --surface-container: #212121; --surface-container-highest: #2C2C2C;
+  --on-surface: #E9E9E6; --on-surface-variant: #A3A29C; --outline: #8C8B85; --outline-variant: #2C2C2C;
+  --brand-yellow: #F7D33B;
   --error-container: #8C1D18; --on-error-container: #F9DEDC;
 }
 * { box-sizing: border-box; }
@@ -54,12 +57,14 @@ a { color: var(--primary); }
 .ic { width: 18px; height: 18px; flex: none; }
 
 /* Top app bar (small) */
-/* 白の帯 + 上端に濃紺のライン(ヘッダー案「中間1」)。帯は全幅、中身はコンテンツ幅に揃える */
-.appbar { display: flex; align-items: center; gap: 4px; min-height: 64px; padding: 8px max(4px, calc((100% - 752px) / 2)) 8px max(16px, calc((100% - 728px) / 2)); background: var(--surface-container-low); border-top: 4px solid var(--primary); box-shadow: var(--shadow-1); position: relative; z-index: 1; }
+/* 白の帯 + 下端に黄のライン。濃紺と黄の二重ラインは圧が強いので黄 1 本に絞った(ヘッダー案 4)。
+   会場名を主、説明を従にして 2 段に置く。帯は全幅、中身はコンテンツ幅に揃える */
+.appbar { display: flex; align-items: center; gap: 4px; min-height: 64px; padding: 8px max(4px, calc((100% - 752px) / 2)) 8px max(16px, calc((100% - 728px) / 2)); background: var(--surface-container-low); border-bottom: 3px solid var(--brand-yellow); position: relative; z-index: 1; }
 .brand { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; min-width: 0; }
 .logo { width: 28px; height: 28px; flex: none; border-radius: 7px; }
-.appbar h1 { margin: 0; font-size: 22px; line-height: 28px; font-weight: 400; letter-spacing: 0; }
+.appbar h1 { margin: 0; display: flex; flex-direction: column; gap: 2px; font-size: 20px; line-height: 1.15; font-weight: 700; letter-spacing: 3px; }
 .appbar h1 span { white-space: nowrap; }
+.appbar h1 span + span { font-size: 10.5px; font-weight: 500; letter-spacing: 4.5px; color: var(--on-surface-variant); }
 .spacer { flex: 1; }
 .iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 24px; color: var(--on-surface-variant); text-decoration: none; }
 .iconbtn .ic { width: 24px; height: 24px; }
@@ -147,7 +152,8 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .lot-summary a { text-decoration: none; font-weight: 500; }
 
 @media (max-width: 480px) {
-  .appbar h1 { font-size: 18px; line-height: 24px; }
+  .appbar h1 { font-size: 17px; letter-spacing: 2px; }
+  .appbar h1 span + span { font-size: 9.5px; letter-spacing: 3.4px; }
   .card-main { padding: 12px; gap: 12px; }
   .tile { flex-basis: 60px; }
   .tile-d { font-size: 28px; line-height: 36px; }
@@ -173,10 +179,10 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 export const ARTICLE_CSS = `
 /* 地は一覧と同じ黄。本文だけ白い紙面(sheet)に載せる。角丸は小さく影も薄く、UI カードではなく紙に見せる */
 .article main.art { max-width: 760px; margin: 0 auto; padding: 0 16px 64px; }
-.article .sheet { --paper: #FFFFFF; --surface-container-low: #FFFFFF; --surface-container: #F7F5EE; --surface-container-highest: #EFEBDD; --on-surface: #1A1F2B; --on-surface-variant: #4E4A3B; --outline-variant: #E6E1CF; --yellow: #F7D33B; --yellow-soft: #FFF3B3; --yellow-pale: #FFFBE6; --red: #B3261E; --red-soft: #FBE9E7; --blue: #1A5FB4; --blue-soft: #E8F0FB; --muted: #7A7563;
+.article .sheet { --paper: #FFFFFF; --surface-container-low: #FFFFFF; --surface-container: #FAF9F6; --surface-container-highest: #F0EEE8; --on-surface: #1B1B18; --on-surface-variant: #5C594F; --outline-variant: #E6E3DC; --yellow: #F7D33B; --yellow-soft: #FFF3B3; --yellow-pale: #FFFBE6; --red: #B3261E; --red-soft: #FBE9E7; --blue: #1A5FB4; --blue-soft: #E8F0FB; --muted: #6F6C63;
   background: var(--paper); color: var(--on-surface); font-size: 16px; line-height: 1.9; border-radius: 4px; padding: 28px clamp(16px, 4vw, 44px) 40px; box-shadow: 0 1px 2px rgba(0,0,0,.14); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .article .sheet { --paper: #221F15; --surface-container-low: #262318; --surface-container: #2B281B; --surface-container-highest: #3A362A; --on-surface: #EDE7D6; --on-surface-variant: #CFC7A8; --outline-variant: #4E4A3B; --yellow-pale: #2E2A14; --yellow-soft: #4A4020; --red-soft: #3A1F1C; --blue-soft: #16273D; --blue: #8FB8F0; --red: #F2B8B5; --muted: #98917A; } }
-:root[data-theme="dark"] .article .sheet { --paper: #221F15; --surface-container-low: #262318; --surface-container: #2B281B; --surface-container-highest: #3A362A; --on-surface: #EDE7D6; --on-surface-variant: #CFC7A8; --outline-variant: #4E4A3B; --yellow-pale: #2E2A14; --yellow-soft: #4A4020; --red-soft: #3A1F1C; --blue-soft: #16273D; --blue: #8FB8F0; --red: #F2B8B5; --muted: #98917A; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .article .sheet { --paper: #1A1A1A; --surface-container-low: #1C1C1C; --surface-container: #212121; --surface-container-highest: #2C2C2C; --on-surface: #E9E9E6; --on-surface-variant: #A3A29C; --outline-variant: #2C2C2C; --yellow-pale: #2A2614; --yellow-soft: #453D1E; --red-soft: #38201D; --blue-soft: #15263B; --blue: #8FB8F0; --red: #F2B8B5; --muted: #8C8B85; } }
+:root[data-theme="dark"] .article .sheet { --paper: #1A1A1A; --surface-container-low: #1C1C1C; --surface-container: #212121; --surface-container-highest: #2C2C2C; --on-surface: #E9E9E6; --on-surface-variant: #A3A29C; --outline-variant: #2C2C2C; --yellow-pale: #2A2614; --yellow-soft: #453D1E; --red-soft: #38201D; --blue-soft: #15263B; --blue: #8FB8F0; --red: #F2B8B5; --muted: #8C8B85; }
 .article .crumb { font-size: 12px; color: var(--on-surface-variant); margin: 16px 0 12px; letter-spacing: .3px; }
 .article .crumb a { color: inherit; text-decoration: none; }
 .article .crumb .sep { margin: 0 6px; }
