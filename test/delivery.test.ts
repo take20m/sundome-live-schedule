@@ -134,6 +134,24 @@ describe('SEO', () => {
     expect(robots.status).toBe(200)
     expect(await robots.text()).toContain('Sitemap: https://example.com/sitemap.xml')
   })
+
+  it('開催済みの公演ページは noindex で、sitemap にも載らない', async () => {
+    const past = new Date(Date.now() - 400 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+    await env.DB.prepare(
+      `INSERT INTO events (id, title, artist, date, confidence, updated_at) VALUES (?, 'PAST TOUR', '過去バンド', ?, 'inferred', ?)`,
+    )
+      .bind(`ev-${past}`, past, new Date().toISOString())
+      .run()
+    const html = await (await SELF.fetch(`https://example.com/e/ev-${past}`)).text()
+    expect(html).toContain('<meta name="robots" content="noindex,follow">')
+    const xml = await (await SELF.fetch('https://example.com/sitemap.xml')).text()
+    expect(xml).not.toContain(`/e/ev-${past}</loc>`)
+    // 今後の公演はこれまでどおり sitemap に載り、noindex も付かない
+    const m = xml.match(/\/e\/(ev-\d{4}-\d{2}-\d{2})<\/loc>/)
+    expect(m).not.toBeNull()
+    const upcoming = await (await SELF.fetch(`https://example.com/e/${m![1]}`)).text()
+    expect(upcoming).not.toContain('noindex')
+  })
 })
 
 describe('アーティスト公式サイトリンク', () => {

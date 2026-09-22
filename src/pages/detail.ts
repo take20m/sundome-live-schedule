@@ -1,3 +1,4 @@
+import { todayInJst } from '../lib/db'
 import type { EventRun, EventWithLotteries } from '../lib/db'
 import { escapeHtml, safeHttpUrl } from '../lib/html'
 import { iconSvg } from '../lib/icon'
@@ -19,6 +20,8 @@ export function renderDetailPage(run: EventRun, now: Date, canonical: string): s
     canonical,
     // 共有カードにはツアービジュアルを出す。未取得なら会場写真(既定)
     image: safeHttpUrl(e.image_url) ? { url: e.image_url!, alt: `${e.artist}「${e.title}」` } : null,
+    // 開催済みの公演は受付情報を持たない薄いページになるので検索には出さない(/past からは辿れる)
+    noindex: e.date < todayInJst(now),
   })
   return `<!doctype html>
 <html lang="ja">

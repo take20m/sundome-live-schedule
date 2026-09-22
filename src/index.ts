@@ -67,8 +67,10 @@ app.get('/feed.xml', async (c) => {
 })
 
 app.get('/sitemap.xml', async (c) => {
-  const ids = await listAllEventIds(c.env.DB)
-  // 解説のあるアーティストページだけを sitemap に載せる。定型文だけのページは noindex にしてある
+  // 開催済みの公演ページは載せない(受付情報のない薄いページになるので noindex にしてある)。
+  // 解説のあるアーティストページだけを載せるのも同じ理由
+  const today = todayInJst(new Date())
+  const ids = (await listAllEventIds(c.env.DB)).filter(({ date }) => date >= today)
   return c.body(
     buildSitemap(
       siteUrl(c.req.url),

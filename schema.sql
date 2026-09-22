@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS events (
   artist_url  TEXT,                      -- アーティスト公式サイト(誰の公演か調べる導線)
   tour_url    TEXT,                      -- アーティスト側のその公演・ツアーのページ(「コンサート情報」の飛び先)
   image_url   TEXT,                      -- tour_url ページの og:image(直リンク表示。自前保存はしない)
-  image_manual INTEGER NOT NULL DEFAULT 0, -- 1 = 人が選んだ画像。og:image の取り直し(REFETCH_ALL)で上書きしない
+  image_manual INTEGER NOT NULL DEFAULT 0, -- 1 = 人が判断した画像(「画像なし」も含む)。og:image の取り直し(REFETCH_ALL)で上書きしない
   tour_manual  INTEGER NOT NULL DEFAULT 0, -- 1 = 人が調べたツアーページ。ingest の収集結果で上書きしない
   confidence  TEXT NOT NULL DEFAULT 'inferred' CHECK (confidence IN ('official', 'inferred')),
   updated_at  TEXT NOT NULL              -- ISO 8601
