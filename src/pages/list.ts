@@ -38,6 +38,25 @@ export function formatDateJa(date: string): string {
   return `${y}年${m}月${d}日(${WEEKDAYS_JA[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]})`
 }
 
+/**
+ * 連日 1 本ぶんの日付。title と meta description 用なので、2 日目以降は
+ * 重なっている年・月を落として読ませる。"2026年10月3日(土)・4日(日)" / 3 日以上は "〜"
+ */
+export function formatRunDatesJa(dates: string[]): string {
+  if (dates.length === 0) return ''
+  const sorted = [...dates].sort()
+  const first = sorted[0]
+  const last = sorted[sorted.length - 1]
+  if (first === last) return formatDateJa(first)
+  const [fy, fm] = first.split('-').map(Number)
+  const [ly, lm, ld] = last.split('-').map(Number)
+  const join = sorted.length === 2 ? '・' : '〜'
+  if (!fy || !fm || !ly || !lm || !ld) return `${formatDateJa(first)}${join}${formatDateJa(last)}`
+  const lw = WEEKDAYS_JA[new Date(Date.UTC(ly, lm - 1, ld)).getUTCDay()]
+  const tail = fy !== ly ? formatDateJa(last) : fm !== lm ? `${lm}月${ld}日(${lw})` : `${ld}日(${lw})`
+  return `${formatDateJa(first)}${join}${tail}`
+}
+
 const STATUS_LABEL: Record<LotteryStatus, string> = {
   open: '受付中',
   upcoming: '受付前',
@@ -209,13 +228,12 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
     [e.open_time && `開場 ${e.open_time}`, e.start_time && `開演 ${e.start_time}`].filter(Boolean).join(' / ')
   let schedule = ''
   if (multi || detail) {
-    // 日ごとに開場・開演を並べる(同一ツアーでも曜日で時刻が違う)。詳細では開いている日を強調
+    // 日ごとに開場・開演を並べる(同一ツアーでも曜日で時刻が違う)。
+    // 連日は 1 本のランを 1 ページとして扱うので、どの日で開いたかは強調しない
     schedule = `<div class="days">${events
       .map((e) => {
         const t = timesOf(e)
-        const isFocus = detail && e.date === focus.date
-        const tag = isFocus && multi ? '<span class="day-tag">このページの公演日</span>' : ''
-        return `<span class="meta-item day${isFocus ? ' day-focus' : ''}">${iconSvg('schedule')}<span>${escapeHtml(dayLabel(e.date))}${t ? ` ${escapeHtml(t)}` : ''}</span>${tag}</span>`
+        return `<span class="meta-item day">${iconSvg('schedule')}<span>${escapeHtml(dayLabel(e.date))}${t ? ` ${escapeHtml(t)}` : ''}</span></span>`
       })
       .join('')}</div>`
   } else {

@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import type { EventWithLotteries } from '../src/lib/db'
 import { groupConsecutive, mergeLotteries, nextDay } from '../src/lib/group'
 import { renderEventCard } from '../src/pages/list'
+import { renderDetailPage } from '../src/pages/detail'
 import { SITE_CSS } from '../src/pages/style'
 import type { LotteryRow } from '../src/types'
 import { applySchema } from './helpers'
@@ -108,16 +109,35 @@ describe('連日公演の表示', () => {
     expect(cards).toContain(`${md(d2)} のみ`)
   })
 
-  it('2日目の URL でも連結カードを出し、その日を強調する。canonical と JSON-LD はその日のもの', async () => {
+  it('2日目の URL でも連結カードを出す。canonical は初日、JSON-LD は全公演日', async () => {
     const html = await (await SELF.fetch(`https://example.com/e/ev-${d2}`)).text()
     expect(html).toContain(`href="/#ev-${d2}"`)
     expect(html).toContain('開場 17:00 / 開演 18:00')
-    expect(html).toMatch(new RegExp(`day day-focus">.*?${md(d2)}\\(.\\) 開場 16:00 / 開演 17:00`))
-    expect(html).toContain('このページの公演日')
-    expect(html).toContain(`<link rel="canonical" href="https://example.com/e/ev-${d2}">`)
-    expect(html.match(/"@type":"MusicEvent"/g)?.length).toBe(1)
+    expect(html).toContain('開場 16:00 / 開演 17:00')
+    // どの日で開いたかは強調しない(1 本のランが 1 ページ)
+    expect(html).not.toContain('このページの公演日')
+    expect(html).not.toContain('day-focus')
+    // 内容が同じ 2 URL なので評価を初日へ寄せる
+    expect(html).toContain(`<link rel="canonical" href="https://example.com/e/ev-${d1}">`)
+    expect(html.match(/"@type":"MusicEvent"/g)?.length).toBe(2)
+    expect(html).toContain(`"startDate":"${d1}T18:00:00+09:00"`)
     expect(html).toContain(`"startDate":"${d2}T17:00:00+09:00"`)
     expect(html).toContain('href="https://example.com/live/two" rel="noopener" target="_blank">コンサート情報')
+  })
+
+  it('連日の title と description は全公演日を名乗る(2日目で検索されても当たるように)', async () => {
+    const html = await (await SELF.fetch(`https://example.com/e/ev-${d1}`)).text()
+    const [, m1, day1] = d1.split('-').map(Number)
+    const [, m2, day2] = d2.split('-').map(Number)
+    const tail = m1 === m2 ? `${day2}日` : `${m2}月${day2}日`
+    expect(html).toMatch(new RegExp(`${m1}月${day1}日\\(.\\)・${tail}\\(.\\) サンドーム福井`))
+  })
+
+  it('sitemap は連日を初日 1 本だけ載せる(2日目は非正規 URL)', async () => {
+    const xml = await (await SELF.fetch('https://example.com/sitemap.xml')).text()
+    expect(xml).toContain(`<loc>https://example.com/e/ev-${d1}</loc>`)
+    expect(xml).not.toContain(`<loc>https://example.com/e/ev-${d2}</loc>`)
+    expect(xml).toContain(`<loc>https://example.com/e/ev-${d3}</loc>`)
   })
 })
 
@@ -152,6 +172,25 @@ describe('カードの当たり判定', () => {
 
   it('受付中の抽選は外部リンクのまま残る', () => {
     expect(card()).toContain('<a href="https://eplus.jp/x/" rel="noopener" target="_blank">')
+  })
+})
+
+describe('連日公演の noindex は最終日で決まる', () => {
+  // canonical を初日に寄せたので、初日基準のままだと 2 日目当日に
+  // 「正規 URL が noindex」になってランごと検索から消える
+  const run = () => {
+    const [g] = groupConsecutive([ev('2026-10-03'), ev('2026-10-04')])
+    return { focus: g.first, group: g }
+  }
+  const render = (nowIso: string) =>
+    renderDetailPage(run(), new Date(nowIso), 'https://example.com/e/ev-2026-10-03')
+
+  it('2日目当日は、初日が過ぎていても index する', () => {
+    expect(render('2026-10-04T03:00:00Z')).not.toContain('noindex') // JST 10/4 12:00
+  })
+
+  it('最終日を過ぎたら noindex', () => {
+    expect(render('2026-10-05T03:00:00Z')).toContain('content="noindex,follow"')
   })
 })
 

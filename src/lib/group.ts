@@ -31,25 +31,31 @@ export function nextDay(date: string): string {
   return d.toISOString().slice(0, 10)
 }
 
-/** 日付順に並べ、同一アーティスト・同一タイトルで日付が連続する公演を 1 グループにする */
-export function groupConsecutive(events: EventWithLotteries[]): EventGroup[] {
-  const sorted = [...events].sort((a, b) => a.date.localeCompare(b.date))
-  const groups: EventGroup[] = []
+/** グループ化に必要な最小の形。sitemap は抽選まで読まないのでこの 3 つだけで束ねられる */
+export type Groupable = { date: string; artist: string; title: string }
+
+/**
+ * 日付順に並べ、同一アーティスト・同一タイトルで日付が連続する行を 1 本のランにまとめる。
+ * canonical(初日) と sitemap が同じ規則で束ねる必要があるので、束ね方はここ 1 か所に置く
+ */
+export function groupRuns<T extends Groupable>(rows: T[]): T[][] {
+  const sorted = [...rows].sort((a, b) => a.date.localeCompare(b.date))
+  const runs: T[][] = []
   for (const e of sorted) {
-    const g = groups[groups.length - 1]
-    if (
-      g &&
-      norm(g.last.artist) === norm(e.artist) &&
-      norm(g.last.title) === norm(e.title) &&
-      nextDay(g.last.date) === e.date
-    ) {
-      g.events.push(e)
-      g.last = e
+    const run = runs[runs.length - 1]
+    const last = run?.[run.length - 1]
+    if (last && norm(last.artist) === norm(e.artist) && norm(last.title) === norm(e.title) && nextDay(last.date) === e.date) {
+      run.push(e)
     } else {
-      groups.push({ events: [e], first: e, last: e })
+      runs.push([e])
     }
   }
-  return groups
+  return runs
+}
+
+/** 日付順に並べ、同一アーティスト・同一タイトルで日付が連続する公演を 1 グループにする */
+export function groupConsecutive(events: EventWithLotteries[]): EventGroup[] {
+  return groupRuns(events).map((es) => ({ events: es, first: es[0], last: es[es.length - 1] }))
 }
 
 /**

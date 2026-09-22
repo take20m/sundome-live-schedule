@@ -6,6 +6,7 @@ import { handleUnknownHosts } from './api/unknown-hosts'
 import { buildRss } from './feeds/rss'
 import { getEventRun, listAllEventIds, listEvents, listEventsByArtist, listPastEvents, listRecentChanges, todayInJst } from './lib/db'
 import { artistDocNames, findArtistDoc, findGuideDoc, guideSlugs } from './lib/content'
+import { groupRuns } from './lib/group'
 import { FAVICON_SVG } from './lib/icon'
 import { buildRobots, buildSitemap } from './lib/seo'
 import { renderAboutPage } from './pages/about'
@@ -31,7 +32,8 @@ app.get('/e/:id', async (c) => {
   if (!/^ev-\d{4}-\d{2}-\d{2}$/.test(id)) return c.notFound()
   const run = await getEventRun(c.env.DB, id)
   if (!run) return c.notFound()
-  return c.html(renderDetailPage(run, new Date(), siteUrl(c.req.url, `/e/${id}`)))
+  // 連日は 2 日目以降も 200 で残しつつ、canonical は初日に寄せる(内容が同じ URL が並ぶため)
+  return c.html(renderDetailPage(run, new Date(), siteUrl(c.req.url, `/e/${run.group.first.id}`)))
 })
 
 app.get('/past', async (c) => {
@@ -68,9 +70,12 @@ app.get('/feed.xml', async (c) => {
 
 app.get('/sitemap.xml', async (c) => {
   // 開催済みの公演ページは載せない(受付情報のない薄いページになるので noindex にしてある)。
-  // 解説のあるアーティストページだけを載せるのも同じ理由
+  // 解説のあるアーティストページだけを載せるのも同じ理由。
+  // 連日は初日だけ ─ 2 日目以降は canonical を初日に向けており、非正規 URL は sitemap に入れない
   const today = todayInJst(new Date())
-  const ids = (await listAllEventIds(c.env.DB)).filter(({ date }) => date >= today)
+  const ids = groupRuns(await listAllEventIds(c.env.DB))
+    .filter((run) => run[run.length - 1].date >= today)
+    .map((run) => run[0])
   return c.body(
     buildSitemap(
       siteUrl(c.req.url),

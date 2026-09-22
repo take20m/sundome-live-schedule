@@ -128,10 +128,13 @@ export async function getEventRun(db: D1Database, id: string): Promise<EventRun 
   return { focus, group: group ?? { events: [focus], first: focus, last: focus } }
 }
 
-export async function listAllEventIds(db: D1Database): Promise<{ id: string; date: string }[]> {
+/** sitemap 用。連日を 1 本に束ねるので artist と title も要る(groupRuns の判定に使う) */
+export async function listAllEventIds(
+  db: D1Database,
+): Promise<{ id: string; date: string; artist: string; title: string }[]> {
   const { results } = await db
-    .prepare('SELECT id, date FROM events ORDER BY date ASC')
-    .all<{ id: string; date: string }>()
+    .prepare('SELECT id, date, artist, title FROM events ORDER BY date ASC')
+    .all<{ id: string; date: string; artist: string; title: string }>()
   return results
 }
 

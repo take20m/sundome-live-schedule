@@ -161,8 +161,6 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .none { margin: 12px 0 0; color: var(--on-surface-variant); }
 /* 連日公演: 日ごとの開場・開演。詳細では開いている日を強調 */
 .days { display: grid; gap: 2px; margin-top: 8px; color: var(--on-surface-variant); }
-.day-focus { color: var(--on-surface); font-weight: 500; }
-.day-tag { margin-left: 8px; font-size: 11px; line-height: 16px; letter-spacing: .5px; font-weight: 500; color: var(--primary); }
 .lot-note { font-size: 12px; line-height: 16px; letter-spacing: .4px; color: var(--on-surface-variant); }
 /* 2日目以降の /#ev-<日付> 着地点。カード内の先頭に置き、カード自身がスクロール先になる */
 .anchor { display: block; height: 0; scroll-margin-top: 16px; }
