@@ -135,6 +135,17 @@ describe('SEO', () => {
     expect(await robots.text()).toContain('Sitemap: https://example.com/sitemap.xml')
   })
 
+  it('アイコンは新しい URL(/icon.svg)と PNG を指し、旧 /favicon.svg も同じ画像を返す', async () => {
+    const html = await (await SELF.fetch('https://example.com/')).text()
+    expect(html).toContain('<link rel="icon" type="image/svg+xml" href="/icon.svg">')
+    expect(html).toContain('<link rel="apple-touch-icon" href="/apple-touch-icon.png">')
+    expect(html).not.toContain('href="/favicon.svg"')
+    const icon = await SELF.fetch('https://example.com/icon.svg')
+    expect(icon.headers.get('content-type')).toBe('image/svg+xml')
+    const old = await SELF.fetch('https://example.com/favicon.svg')
+    expect(await old.text()).toBe(await icon.text())
+  })
+
   it('開催済みの公演ページは noindex で、sitemap にも載らない', async () => {
     const past = new Date(Date.now() - 400 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
     await env.DB.prepare(

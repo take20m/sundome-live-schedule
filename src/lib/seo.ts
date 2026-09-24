@@ -141,10 +141,12 @@ export function buildHeadMeta(opts: {
 ${opts.noindex ? '<meta name="robots" content="noindex,follow">\n' : ''}
 <meta name="description" content="${d}">
 <meta name="theme-color" content="${BRAND_COLOR}">
-<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&amp;family=Noto+Sans+JP:wght@400;500;700&amp;display=swap">
-<link rel="apple-touch-icon" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="canonical" href="${canonical}">
 <meta property="og:type" content="website">
 <meta property="og:title" content="${t}">

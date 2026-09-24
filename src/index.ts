@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import type { Context } from 'hono'
 import { handleIngest } from './api/ingest'
 import { handlePendingImages, handleSetImages } from './api/images'
 import { handleMissing } from './api/missing'
@@ -93,12 +94,15 @@ app.get('/sitemap.xml', async (c) => {
 
 app.get('/robots.txt', (c) => c.text(buildRobots(siteUrl(c.req.url))))
 
-app.get('/favicon.svg', (c) =>
+// アイコンは 2026-09-20 に差し替えた。検索結果の favicon は URL 単位でキャッシュされるので、
+// URL を /icon.svg に変えて取り直させる。旧 URL も同じ画像を返す
+const serveIcon = (c: Context) =>
   c.body(FAVICON_SVG, 200, {
     'Content-Type': 'image/svg+xml',
     'Cache-Control': 'public, max-age=86400',
-  }),
-)
+  })
+app.get('/icon.svg', serveIcon)
+app.get('/favicon.svg', serveIcon)
 
 app.post('/api/ingest', handleIngest)
 app.get('/api/missing', handleMissing)
