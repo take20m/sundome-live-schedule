@@ -261,8 +261,8 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
   }
 
   const merged: MergedLottery[] = mergeLotteries(group)
-  // 一覧では受付の終わったものを出さない(もう申し込めないので視線を取るだけ)。詳細ページでは履歴として全部出す
-  const shown = detail ? merged : merged.filter((m) => lotteryStatus(m, now) !== 'closed')
+  // 一覧では終了・売り切れの受付を出さない(もう申し込めないので視線を取るだけ)。詳細ページでは履歴として全部出す
+  const shown = detail ? merged : merged.filter((m) => !['closed', 'soldout'].includes(lotteryStatus(m, now)))
   const hiddenClosed = merged.length - shown.length
   const lots = opts.compact
     ? merged.length > 0
@@ -276,7 +276,7 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
           })
           .join('')}</ul>`
       : hiddenClosed > 0
-        ? `<p class="lot-summary"><a href="/e/${escapeHtml(first.id)}">終了した先行・抽選 ${hiddenClosed} 件</a></p>`
+        ? `<p class="lot-summary"><a href="/e/${escapeHtml(first.id)}">受付を終えた先行・抽選 ${hiddenClosed} 件</a></p>`
       : events[events.length - 1].date < todayInJst(now)
         ? '' // 開催済みの公演はもう収集しないので、「未収集」とは言わない
         : `<p class="none">${detail ? 'チケット情報は未収集です(毎晩調べ直しています)' : 'チケット情報は未収集です'}</p>`
@@ -291,8 +291,11 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
   // 画像のリンク先: 一覧では詳細へ、詳細では出典(ツアーページ)へ
   const imageUrl = safeHttpUrl(focus.image_url) ?? events.map((e) => safeHttpUrl(e.image_url)).find((u) => u) ?? null
   const mediaHref = detail ? safeHttpUrl(focus.tour_url) : `/e/${first.id}`
+  // 一覧は低い枠に画像を切らずに収め、余白には同じ画像をぼかして敷く(正方形や縦長のツアー画像でも文字が切れない)。
+  // 同じ URL なので読み込みは 1 回で済む
   const img = imageUrl
-    ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(first.title)}" loading="lazy" decoding="async" onerror="this.closest('.card-media').remove()">`
+    ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(first.title)}" loading="lazy" decoding="async" onerror="this.closest('.card-media').remove()">` +
+      (detail ? '' : `<img class="backdrop" src="${escapeHtml(imageUrl)}" alt="" aria-hidden="true" loading="lazy" decoding="async">`)
     : ''
   const media = !img
     ? ''

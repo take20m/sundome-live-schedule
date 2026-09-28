@@ -127,8 +127,11 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .card-media { display: block; aspect-ratio: 16 / 9; max-width: 100%; background: var(--surface-container-highest); }
 .card-media:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
 .card-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
-/* 一覧のカードでは画像を半分の高さに。公演名と受付が先に目に入るように */
-.card-media-short { aspect-ratio: 32 / 9; }
+/* 一覧のカードでは画像を半分の高さに。公演名と受付が先に目に入るように。
+   ツアー画像は正方形・縦長もあるので切らずに収め(contain)、余白には同じ画像をぼかして敷く */
+.card-media-short { aspect-ratio: 32 / 9; position: relative; overflow: hidden; }
+.card-media-short img { position: relative; z-index: 1; object-fit: contain; }
+.card-media-short img.backdrop { position: absolute; inset: 0; z-index: 0; object-fit: cover; filter: blur(24px) saturate(1.2) brightness(.8); transform: scale(1.25); }
 .card:hover { box-shadow: var(--shadow-2); }
 /* 詳細から /#ev-... で戻ってきた直後、該当カードを一瞬強調して位置を示す */
 .card:target, .card:has(.anchor:target) { outline: 3px solid transparent; outline-offset: 3px; animation: card-arrive 2.4s ease-out; }

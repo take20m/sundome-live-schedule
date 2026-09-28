@@ -82,6 +82,8 @@ describe('images API と表示', () => {
     // 一覧の画像は詳細へのリンク
     // 一覧の画像は低め(card-media-short)、詳細は 16:9 のまま
     expect(withImage).toContain(`<a class="card-media card-media-short" href="/e/ev-${withTour}"><img src="https://cdn.example.com/kv.jpg"`)
+    // 一覧は切らずに収め、余白にぼかした同じ画像を敷く(装飾なので読み上げない)
+    expect(withImage).toContain('<img class="backdrop" src="https://cdn.example.com/kv.jpg" alt="" aria-hidden="true"')
     expect(withImage).toContain(`onerror="this.closest('.card-media').remove()"`)
     expect(withImage).toContain('loading="lazy"')
     expect(cardOf(`ev-${noTour}`)).not.toContain('card-media')
@@ -90,6 +92,7 @@ describe('images API と表示', () => {
     // 詳細の画像は出典(ツアーページ)へのリンク
     const detail = await (await SELF.fetch(`https://example.com/e/ev-${withTour}`)).text()
     expect(detail).toContain('<a class="card-media" href="https://example.com/live/" rel="noopener" target="_blank"><img src="https://cdn.example.com/kv.jpg"')
+    expect(detail).not.toContain('class="backdrop"')
     // 共有カード(OG)にもツアー画像。画像の無い公演は会場写真
     expect(detail).toContain('<meta property="og:image" content="https://cdn.example.com/kv.jpg">')
     const noImg = await (await SELF.fetch(`https://example.com/e/ev-${noTour}`)).text()

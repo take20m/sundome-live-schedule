@@ -313,9 +313,13 @@ describe('ingest API', () => {
     }
     await post({ events: [soldOutEvent] })
 
-    // 一覧で「売り切れ」バッジ、受付中扱いにならない
-    const html = await (await SELF.fetch('https://example.com/')).text()
+    // 詳細で「売り切れ」バッジ、受付中扱いにならない。一覧ではもう申し込めないので出さない
+    const html = await (await SELF.fetch('https://example.com/e/ev-2027-10-10')).text()
     expect(html).toContain('売り切れ')
+    const list = await (await SELF.fetch('https://example.com/')).text()
+    const card = list.slice(list.indexOf('id="ev-2027-10-10"'), list.indexOf('</article>', list.indexOf('id="ev-2027-10-10"')))
+    expect(card).not.toContain('一般発売(先着順)')
+    expect(card).toContain('受付を終えた先行・抽選 1 件')
 
     // 浅い収集(sold_out欠落)で再送してもフラグは維持される
     const shallow = structuredClone(soldOutEvent)
