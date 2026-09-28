@@ -78,9 +78,9 @@ a { color: var(--primary); }
 
 main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 /* 会場写真のバナー(PC 21:9 / スマホ 16:9)。写真は CC BY-SA、クレジットは about ページ(CC BY-SA 4.0 §3(a)(2) によりリンク先での表記で足りる) */
-.banner { display: block; margin: 16px 0 8px; border-radius: 12px; overflow: hidden; background: var(--surface-container-highest); aspect-ratio: 21 / 9; max-width: 100%; }
-.banner img { display: block; width: 100%; height: 100%; object-fit: cover; }
-@media (max-width: 480px) { .banner { aspect-ratio: 16 / 9; } }
+.banner { display: block; margin: 16px 0 8px; border-radius: 12px; overflow: hidden; background: var(--surface-container-highest); aspect-ratio: 42 / 9; max-width: 100%; }
+.banner img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 60%; }
+@media (max-width: 480px) { .banner { aspect-ratio: 32 / 9; } }
 .section { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin: 24px 0 8px; }
 .section h2 { margin: 0; font-size: 16px; line-height: 24px; font-weight: 500; letter-spacing: .15px; }
 .section .sup { font-size: 12px; line-height: 16px; letter-spacing: .4px; color: var(--on-surface-variant); }
@@ -127,6 +127,8 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .card-media { display: block; aspect-ratio: 16 / 9; max-width: 100%; background: var(--surface-container-highest); }
 .card-media:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
 .card-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* 一覧のカードでは画像を半分の高さに。公演名と受付が先に目に入るように */
+.card-media-short { aspect-ratio: 32 / 9; }
 .card:hover { box-shadow: var(--shadow-2); }
 /* 詳細から /#ev-... で戻ってきた直後、該当カードを一瞬強調して位置を示す */
 .card:target, .card:has(.anchor:target) { outline: 3px solid transparent; outline-offset: 3px; animation: card-arrive 2.4s ease-out; }

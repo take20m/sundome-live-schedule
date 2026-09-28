@@ -80,7 +80,8 @@ describe('images API と表示', () => {
     const cardOf = (id: string) => html.slice(html.indexOf(`id="${id}"`), html.indexOf('</article>', html.indexOf(`id="${id}"`)))
     const withImage = cardOf(`ev-${withTour}`)
     // 一覧の画像は詳細へのリンク
-    expect(withImage).toContain(`<a class="card-media" href="/e/ev-${withTour}"><img src="https://cdn.example.com/kv.jpg"`)
+    // 一覧の画像は低め(card-media-short)、詳細は 16:9 のまま
+    expect(withImage).toContain(`<a class="card-media card-media-short" href="/e/ev-${withTour}"><img src="https://cdn.example.com/kv.jpg"`)
     expect(withImage).toContain(`onerror="this.closest('.card-media').remove()"`)
     expect(withImage).toContain('loading="lazy"')
     expect(cardOf(`ev-${noTour}`)).not.toContain('card-media')

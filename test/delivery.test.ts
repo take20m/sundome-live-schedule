@@ -283,6 +283,16 @@ describe('申込リンク', () => {
     expect(html).not.toContain('linktest/upcoming-ng')
   })
 
+  it('一覧では終了した受付を出さず、詳細では履歴として出す', async () => {
+    const card = (html: string) => html.slice(html.indexOf(`id="ev-${eventDate}"`), html.indexOf('</article>', html.indexOf(`id="ev-${eventDate}"`)))
+    const list = card(await (await SELF.fetch('https://example.com/')).text())
+    expect(list).toContain('受付中かつ購入ページ')
+    expect(list).toContain('受付前かつ購入ページ')
+    expect(list).not.toContain('終了かつ購入ページ')
+    const detail = await (await SELF.fetch(`https://example.com/e/ev-${eventDate}`)).text()
+    expect(detail).toContain('終了かつ購入ページ')
+  })
+
   // JSON-LD の Offer.url は検索結果のチケット導線に使われるので画面と同じ基準で出す
   it('JSON-LDのOfferにも購入ページのURLだけ載る', async () => {
     const html = await (await SELF.fetch(`https://example.com/e/ev-${eventDate}`)).text()

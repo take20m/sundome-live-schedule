@@ -261,17 +261,22 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
   }
 
   const merged: MergedLottery[] = mergeLotteries(group)
+  // 一覧では受付の終わったものを出さない(もう申し込めないので視線を取るだけ)。詳細ページでは履歴として全部出す
+  const shown = detail ? merged : merged.filter((m) => lotteryStatus(m, now) !== 'closed')
+  const hiddenClosed = merged.length - shown.length
   const lots = opts.compact
     ? merged.length > 0
       ? `<p class="lot-summary"><a href="/e/${escapeHtml(first.id)}">先行・抽選 ${merged.length} 件の記録</a></p>`
       : ''
-    : merged.length > 0
-      ? `<ul class="lots">${merged
+    : shown.length > 0
+      ? `<ul class="lots">${shown
           .map((m) => {
             const partial = m.dates.length < events.length
             return renderLottery(m, now, partial ? `${m.dates.map(md).join('・')} のみ` : '')
           })
           .join('')}</ul>`
+      : hiddenClosed > 0
+        ? `<p class="lot-summary"><a href="/e/${escapeHtml(first.id)}">終了した先行・抽選 ${hiddenClosed} 件</a></p>`
       : events[events.length - 1].date < todayInJst(now)
         ? '' // 開催済みの公演はもう収集しないので、「未収集」とは言わない
         : `<p class="none">${detail ? 'チケット情報は未収集です(毎晩調べ直しています)' : 'チケット情報は未収集です'}</p>`
@@ -292,8 +297,8 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
   const media = !img
     ? ''
     : mediaHref
-      ? `<a class="card-media" href="${escapeHtml(mediaHref)}"${detail ? ' rel="noopener" target="_blank"' : ''}>${img}</a>`
-      : `<div class="card-media">${img}</div>`
+      ? `<a class="card-media${detail ? '' : ' card-media-short'}" href="${escapeHtml(mediaHref)}"${detail ? ' rel="noopener" target="_blank"' : ''}>${img}</a>`
+      : `<div class="card-media${detail ? '' : ' card-media-short'}">${img}</div>`
 
   // 一覧とアーティストページでは card-main 全体を詳細への当たり判定にする(タイトルの <a> を CSS で引き伸ばす)。
   // 抽選リストは外に置いたまま ─ 中の外部チケットリンクが <a> の入れ子になるのと、期間の日時が選択できなくなるのを避ける
