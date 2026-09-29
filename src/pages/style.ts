@@ -9,7 +9,22 @@ export const SITE_HEADER = `<header class="appbar">
 <a class="brand" href="/">${LOGO_SVG}<h1><span>サンドーム福井</span> <span>コンサート・ライブ情報</span></h1></a>
 <span class="spacer"></span>
 <a class="iconbtn" href="/feed.xml" aria-label="RSS フィード" title="RSS">${iconSvg('rss_feed')}</a>
-</header>`
+</header>
+<script>
+// 下へスクロールしたらヘッダーを隠し、上へ一定量(48px)戻したら出す。ページ先頭付近では常に出す
+(function () {
+  var h = document.querySelector('.appbar');
+  if (!h) return;
+  var last = window.scrollY, up = 0, SHOW_AFTER = 48;
+  window.addEventListener('scroll', function () {
+    var y = window.scrollY, d = y - last;
+    last = y;
+    if (y <= h.offsetHeight) { h.classList.remove('is-hidden'); up = 0; return; }
+    if (d > 0) { up = 0; h.classList.add('is-hidden'); }
+    else { up -= d; if (up >= SHOW_AFTER) h.classList.remove('is-hidden'); }
+  }, { passive: true });
+})();
+</script>`
 
 export const SITE_FOOTER = `<footer class="site-f">
 <a href="/about">このサイトについて</a>
@@ -65,7 +80,9 @@ a { color: var(--primary); }
 /* Top app bar (small) */
 /* 白の帯 + 下端に黄のライン。濃紺と黄の二重ラインは圧が強いので黄 1 本に絞った(ヘッダー案 4)。
    会場名を主、説明を従にして 2 段に置く。帯は全幅、中身はコンテンツ幅に揃える */
-.appbar { display: flex; align-items: center; gap: 4px; min-height: 64px; padding: 8px max(4px, calc((100% - 752px) / 2)) 8px max(16px, calc((100% - 728px) / 2)); background: var(--surface-container-low); border-bottom: 3px solid var(--brand-yellow); position: relative; z-index: 1; }
+.appbar { display: flex; align-items: center; gap: 4px; min-height: 64px; padding: 8px max(4px, calc((100% - 752px) / 2)) 8px max(16px, calc((100% - 728px) / 2)); background: var(--surface-container-low); border-bottom: 3px solid var(--brand-yellow); position: sticky; top: 0; z-index: 10; }
+/* 下へスクロール中は隠す(上へ戻すと出る。キーボードで中に入ったときも出す) */
+.appbar.is-hidden:not(:focus-within) { transform: translateY(-100%); }
 .brand { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; min-width: 0; }
 .logo { width: 28px; height: 28px; flex: none; border-radius: 7px; }
 .appbar h1 { margin: 0; display: flex; flex-direction: column; gap: 2px; font-size: 20px; line-height: 1.15; font-weight: 700; letter-spacing: 3px; }
@@ -110,7 +127,7 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 
 /* 公演カード: Elevated */
 .cards { display: grid; gap: 16px; }
-.card { display: flex; flex-direction: column; background: var(--surface-container-low); border-radius: 12px; box-shadow: var(--shadow-1); scroll-margin-top: 16px; overflow: hidden; }
+.card { display: flex; flex-direction: column; background: var(--surface-container-low); border-radius: 12px; box-shadow: var(--shadow-1); scroll-margin-top: 84px; overflow: hidden; }
 .card-main { display: flex; gap: 16px; padding: 16px; }
 /* 一覧・アーティストページ: タイトルのリンクを card-main いっぱいに引き伸ばして当たり判定にする */
 .card-main.tap { position: relative; cursor: pointer; }
@@ -170,7 +187,7 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .days { display: grid; gap: 2px; margin-top: 8px; color: var(--on-surface-variant); }
 .lot-note { font-size: 12px; line-height: 16px; letter-spacing: .4px; color: var(--on-surface-variant); }
 /* 2日目以降の /#ev-<日付> 着地点。カード内の先頭に置き、カード自身がスクロール先になる */
-.anchor { display: block; height: 0; scroll-margin-top: 16px; }
+.anchor { display: block; height: 0; scroll-margin-top: 84px; }
 
 /* Text button(詳細のリンク・戻る) */
 .actions { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 0 -12px; }
@@ -207,6 +224,7 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 }
 @media (prefers-reduced-motion: no-preference) {
   .card, .row, .btn-text, .iconbtn { transition: background-color .15s, box-shadow .15s; }
+  .appbar { transition: transform .2s ease; }
 }
 @media (prefers-reduced-motion: reduce) {
   .card:target, .card:has(.anchor:target) { animation: none; outline-color: var(--primary); }

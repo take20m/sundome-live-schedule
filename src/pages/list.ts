@@ -339,7 +339,7 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
   <div class="card-body">
     ${cardDate}
     <h3 class="card-title">${title}</h3>
-    <p class="card-sub">${escapeHtml(first.title)}</p>
+    ${detail ? `<p class="card-sub">${escapeHtml(first.title)}</p>` : ''}
     ${schedule}
     ${venue}
     ${actions}

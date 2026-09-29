@@ -8,11 +8,15 @@ beforeAll(async () => {
 })
 
 describe('一覧ページ', () => {
-  it('公演タイトルと受付中バッジが表示される', async () => {
+  it('アーティスト名と受付中バッジが表示され、ツアー名は一覧に出さず詳細に出す', async () => {
     const res = await SELF.fetch('https://example.com/')
     expect(res.status).toBe(200)
     const html = await res.text()
-    expect(html).toContain('SAMPLE ARTIST LIVE TOUR 2026 &quot;HELLO&quot;')
+    expect(html).toContain('SAMPLE ARTIST')
+    expect(html).not.toContain('<p class="card-sub">')
+    const id = html.match(/id="(ev-\d{4}-\d{2}-\d{2})"/)![1]
+    const detail = await (await SELF.fetch(`https://example.com/e/${id}`)).text()
+    expect(detail).toContain('<p class="card-sub">SAMPLE ARTIST LIVE TOUR 2026 &quot;HELLO&quot;</p>')
     expect(html).toContain('受付中')
     expect(html).toContain('オフィシャル先行(抽選)')
   })
@@ -133,6 +137,14 @@ describe('SEO', () => {
     const robots = await SELF.fetch('https://example.com/robots.txt')
     expect(robots.status).toBe(200)
     expect(await robots.text()).toContain('Sitemap: https://example.com/sitemap.xml')
+  })
+
+  it('ヘッダーは下へスクロールすると隠れ、上へ戻すと出る(全ページ共通のスクリプト)', async () => {
+    for (const path of ['/', '/past', '/guide/access']) {
+      const html = await (await SELF.fetch(`https://example.com${path}`)).text()
+      expect(html).toContain('<header class="appbar">')
+      expect(html).toContain("h.classList.add('is-hidden')")
+    }
   })
 
   it('アイコンは新しい URL(/icon.svg)と PNG を指し、旧 /favicon.svg も同じ画像を返す', async () => {
