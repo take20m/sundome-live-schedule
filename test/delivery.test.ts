@@ -119,6 +119,26 @@ describe('締切セクションとカウントダウン', () => {
   })
 })
 
+describe('RSS', () => {
+  it('受付の通知は誰でも申し込めるものだけ。会員限定の受付の通知は、記録済みでもフィードに出さない', async () => {
+    const now = new Date().toISOString()
+    const ev = await env.DB.prepare('SELECT id FROM events ORDER BY date LIMIT 1').first<{ id: string }>()
+    const lotIns = env.DB.prepare(
+      `INSERT INTO lotteries (id, event_id, name, starts_at, ends_at, confidence, updated_at) VALUES (?, ?, ?, ?, ?, 'official', ?)`,
+    )
+    await lotIns.bind('lot-rss-fc', ev!.id, 'FCプレミアム会員先行', now, now, now).run()
+    await lotIns.bind('lot-rss-open', ev!.id, 'プレイガイド一般先行', now, now, now).run()
+    const chIns = env.DB.prepare(
+      `INSERT INTO changes (item_id, item_type, change_kind, summary, created_at) VALUES (?, 'lottery', 'added', ?, ?)`,
+    )
+    await chIns.bind('lot-rss-fc', '受付開始: RSSテスト FCプレミアム会員先行', now).run()
+    await chIns.bind('lot-rss-open', '受付開始: RSSテスト プレイガイド一般先行', now).run()
+    const xml = await (await SELF.fetch('https://example.com/feed.xml')).text()
+    expect(xml).toContain('プレイガイド一般先行')
+    expect(xml).not.toContain('FCプレミアム会員先行')
+  })
+})
+
 describe('SEO', () => {
   it('JSON-LD・OGP・canonical が入っている', async () => {
     const res = await SELF.fetch('https://example.com/')

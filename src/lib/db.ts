@@ -1,3 +1,4 @@
+import { isRestrictedLottery } from './audience'
 import type { EventRow, LotteryRow } from '../types'
 import type { EventGroup } from './group'
 import { groupConsecutive } from './group'
@@ -138,12 +139,23 @@ export async function listAllEventIds(
   return results
 }
 
+/**
+ * RSS に流す変更。受付の通知は誰でも申し込めるものだけにする(会員限定・CD 封入などは流さない)。
+ * ingest でも記録しないようにしたが、それ以前に記録された分もここで落とす
+ */
 export async function listRecentChanges(db: D1Database, limit = 50): Promise<ChangeRow[]> {
   const { results } = await db
-    .prepare('SELECT * FROM changes ORDER BY created_at DESC, id DESC LIMIT ?')
-    .bind(limit)
-    .all<ChangeRow>()
+    .prepare(
+      `SELECT c.*, l.name AS lottery_name FROM changes c
+       LEFT JOIN lotteries l ON c.item_type = 'lottery' AND l.id = c.item_id
+       ORDER BY c.created_at DESC, c.id DESC LIMIT ?`,
+    )
+    .bind(limit * 2)
+    .all<ChangeRow & { lottery_name: string | null }>()
   return results
+    .filter((r) => !(r.item_type === 'lottery' && r.lottery_name !== null && isRestrictedLottery(r.lottery_name)))
+    .slice(0, limit)
+    .map(({ lottery_name: _, ...r }) => r)
 }
 
 /** JSTでの今日の日付 (YYYY-MM-DD) */

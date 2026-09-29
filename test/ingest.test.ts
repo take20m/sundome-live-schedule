@@ -14,7 +14,7 @@ const payload = {
       confidence: 'official',
       lotteries: [
         {
-          name: 'FC先行(抽選)',
+          name: 'オフィシャル先行(抽選)',
           starts_at: '2027-01-10T10:00:00+09:00',
           ends_at: '2027-01-20T23:59:00+09:00',
           url: 'https://example.com/fc',
@@ -249,7 +249,7 @@ describe('ingest API', () => {
       confidence: 'official',
       lotteries,
     })
-    const fc = { name: 'FC先行', starts_at: future(1), ends_at: future(10), url: null, confidence: 'official' }
+    const fc = { name: 'オフィシャル先行', starts_at: future(1), ends_at: future(10), url: null, confidence: 'official' }
     const ended = { name: '一次先行', starts_at: past(30), ends_at: past(20), url: null, confidence: 'official' }
 
     const before = await env.DB.prepare('SELECT count(*) AS n FROM changes').first<{ n: number }>()
@@ -257,12 +257,12 @@ describe('ingest API', () => {
     // 2公演日に同じ受付(未来)+締切済みの受付
     await post({ events: [mk('2027-09-09', [fc, ended]), mk('2027-09-10', [fc, ended])] })
     let after = await env.DB.prepare('SELECT count(*) AS n FROM changes').first<{ n: number }>()
-    // 公演added×2(日付が違うので別サマリ) + FC先行added×1(同文は重複排除) = 3。締切済みは通知されない
+    // 公演added×2(日付が違うので別サマリ) + オフィシャル先行added×1(同文は重複排除) = 3。締切済みは通知されない
     expect(after!.n - before!.n).toBe(3)
 
     // 同じ受付を改名して再送(期間一致) → ID引き継ぎで added も updated も出ない
     const renamed = structuredClone(fc)
-    renamed.name = 'NOISE TOUR 2027 ファンクラブ先行'
+    renamed.name = 'NOISE TOUR 2027 オフィシャル先行'
     const res = await post({ events: [mk('2027-09-09', [renamed])] })
     const body = (await res.json()) as Record<string, { unchanged: number }>
     expect(body.lotteries.unchanged).toBe(1)
@@ -275,7 +275,22 @@ describe('ingest API', () => {
     )
       .bind(new Date().toISOString())
       .first<{ name: string }>()
-    expect(row?.name).toBe('NOISE TOUR 2027 ファンクラブ先行')
+    expect(row?.name).toBe('NOISE TOUR 2027 オフィシャル先行')
+
+    // 会員限定(FC・CD封入)の受付は、期間があっても通知されない(DBには入り、詳細ページには出る)
+    await post({
+      events: [
+        mk('2027-09-09', [
+          { name: 'FC会員先行(抽選)', starts_at: future(2), ends_at: future(8), url: null, confidence: 'official' },
+          { name: 'CD封入シリアル先行', starts_at: future(3), ends_at: future(9), url: null, confidence: 'official' },
+        ]),
+      ],
+    })
+    after = await env.DB.prepare('SELECT count(*) AS n FROM changes').first<{ n: number }>()
+    expect(after!.n - before!.n).toBe(3) // 増えていない
+    expect(
+      (await env.DB.prepare("SELECT count(*) AS n FROM lotteries WHERE name IN ('FC会員先行(抽選)', 'CD封入シリアル先行')").first<{ n: number }>())!.n,
+    ).toBe(2)
 
     // 期間が全く不明の受付、過去公演の受付はどちらも通知されない(DBには入る)
     const yesterday = past(1).slice(0, 10)

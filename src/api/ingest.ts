@@ -1,4 +1,5 @@
 import type { Context } from 'hono'
+import { isRestrictedLottery } from '../lib/audience'
 import { todayInJst } from '../lib/db'
 import { formatJst } from '../lib/format'
 import { hostOf, isDeniedHost, isPlayguideHost, isTopPage, isVenueHost } from '../lib/ticket-url'
@@ -412,12 +413,14 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
       // - 期間が1つも取れていない受付は通知しない(期間未確認の名前は表記ゆれで
       //   毎晩IDが変わりやすくノイズ源)
       // - 既に締切を過ぎた受付は通知しない(表示はされる)
+      // - 会員限定・CD 封入などの受付は通知しない(誰でも申し込めるものだけ。販売中欄と同じ基準)
       // 加えて通知は新規追加のみ(下の 'added-only')。期間が数分ずれた等の更新は
       // 収集の揺れが大半でノイズになるため、黙って反映する
       const lotteryNotify =
         !eventInPast &&
         (lm.starts_at !== null || lm.ends_at !== null) &&
-        !(lm.ends_at && Date.parse(lm.ends_at) < now.getTime())
+        !(lm.ends_at && Date.parse(lm.ends_at) < now.getTime()) &&
+        !isRestrictedLottery(l.name)
       const lotteryResult = await diffAndUpsert(
         db,
         lotteryId,
