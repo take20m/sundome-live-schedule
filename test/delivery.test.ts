@@ -53,7 +53,9 @@ describe('締切セクションとカウントダウン', () => {
     const html = await (await SELF.fetch('https://example.com/')).text()
     const section = html.split('販売中のチケット')[1].split('今後の公演')[0]
     expect(section).toContain('一般発売(先着)')
-    expect(section).toContain('〆未定')
+    // 締切のない販売は左に「販売中」。締切の日時は左のカウントダウンと重なるので行には出さない
+    expect(section).toContain('販売中')
+    expect(section).not.toContain('〆')
     expect(section).not.toContain('売切済の販売')
   })
 

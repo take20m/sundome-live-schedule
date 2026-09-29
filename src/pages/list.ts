@@ -136,13 +136,13 @@ function renderDeadlines(events: EventWithLotteries[], now: Date): string {
             ? formatCountdown(new Date(lottery.ends_at!).getTime() - now.getTime())
             : '販売中'
           : `${formatJst(lottery.starts_at)}〜`
+      // 締切の日時は左のカウントダウン(「あと5日」「販売中」)と重なるので出さない。期間は詳細ページにある
       const sortedDates = [...dates].sort()
       const datesLabel = `${sortedDates[0].slice(0, 4)}/${sortedDates.map(md).join('・')}`
       const nameLabel = names.length > 1 ? `${names[0]} 他${names.length - 1}件` : names[0]
-      const endLabel = hasEnd ? `〆${formatJst(lottery.ends_at)}` : '〆未定'
       return `<a class="row${status === 'open' ? ' row-open' : ''}" href="/e/${escapeHtml(event.id)}">
   <span class="cd"${status === 'open' && hasEnd ? ` data-ends="${escapeHtml(lottery.ends_at!)}"` : ''}>${escapeHtml(countdown)}</span>
-  <span class="row-text"><span class="row-h">${escapeHtml(event.artist)}</span><span class="row-s">${escapeHtml(nameLabel)} · 公演 ${escapeHtml(datesLabel)} · ${escapeHtml(endLabel)}</span></span>
+  <span class="row-text"><span class="row-h">${escapeHtml(event.artist)}</span><span class="row-s">${escapeHtml(nameLabel)} · 公演 ${escapeHtml(datesLabel)}</span></span>
   ${statusChip(status)}
 </a>`
     })
