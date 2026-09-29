@@ -79,7 +79,13 @@ try {
       writeFileSync(file, buf)
       const out = execFileSync(
         'claude',
-        ['-p', prompt(file, img.artist, img.title), '--allowedTools', `Read(${TMP_DIR}/**)`, '--max-turns', '4', '--output-format', 'text'],
+        [
+          '-p', prompt(file, img.artist, img.title),
+          '--model', process.env.CLAUDE_MODEL ?? 'claude-opus-5-5',
+          '--allowedTools', `Read(${TMP_DIR}/**)`,
+          '--max-turns', '4',
+          '--output-format', 'text',
+        ],
         { encoding: 'utf8', timeout: 180_000 },
       )
       rmSync(file, { force: true })

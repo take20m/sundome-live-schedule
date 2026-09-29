@@ -61,6 +61,7 @@ for (const [artist, artistEvents] of targets) {
       'claude',
       [
         '-p', prompt,
+        '--model', process.env.CLAUDE_MODEL ?? 'claude-opus-5-5',
         '--allowedTools', 'WebSearch,WebFetch,Edit(collector/out/**)',
         '--permission-mode', 'acceptEdits',
         '--max-turns', '40',
