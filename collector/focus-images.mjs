@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// 一覧の正方形サムネに切り出す中心(CSS object-position)を、画像を見て決める(4段目)。
+// 一覧の正方形サムネの見せ方(切るか縮めて収めるか・中心・余白の色・拡大率)を、画像を見て決める(4段目)。
 // 切り出し位置が未設定の画像だけが対象なので、人が決めた位置は上書きしない。
 // 画像はこのジョブの間だけ一時フォルダに置き、判断が済んだら消す(サイトには保存しない。位置だけを送る)。
 // 使い方: INGEST_URL=... INGEST_TOKEN=... node collector/focus-images.mjs [maxImages]
@@ -38,16 +38,21 @@ console.log(`focus-images: 対象 ${Math.min(images.length, maxImages)} / ${imag
 const prompt = (file, artist, title) => `次の画像は、コンサート「${artist}「${title}」」のツアービジュアルです: ${file}
 この画像を Read で開いて見てください。
 
-この画像を、一覧に置く正方形のサムネイルにします(CSS の object-fit: cover で正方形に切り抜く)。
-正方形に切り抜いたときに、次の優先順で大事なものが残るよう、切り抜きの中心を決めてください。
-1. ツアー名・公演名・ロゴなどの文字(読める部分が最も多く残る位置)
-2. 人物の顔(切れないように)
-3. 画像の主役になっている図柄
+この画像を、一覧に置く小さな正方形のサムネイル(約 90px 四方)にします。見せ方を決めてください。
 
-答えは CSS の object-position の値として「横% 縦%」の形で 1 行だけ出力してください(0%=左端/上端、50%=中央、100%=右端/下端)。
-画像が正方形に近く、どこを中心にしても差がないなら「50% 50%」にしてください。
-例: 50% 30%
-説明や他の文字は書かないでください。`
+- fit: "cover" か "contain"
+  - "cover": 正方形いっぱいに拡大し、はみ出た部分を切る。写真・イラストなど、切っても主役が残る画像向け
+  - "contain": 切らずに全体を縮めて正方形に収め、余白を bg の色で埋める。
+    無地(白・黒など)の背景に横長の文字ロゴが載っているだけの画像向け(cover だと文字が途中で切れるため)
+- focus: CSS の object-position の値「横% 縦%」(0%=左端/上端、50%=中央、100%=右端/下端)。
+  cover では切り抜きの中心、zoom では拡大の中心になる。
+  残す優先順: 1) ツアー名・ロゴなどの文字(読める部分が最も多く残る位置) 2) 人物の顔 3) 主役の図柄
+- bg: contain のときの余白の色。画像の背景(縁)の色を "#RRGGBB" で。cover なら null
+- zoom: 1〜3 の拡大率。通常は 1。上下や左右に黒帯・白帯が入っている画像は、帯が枠の外に出る倍率にする。
+  contain で文字ロゴの周りの余白が大きすぎる場合も、読みやすくなる程度に少し上げてよい
+
+答えは次の形の JSON を 1 行だけ出力してください。説明や他の文字は書かないでください。
+{"fit":"cover","focus":"50% 30%","bg":null,"zoom":1}`
 
 mkdirSync(TMP_DIR, { recursive: true })
 const results = []
@@ -78,13 +83,23 @@ try {
         { encoding: 'utf8', timeout: 180_000 },
       )
       rmSync(file, { force: true })
-      const focus = out.trim().split('\n').map((l) => l.trim()).reverse().find((l) => FOCUS_RE.test(l))
-      if (!focus) {
-        console.log(`  skip ${label}: 位置を読み取れない(${out.trim().slice(0, 80)})`)
+      // 最後に出てきた JSON 1 行を採る。形が合わなければ見送り(翌晩また対象になる)
+      let framing = null
+      for (const line of out.trim().split('\n').reverse()) {
+        const m = line.match(/\{.*\}/)
+        if (!m) continue
+        try {
+          framing = JSON.parse(m[0])
+          break
+        } catch {}
+      }
+      if (!framing || !FOCUS_RE.test(framing.focus ?? '')) {
+        console.log(`  skip ${label}: 見せ方を読み取れない(${out.trim().slice(0, 80)})`)
         continue
       }
-      results.push({ image_url: img.image_url, focus })
-      console.log(`  ok   ${label}: ${focus}`)
+      const { fit, focus, bg, zoom } = framing
+      results.push({ image_url: img.image_url, focus, fit, bg, zoom })
+      console.log(`  ok   ${label}: ${JSON.stringify({ fit, focus, bg, zoom })}`)
     } catch (err) {
       console.log(`  skip ${label}: ${err.message.split('\n')[0]}`)
     }

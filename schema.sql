@@ -14,6 +14,9 @@ CREATE TABLE IF NOT EXISTS events (
   image_url   TEXT,                      -- tour_url ページの og:image(直リンク表示。自前保存はしない)
   image_manual INTEGER NOT NULL DEFAULT 0, -- 1 = 人が判断した画像(「画像なし」も含む)。og:image の取り直し(REFETCH_ALL)で上書きしない
   image_focus  TEXT,                     -- 一覧の正方形サムネに切り出すときの中心(CSS object-position。例 "50% 30%")。画像は保存せず位置だけ持つ
+  image_fit    TEXT,                     -- サムネの見せ方: cover(切る) / contain(全体を縮めて収める)。未設定は cover
+  image_bg     TEXT,                     -- contain のときの余白の色(#RRGGBB)。無地の背景のロゴ画像で継ぎ目を見せない
+  image_zoom   REAL,                     -- 拡大率(1〜3)。上下の黒帯を枠の外へ追い出すなど。中心は image_focus
   tour_manual  INTEGER NOT NULL DEFAULT 0, -- 1 = 人が調べたツアーページ。ingest の収集結果で上書きしない
   confidence  TEXT NOT NULL DEFAULT 'inferred' CHECK (confidence IN ('official', 'inferred')),
   updated_at  TEXT NOT NULL              -- ISO 8601

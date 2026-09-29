@@ -132,6 +132,29 @@ describe('images API と表示', () => {
     expect((await SELF.fetch('https://example.com/api/images/focus-pending')).status).toBe(401)
   })
 
+  it('見せ方: contain は余白の色つきで全体を収め、zoom は中心を軸に拡大する。不正な値は未設定扱い', async () => {
+    const post = (focus: unknown[]) =>
+      SELF.fetch('https://example.com/api/images/focus', { method: 'POST', headers, body: JSON.stringify({ focus }) })
+    const card = async () => {
+      const html = await (await SELF.fetch('https://example.com/')).text()
+      return html.slice(html.indexOf(`id="ev-${withTour}"`), html.indexOf('</article>', html.indexOf(`id="ev-${withTour}"`)))
+    }
+    await post([{ image_url: 'https://cdn.example.com/kv.jpg', focus: '50% 40%', fit: 'contain', bg: '#FFFFFF', zoom: 1.2 }])
+    let c = await card()
+    expect(c).toContain('<div class="thumb" style="background: #FFFFFF">')
+    expect(c).toContain('style="object-fit: contain; object-position: 50% 40%; transform: scale(1.2); transform-origin: 50% 40%"')
+    // 不正な fit / bg / zoom は捨てる(cover・余白なし・等倍)
+    await post([{ image_url: 'https://cdn.example.com/kv.jpg', focus: '50% 50%', fit: 'fill', bg: 'red;x', zoom: 9 }])
+    c = await card()
+    expect(c).toContain('<div class="thumb"><img src="https://cdn.example.com/kv.jpg"')
+    expect(c).not.toContain('object-fit: contain')
+    expect(c).not.toContain('transform')
+    // 後のテストで「画像が変わると見せ方が消える」を確かめるため、有効な値を入れて終える
+    await post([{ image_url: 'https://cdn.example.com/kv.jpg', focus: '50% 40%', fit: 'contain', bg: '#000000', zoom: 1.5 }])
+    const set = await env.DB.prepare('SELECT image_fit, image_bg, image_zoom FROM events WHERE id = ?').bind(`ev-${withTour}`).first()
+    expect(set).toEqual({ image_fit: 'contain', image_bg: '#000000', image_zoom: 1.5 })
+  })
+
   it('manual: true は人が選んだ画像とツアーページを記録し、取り直し(all=1)の対象から外れる', async () => {
     const res = await SELF.fetch('https://example.com/api/images', {
       method: 'POST',
@@ -178,8 +201,12 @@ describe('images API と表示', () => {
     const row = await env.DB.prepare('SELECT image_url, image_manual, tour_url, image_focus FROM events WHERE id = ?')
       .bind(`ev-${withTour}`)
       .first<{ image_url: string; image_manual: number; tour_url: string; image_focus: string | null }>()
-    // 画像が差し替わったので、前の画像に合わせた切り出し位置は消える
+    // 画像が差し替わったので、前の画像に合わせた見せ方は全部消える
     expect(row?.image_focus).toBeNull()
+    const framing = await env.DB.prepare('SELECT image_fit, image_bg, image_zoom FROM events WHERE id = ?')
+      .bind(`ev-${withTour}`)
+      .first<{ image_fit: string | null; image_bg: string | null; image_zoom: number | null }>()
+    expect(framing).toEqual({ image_fit: null, image_bg: null, image_zoom: null })
     expect(row).toMatchObject({
       image_url: 'https://cdn.example.com/kv2.jpg',
       image_manual: 0,

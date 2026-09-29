@@ -9,7 +9,7 @@ import { iconSvg } from '../lib/icon'
 import { buildHeadMeta, buildJsonLd, buildMetaDescription } from '../lib/seo'
 import type { LotteryStatus } from '../lib/status'
 import { lotteryStatus } from '../lib/status'
-import { safeFocus } from '../lib/focus'
+import { safeBg, safeFit, safeFocus, safeZoom } from '../lib/focus'
 import { isPurchasePage } from '../lib/ticket-url'
 import type { LotteryRow } from '../types'
 import { SITE_CSS, SITE_FOOTER, SITE_HEADER } from './style'
@@ -308,10 +308,20 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
     : mediaHref
       ? `<a class="card-media" href="${escapeHtml(mediaHref)}" rel="noopener" target="_blank">${img}</a>`
       : `<div class="card-media">${img}</div>`
-  const focusPos = safeFocus(events.find((e) => safeHttpUrl(e.image_url) === imageUrl)?.image_focus)
+  // 見せ方(切る/縮めて収める・余白の色・拡大)。どれも検証済みの値だけを style に入れる
+  const imgEvent = events.find((e) => safeHttpUrl(e.image_url) === imageUrl)
+  const focusPos = safeFocus(imgEvent?.image_focus) ?? '50% 50%'
+  const fit = safeFit(imgEvent?.image_fit) ?? 'cover'
+  const bg = fit === 'contain' ? safeBg(imgEvent?.image_bg) : null
+  const zoom = safeZoom(imgEvent?.image_zoom)
+  const imgStyle = [
+    fit === 'contain' ? 'object-fit: contain' : '',
+    focusPos !== '50% 50%' ? `object-position: ${focusPos}` : '',
+    zoom && zoom > 1 ? `transform: scale(${zoom}); transform-origin: ${focusPos}` : '',
+  ].filter(Boolean).join('; ')
   // サムネが読み込めなければ日付タイルに戻す(壊れた画像アイコンを見せない)
   const thumb = thumbMode
-    ? `<div class="thumb"><img src="${escapeHtml(imageUrl!)}" alt="${escapeHtml(first.title)}" loading="lazy" decoding="async"${focusPos ? ` style="object-position: ${focusPos}"` : ''} onerror="var t=this.closest('.thumb');t.nextElementSibling.hidden=false;t.remove()"></div>`
+    ? `<div class="thumb"${bg ? ` style="background: ${bg}"` : ''}><img src="${escapeHtml(imageUrl!)}" alt="${escapeHtml(first.title)}" loading="lazy" decoding="async"${imgStyle ? ` style="${imgStyle}"` : ''} onerror="var t=this.closest('.thumb');t.nextElementSibling.hidden=false;t.remove()"></div>`
     : ''
   // サムネのときは日付を文字で出す。年は今年でなければ付ける
   const dayShort = (date: string) => {

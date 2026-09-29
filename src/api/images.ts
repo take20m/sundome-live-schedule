@@ -1,6 +1,6 @@
 import type { Context } from 'hono'
 import { todayInJst } from '../lib/db'
-import { FOCUS_RE } from '../lib/focus'
+import { FOCUS_RE, safeBg, safeFit, safeZoom } from '../lib/focus'
 import { isDeniedHost } from '../lib/ticket-url'
 import type { Bindings } from '../types'
 
@@ -93,12 +93,18 @@ export async function handleSetImages(c: Context<{ Bindings: Bindings }>): Promi
     const res = tourUrl
       ? await c.env.DB.prepare(
           `UPDATE events SET image_focus = CASE WHEN image_url = ? THEN image_focus ELSE NULL END,
+             image_fit = CASE WHEN image_url = ?1 THEN image_fit ELSE NULL END,
+             image_bg = CASE WHEN image_url = ?1 THEN image_bg ELSE NULL END,
+             image_zoom = CASE WHEN image_url = ?1 THEN image_zoom ELSE NULL END,
              image_url = ?, image_manual = 1, tour_url = ?, tour_manual = 1, updated_at = ? WHERE id = ?`,
         )
           .bind(item.image_url, item.image_url, tourUrl, nowIso, item.event_id)
           .run()
       : await c.env.DB.prepare(
           `UPDATE events SET image_focus = CASE WHEN image_url = ? THEN image_focus ELSE NULL END,
+             image_fit = CASE WHEN image_url = ?1 THEN image_fit ELSE NULL END,
+             image_bg = CASE WHEN image_url = ?1 THEN image_bg ELSE NULL END,
+             image_zoom = CASE WHEN image_url = ?1 THEN image_zoom ELSE NULL END,
              image_url = ?, image_manual = ?, updated_at = ? WHERE id = ?`,
         )
           .bind(item.image_url, item.image_url, manual ? 1 : 0, nowIso, item.event_id)
@@ -130,7 +136,10 @@ export async function handlePendingFocus(c: Context<{ Bindings: Bindings }>): Pr
   return c.json({ images: results })
 }
 
-/** POST /api/images/focus { focus: [{ image_url, focus }] }。その画像を使う全公演にまとめて入れる */
+/**
+ * POST /api/images/focus { focus: [{ image_url, focus, fit?, bg?, zoom? }] }。その画像を使う全公演にまとめて入れる。
+ * fit / bg / zoom は省略・不正なら未設定(= cover・余白なし・等倍)として入れる
+ */
 export async function handleSetFocus(c: Context<{ Bindings: Bindings }>): Promise<Response> {
   const denied = unauthorized(c)
   if (denied) return denied
@@ -150,8 +159,11 @@ export async function handleSetFocus(c: Context<{ Bindings: Bindings }>): Promis
       skipped.push(`focus[${i}]: image_url または focus が不正`)
       continue
     }
-    const res = await c.env.DB.prepare('UPDATE events SET image_focus = ? WHERE image_url = ?')
-      .bind(item.focus, item.image_url)
+    const fit = safeFit(item.fit as string | null)
+    const res = await c.env.DB.prepare(
+      'UPDATE events SET image_focus = ?, image_fit = ?, image_bg = ?, image_zoom = ? WHERE image_url = ?',
+    )
+      .bind(item.focus, fit, fit === 'contain' ? safeBg(item.bg as string | null) : null, safeZoom(item.zoom), item.image_url)
       .run()
     if (res.meta.changes === 0) {
       skipped.push(`focus[${i}]: その画像を使う公演がない`)
