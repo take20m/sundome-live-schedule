@@ -133,9 +133,14 @@ describe('RSS', () => {
     )
     await chIns.bind('lot-rss-fc', '受付開始: RSSテスト FCプレミアム会員先行', now).run()
     await chIns.bind('lot-rss-open', '受付開始: RSSテスト プレイガイド一般先行', now).run()
+    // 受付の行が残っていない通知(ID が後から変わった)は、サマリの受付名で判定する
+    await chIns.bind('lot-rss-gone', '抽選情報: RSSテスト「OFFICIAL FAN CLUB「会報」全会員先行」受付 9/24 12:00〜9/30 05:00', now).run()
+    await chIns.bind('lot-rss-gone2', '抽選情報: RSSテスト「一般発売(先着)」受付 10/1 10:00〜不明', now).run()
     const xml = await (await SELF.fetch('https://example.com/feed.xml')).text()
     expect(xml).toContain('プレイガイド一般先行')
     expect(xml).not.toContain('FCプレミアム会員先行')
+    expect(xml).not.toContain('全会員先行')
+    expect(xml).toContain('一般発売(先着)')
   })
 })
 

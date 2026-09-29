@@ -152,8 +152,16 @@ export async function listRecentChanges(db: D1Database, limit = 50): Promise<Cha
     )
     .bind(limit * 2)
     .all<ChangeRow & { lottery_name: string | null }>()
+  // 受付の ID が後から変わって元の行が無い通知もある。そのときはサマリ
+  // (「抽選情報: アーティスト「受付名」受付 期間」、ingest の lotterySummary の書式)から受付名を取り出す
+  const nameOf = (r: ChangeRow & { lottery_name: string | null }) =>
+    r.lottery_name ?? r.summary.match(/^抽選(?:情報|更新): .*?「(.*)」受付 /)?.[1] ?? null
   return results
-    .filter((r) => !(r.item_type === 'lottery' && r.lottery_name !== null && isRestrictedLottery(r.lottery_name)))
+    .filter((r) => {
+      if (r.item_type !== 'lottery') return true
+      const name = nameOf(r)
+      return name === null || !isRestrictedLottery(name)
+    })
     .slice(0, limit)
     .map(({ lottery_name: _, ...r }) => r)
 }
