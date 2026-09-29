@@ -93,14 +93,21 @@ describe('連日公演の表示', () => {
     await lotIns.bind(`lot-${d2}-b`, `ev-${d2}`, '2日目限定当日券', null, ends, now.toISOString()).run()
   })
 
-  it('一覧では連日公演が1枚のカードになり、日ごとの開場・開演と2日目のアンカーを持つ', async () => {
+  it('一覧では連日公演が1枚のカードになり、日ごとに曜日と開演、2日目のアンカーを持つ', async () => {
     const html = await (await SELF.fetch('https://example.com/')).text()
     const cards = html.split('今後の公演')[1]
     expect(cards.match(/<article class="card/g)?.length).toBe(2) // 連日で1枚 + 別タイトルで1枚
     expect(cards).toContain(`id="ev-${d1}"`)
     expect(cards).toContain(`<span class="anchor" id="ev-${d2}"></span>`)
-    expect(cards).toContain('開場 17:00 / 開演 18:00')
-    expect(cards).toContain('開場 16:00 / 開演 17:00')
+    // 一覧: 日付はタイル(画像があれば上の行)が示すので、時刻の行は曜日と開演だけ
+    const wd = (s: string) => '日月火水木金土'[new Date(`${s}T00:00:00Z`).getUTCDay()]
+    expect(cards).toContain(`<span>${wd(d1)} 開演 18:00</span>`)
+    expect(cards).toContain(`<span>${wd(d2)} 開演 17:00</span>`)
+    expect(cards).not.toContain('開場 17:00')
+    // 詳細は日付・開場・開演を全部出す
+    const detailPage = await (await SELF.fetch(`https://example.com/e/ev-${d1}`)).text()
+    expect(detailPage).toContain('開場 17:00 / 開演 18:00')
+    expect(detailPage).toContain('開場 16:00 / 開演 17:00')
     expect(cards).toContain(
       `<span class="tile-d range">${Number(d1.slice(8, 10))}<span class="sep">・</span>${Number(d2.slice(8, 10))}</span>`,
     )

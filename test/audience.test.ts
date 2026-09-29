@@ -1,7 +1,7 @@
 import { env, SELF } from 'cloudflare:test'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { isRestrictedLottery } from '../src/lib/audience'
-import { applySchema, seedSample } from './helpers'
+import { applySchema, onSaleLotteryNames, seedSample } from './helpers'
 
 describe('isRestrictedLottery', () => {
   it.each([
@@ -63,8 +63,11 @@ describe('販売中のチケット欄の対象', () => {
     const html = await (await SELF.fetch('https://example.com/')).text()
     const [, rest] = html.split('販売中のチケット')
     const [section, cards] = rest.split('今後の公演')
-    expect(section).toContain('オフィシャル先行(抽選)')
-    expect(section).not.toContain('FC会員限定先行(抽選)')
+    // 販売中欄は受付名を出さないので、行の飛び先の受付で確かめる
+    const onSale = await onSaleLotteryNames(SELF, html)
+    expect(onSale).toContain('オフィシャル先行(抽選)')
+    expect(onSale).not.toContain('FC会員限定先行(抽選)')
+    expect(section).not.toContain('先行(抽選)')
     // 申込先の URL が無いので一覧のカードには出さず(クリックできない)、詳細ページには出す
     expect(cards).not.toContain('FC会員限定先行(抽選)')
     const detail = await (await SELF.fetch(`https://example.com/e/ev-${eventDate}`)).text()

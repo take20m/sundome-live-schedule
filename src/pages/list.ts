@@ -108,15 +108,14 @@ function renderDeadlines(events: EventWithLotteries[], now: Date): string {
 
   // 「アーティスト+締切」でグループ化して1行にまとめる。
   // 同一ツアーの複数公演日や、席種違いの同時受付(プレリザーブ/ステージサイド等)を集約する
-  type Group = { first: Entry; names: string[]; dates: Set<string> }
+  type Group = { first: Entry; dates: Set<string> }
   const groups = new Map<string, Group>()
   for (const entry of entries) {
     const key = `${entry.event.artist}|${entry.lottery.ends_at ? Date.parse(entry.lottery.ends_at) : 'endless'}`
     const g = groups.get(key)
     if (!g) {
-      groups.set(key, { first: entry, names: [entry.lottery.name], dates: new Set([entry.event.date]) })
+      groups.set(key, { first: entry, dates: new Set([entry.event.date]) })
     } else {
-      if (!g.names.includes(entry.lottery.name)) g.names.push(entry.lottery.name)
       g.dates.add(entry.event.date)
     }
   }
@@ -127,7 +126,7 @@ function renderDeadlines(events: EventWithLotteries[], now: Date): string {
   }
   const items = [...groups.values()]
     .slice(0, 6)
-    .map(({ first, names, dates }) => {
+    .map(({ first, dates }) => {
       const { event, lottery, status } = first
       const hasEnd = lottery.ends_at !== null
       const countdown =
@@ -136,13 +135,13 @@ function renderDeadlines(events: EventWithLotteries[], now: Date): string {
             ? formatCountdown(new Date(lottery.ends_at!).getTime() - now.getTime())
             : '販売中'
           : `${formatJst(lottery.starts_at)}〜`
-      // 締切の日時は左のカウントダウン(「あと5日」「販売中」)と重なるので出さない。期間は詳細ページにある
+      // 締切の日時は左のカウントダウン(「あと5日」「販売中」)と重なるので出さない。
+      // 受付の名前も出さない(行から詳細ページのその受付へ飛べる)。期間と名前は詳細ページにある
       const sortedDates = [...dates].sort()
       const datesLabel = `${sortedDates[0].slice(0, 4)}/${sortedDates.map(md).join('・')}`
-      const nameLabel = names.length > 1 ? `${names[0]} 他${names.length - 1}件` : names[0]
       return `<a class="row${status === 'open' ? ' row-open' : ''}" href="/e/${escapeHtml(event.id)}#${lotteryAnchor(lottery)}">
   <span class="cd"${status === 'open' && hasEnd ? ` data-ends="${escapeHtml(lottery.ends_at!)}"` : ''}>${escapeHtml(countdown)}</span>
-  <span class="row-text"><span class="row-h">${escapeHtml(event.artist)}</span><span class="row-s">${escapeHtml(nameLabel)} · 公演 ${escapeHtml(datesLabel)}</span></span>
+  <span class="row-text"><span class="row-h">${escapeHtml(event.artist)}</span><span class="row-s">公演 ${escapeHtml(datesLabel)}</span></span>
   ${statusChip(status)}
 </a>`
     })
@@ -230,16 +229,25 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
     ? `<a href="/a/${encodeURIComponent(first.artist)}">${escapeHtml(first.artist)}</a>`
     : `<a href="/e/${escapeHtml(first.id)}">${escapeHtml(first.artist)}</a>`
 
+  // 詳細: 日ごとに「日付 開場 / 開演」。一覧: 日付は上の行(サムネ時)か日付タイルが示すので繰り返さず、
+  // 連日なら曜日だけ、時刻は開演だけにする(開演が未確認なら開場)
   const timesOf = (e: EventWithLotteries) =>
-    [e.open_time && `開場 ${e.open_time}`, e.start_time && `開演 ${e.start_time}`].filter(Boolean).join(' / ')
+    detail
+      ? [e.open_time && `開場 ${e.open_time}`, e.start_time && `開演 ${e.start_time}`].filter(Boolean).join(' / ')
+      : e.start_time
+        ? `開演 ${e.start_time}`
+        : e.open_time
+          ? `開場 ${e.open_time}`
+          : ''
   let schedule = ''
   if (multi || detail) {
-    // 日ごとに開場・開演を並べる(同一ツアーでも曜日で時刻が違う)。
+    // 日ごとに並べる(同一ツアーでも曜日で時刻が違う)。
     // 連日は 1 本のランを 1 ページとして扱うので、どの日で開いたかは強調しない
     schedule = `<div class="days">${events
       .map((e) => {
         const t = timesOf(e)
-        return `<span class="meta-item day">${iconSvg('schedule')}<span>${escapeHtml(dayLabel(e.date))}${t ? ` ${escapeHtml(t)}` : ''}</span></span>`
+        const day = detail ? dayLabel(e.date) : dateParts(e.date).dw
+        return `<span class="meta-item day">${iconSvg('schedule')}<span>${escapeHtml(day)}${t ? ` ${escapeHtml(t)}` : ''}</span></span>`
       })
       .join('')}</div>`
   } else {

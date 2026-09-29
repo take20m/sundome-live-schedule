@@ -148,7 +148,7 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .thumb { flex: 0 0 92px; width: 92px; height: 92px; align-self: flex-start; border-radius: 10px; overflow: hidden; background: var(--surface-container-highest); }
 .thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .tile[hidden] { display: none; }
-.card-date { margin: 0 0 2px; font-size: 13px; line-height: 18px; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; }
+.card-date { margin: 0 0 2px; font-size: 15px; line-height: 20px; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; }
 .card-date .soon { display: inline-block; margin-right: 6px; padding: 0 6px; border-radius: 4px; background: var(--primary-container); color: var(--on-primary-container); font-size: 11px; }
 .card-date .soon.today { background: var(--primary); color: var(--on-primary); }
 .card:hover { box-shadow: var(--shadow-2); }

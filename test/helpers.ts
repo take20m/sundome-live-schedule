@@ -62,3 +62,19 @@ export async function seedSample(db: D1Database, now: Date = new Date()): Promis
     .bind(`ev-${eventDate}`, 'event', 'added', '新規公演: SAMPLE ARTIST LIVE TOUR 2026', nowIso)
     .run()
 }
+
+/**
+ * 販売中欄の行はアーティスト名と公演日だけで受付名を出さない。
+ * 行の飛び先(/e/<id>#lot-...)を詳細ページで引き、どの受付の行かを名前で返す
+ */
+export async function onSaleLotteryNames(fetcher: { fetch: typeof fetch }, html: string): Promise<string[]> {
+  const section = html.split('販売中のチケット')[1]?.split('今後の公演')[0] ?? ''
+  const names: string[] = []
+  for (const [, path, anchor] of section.matchAll(/href="(\/e\/ev-[\d-]+)#(lot-[a-z0-9]+)"/g)) {
+    const detail = await (await fetcher.fetch(`https://example.com${path}`)).text()
+    const li = detail.slice(detail.indexOf(`id="${anchor}"`), detail.indexOf('</li>', detail.indexOf(`id="${anchor}"`)))
+    const name = li.match(/<span class="lot-name">(?:<a [^>]*>)?([^<]*)/)?.[1]
+    if (name) names.push(name)
+  }
+  return names
+}

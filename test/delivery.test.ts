@@ -1,6 +1,6 @@
 import { env, SELF } from 'cloudflare:test'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { applySchema, seedSample } from './helpers'
+import { applySchema, onSaleLotteryNames, seedSample } from './helpers'
 
 beforeAll(async () => {
   await applySchema(env.DB)
@@ -52,11 +52,14 @@ describe('締切セクションとカウントダウン', () => {
       .run()
     const html = await (await SELF.fetch('https://example.com/')).text()
     const section = html.split('販売中のチケット')[1].split('今後の公演')[0]
-    expect(section).toContain('一般発売(先着)')
-    // 締切のない販売は左に「販売中」。締切の日時は左のカウントダウンと重なるので行には出さない
+    const onSale = await onSaleLotteryNames(SELF, html)
+    expect(onSale).toContain('一般発売(先着)')
+    expect(onSale).not.toContain('売切済の販売')
+    // 行はアーティスト名と公演日だけ。締切の日時・受付名は出さない(左のカウントダウンと詳細ページにある)
+    expect(section).toContain('エンドレス')
     expect(section).toContain('販売中')
     expect(section).not.toContain('〆')
-    expect(section).not.toContain('売切済の販売')
+    expect(section).not.toContain('一般発売(先着)')
   })
 
   it('同一ツアーの複数公演日に紐づく同じ受付は1回だけ表示される', async () => {
@@ -88,7 +91,7 @@ describe('締切セクションとカウントダウン', () => {
     expect(html).toMatch(/公演 \d{4}\/\d+\/\d+・\d+\/\d+/)
   })
 
-  it('同一アーティスト・同一締切の複数受付は1行にまとまり「他N件」表示', async () => {
+  it('同一アーティスト・同一締切の複数受付は1行にまとまる', async () => {
     const seeded = await env.DB.prepare(
       "SELECT event_id, starts_at, ends_at FROM lotteries WHERE name = 'オフィシャル先行(抽選)' LIMIT 1",
     ).first<{ event_id: string; starts_at: string; ends_at: string }>()
@@ -100,7 +103,7 @@ describe('締切セクションとカウントダウン', () => {
       .run()
     const html = await (await SELF.fetch('https://example.com/')).text()
     expect(html.match(/data-ends=/g)?.length).toBe(1)
-    expect(html).toContain('他1件')
+    expect(html).not.toContain('他1件') // 受付名を出さないので件数も出さない
   })
 
   it('今日開催の公演には「本日公演」マーカーが付く', async () => {
