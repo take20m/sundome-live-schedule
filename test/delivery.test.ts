@@ -141,6 +141,14 @@ describe('SEO', () => {
     expect(await robots.text()).toContain('Sitemap: https://example.com/sitemap.xml')
   })
 
+  it('HTML は Cache-Control: no-cache で、アイコンは従来どおり長めにキャッシュ', async () => {
+    for (const path of ['/', '/past', '/guide/access']) {
+      const res = await SELF.fetch(`https://example.com${path}`)
+      expect(res.headers.get('cache-control')).toBe('no-cache')
+    }
+    expect((await SELF.fetch('https://example.com/icon.svg')).headers.get('cache-control')).toBe('public, max-age=86400')
+  })
+
   it('ヘッダーは下へスクロールすると隠れ、上へ戻すと出る(全ページ共通のスクリプト)', async () => {
     for (const path of ['/', '/past', '/guide/access']) {
       const html = await (await SELF.fetch(`https://example.com${path}`)).text()

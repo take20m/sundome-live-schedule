@@ -20,6 +20,15 @@ import type { Bindings } from './types'
 
 const app = new Hono<{ Bindings: Bindings }>()
 
+// HTML は表示のたびにサーバーへ確認させる(no-cache)。毎晩データが変わり、デプロイ後も
+// iPhone の Safari が前のページを出し続けることがあったため。個別に Cache-Control を付けた応答はそのまま
+app.use('*', async (c, next) => {
+  await next()
+  if (c.res.headers.get('content-type')?.startsWith('text/html') && !c.res.headers.has('cache-control')) {
+    c.res.headers.set('Cache-Control', 'no-cache')
+  }
+})
+
 const siteUrl = (reqUrl: string, path = '/') => new URL(path, reqUrl).toString()
 
 app.get('/', async (c) => {
