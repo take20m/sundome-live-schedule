@@ -262,9 +262,9 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
   }
 
   const merged: MergedLottery[] = mergeLotteries(group)
-  // 一覧では終了・売り切れの受付を出さない(もう申し込めないので視線を取るだけ)。詳細ページでは履歴として全部出す
-  const shown = detail ? merged : merged.filter((m) => !['closed', 'soldout'].includes(lotteryStatus(m, now)))
-  const hiddenClosed = merged.length - shown.length
+  // 一覧では、今クリックして申し込める受付(受付中で申込ページがある = renderLottery がリンクにするもの)だけを出す。
+  // 終了・売り切れ・受付前・期間不明や、申込先の無い受付は視線を取るだけなので詳細ページに任せる
+  const shown = detail ? merged : merged.filter((m) => lotteryStatus(m, now) === 'open' && isPurchasePage(m.url))
   const lots = opts.compact
     ? merged.length > 0
       ? `<p class="lot-summary"><a href="/e/${escapeHtml(first.id)}">先行・抽選 ${merged.length} 件の記録</a></p>`
@@ -276,8 +276,8 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
             return renderLottery(m, now, partial ? `${m.dates.map(md).join('・')} のみ` : '')
           })
           .join('')}</ul>`
-      : hiddenClosed > 0
-        ? `<p class="lot-summary"><a href="/e/${escapeHtml(first.id)}">受付を終えた先行・抽選 ${hiddenClosed} 件</a></p>`
+      : !detail && merged.length > 0
+        ? '' // 受付の記録はあるが今申し込めるものがない。一覧では何も出さない(詳細ページに全部ある)
       : events[events.length - 1].date < todayInJst(now)
         ? '' // 開催済みの公演はもう収集しないので、「未収集」とは言わない
         : `<p class="none">${detail ? 'チケット情報は未収集です(毎晩調べ直しています)' : 'チケット情報は未収集です'}</p>`

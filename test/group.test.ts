@@ -104,9 +104,11 @@ describe('連日公演の表示', () => {
     expect(cards).toContain(
       `<span class="tile-d range">${Number(d1.slice(8, 10))}<span class="sep">・</span>${Number(d2.slice(8, 10))}</span>`,
     )
-    // 両日共通の受付は1行、片日だけの受付には注記
-    expect(cards.match(/オフィシャル先行/g)?.length).toBe(1)
-    expect(cards).toContain(`${md(d2)} のみ`)
+    // 両日共通の受付は1行、片日だけの受付には注記(申込先の無い受付は一覧に出さないので、詳細ページで確かめる)
+    const detail = await (await SELF.fetch(`https://example.com/e/ev-${d1}`)).text()
+    const lots = detail.slice(detail.indexOf('<ul class="lots">'), detail.indexOf('</ul>', detail.indexOf('<ul class="lots">')))
+    expect(lots.match(/オフィシャル先行/g)?.length).toBe(1)
+    expect(lots).toContain(`${md(d2)} のみ`)
   })
 
   it('2日目の URL でも連結カードを出す。canonical は初日、JSON-LD は全公演日', async () => {

@@ -319,7 +319,7 @@ describe('ingest API', () => {
     const list = await (await SELF.fetch('https://example.com/')).text()
     const card = list.slice(list.indexOf('id="ev-2027-10-10"'), list.indexOf('</article>', list.indexOf('id="ev-2027-10-10"')))
     expect(card).not.toContain('一般発売(先着順)')
-    expect(card).toContain('受付を終えた先行・抽選 1 件')
+    expect(card).not.toContain('受付を終えた')
 
     // 浅い収集(sold_out欠落)で再送してもフラグは維持される
     const shallow = structuredClone(soldOutEvent)
