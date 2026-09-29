@@ -188,6 +188,10 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .lot-note { font-size: 12px; line-height: 16px; letter-spacing: .4px; color: var(--on-surface-variant); }
 /* 2日目以降の /#ev-<日付> 着地点。カード内の先頭に置き、カード自身がスクロール先になる */
 .anchor { display: block; height: 0; scroll-margin-top: 84px; }
+/* 販売中欄から /e/...#lot-... で飛んできた受付。固定ヘッダーに隠れない位置に着地させ、一瞬だけ色を付けて示す */
+.lot { scroll-margin-top: 96px; }
+.lot:target { border-radius: 8px; animation: lot-arrive 2.4s ease-out; }
+@keyframes lot-arrive { 0%, 40% { background: color-mix(in srgb, var(--primary) 16%, transparent); } 100% { background: transparent; } }
 
 /* Text button(詳細のリンク・戻る) */
 .actions { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 0 -12px; }
@@ -228,6 +232,7 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .card:target, .card:has(.anchor:target) { animation: none; outline-color: var(--primary); }
+  .lot:target { animation: none; background: color-mix(in srgb, var(--primary) 12%, transparent); }
 }
 `
 

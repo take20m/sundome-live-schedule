@@ -297,6 +297,21 @@ describe('申込リンク', () => {
     expect(html).not.toContain('linktest/upcoming-ng')
   })
 
+  it('販売中欄の行は詳細ページのその受付(#lot-...)へ飛び、詳細の行には同じ id がある', async () => {
+    const top = await (await SELF.fetch('https://example.com/')).text()
+    const section = top.split('販売中のチケット')[1].split('今後の公演')[0]
+    const m = section.match(new RegExp(`href="/e/ev-${eventDate}#(lot-[a-z0-9]+)"`))
+    expect(m).not.toBeNull()
+    const detail = await (await SELF.fetch(`https://example.com/e/ev-${eventDate}`)).text()
+    expect(detail).toContain(`<li class="lot lot-open" id="${m![1]}">`)
+    // 一覧のカードの受付行には id を付けない(同じ受付が複数のカードに出うる)
+    const card = top.slice(top.indexOf(`id="ev-${eventDate}"`), top.indexOf('</article>', top.indexOf(`id="ev-${eventDate}"`)))
+    expect(card).not.toContain(`id="${m![1]}"`)
+    // 一覧のカードの受付には期間を出さず、詳細には出す
+    expect(card).not.toContain('class="lot-period"')
+    expect(detail).toContain('class="lot-period"')
+  })
+
   it('一覧のカードには今クリックして申し込める受付だけを出し、詳細では全部出す', async () => {
     const card = (html: string) => html.slice(html.indexOf(`id="ev-${eventDate}"`), html.indexOf('</article>', html.indexOf(`id="ev-${eventDate}"`)))
     const list = card(await (await SELF.fetch('https://example.com/')).text())

@@ -62,6 +62,17 @@ export function groupConsecutive(events: EventWithLotteries[]): EventGroup[] {
  * 名前・期間・売り切れ状態が同じ抽選を 1 行に統合する。
  * 並びは最初に現れた順(初日の抽選順 → 2日目だけの抽選)。URL は最初に見つかった非 null を使う
  */
+/**
+ * 受付の固定アンカー(詳細ページの行の id)。名前(表記ゆれ吸収)と期間から作るので、
+ * 連日公演で 1 行にまとめられた受付でも、どの公演日の行から作っても同じになる
+ */
+export function lotteryAnchor(l: Pick<LotteryRow, 'name' | 'starts_at' | 'ends_at'>): string {
+  const key = [norm(l.name), l.starts_at ?? '', l.ends_at ?? ''].join('|')
+  let h = 5381
+  for (let i = 0; i < key.length; i++) h = ((h * 33) ^ key.charCodeAt(i)) >>> 0
+  return `lot-${h.toString(36)}`
+}
+
 export function mergeLotteries(group: EventGroup): MergedLottery[] {
   const out: MergedLottery[] = []
   const index = new Map<string, MergedLottery>()

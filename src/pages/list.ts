@@ -2,7 +2,7 @@ import { isRestrictedLottery } from '../lib/audience'
 import { todayInJst } from '../lib/db'
 import type { EventWithLotteries } from '../lib/db'
 import { formatJst } from '../lib/format'
-import { groupConsecutive, mergeLotteries } from '../lib/group'
+import { groupConsecutive, lotteryAnchor, mergeLotteries } from '../lib/group'
 import type { EventGroup, MergedLottery } from '../lib/group'
 import { escapeHtml, safeHttpUrl } from '../lib/html'
 import { iconSvg } from '../lib/icon'
@@ -140,7 +140,7 @@ function renderDeadlines(events: EventWithLotteries[], now: Date): string {
       const sortedDates = [...dates].sort()
       const datesLabel = `${sortedDates[0].slice(0, 4)}/${sortedDates.map(md).join('・')}`
       const nameLabel = names.length > 1 ? `${names[0]} 他${names.length - 1}件` : names[0]
-      return `<a class="row${status === 'open' ? ' row-open' : ''}" href="/e/${escapeHtml(event.id)}">
+      return `<a class="row${status === 'open' ? ' row-open' : ''}" href="/e/${escapeHtml(event.id)}#${lotteryAnchor(lottery)}">
   <span class="cd"${status === 'open' && hasEnd ? ` data-ends="${escapeHtml(lottery.ends_at!)}"` : ''}>${escapeHtml(countdown)}</span>
   <span class="row-text"><span class="row-h">${escapeHtml(event.artist)}</span><span class="row-s">${escapeHtml(nameLabel)} · 公演 ${escapeHtml(datesLabel)}</span></span>
   ${statusChip(status)}
@@ -153,8 +153,12 @@ ${items}
 </div>`
 }
 
-/** 抽選 1 行。note は連結カードで一部の公演日にしか紐づかない受付への注記("10/4 のみ") */
-export function renderLottery(l: LotteryRow, now: Date, note = ''): string {
+/**
+ * 抽選 1 行。note は連結カードで一部の公演日にしか紐づかない受付への注記("10/4 のみ")。
+ * detail: 詳細ページの行。販売中欄から飛べるよう id を付け、期間も出す。
+ * 一覧のカードでは期間を出さない(受付中のものだけが並び、締切は販売中欄のカウントダウンにある)
+ */
+export function renderLottery(l: LotteryRow, now: Date, note = '', detail = false): string {
   const status = lotteryStatus(l, now)
   const period =
     l.starts_at || l.ends_at ? `${formatJst(l.starts_at)} 〜 ${formatJst(l.ends_at)}` : '期間未確認'
@@ -166,7 +170,8 @@ export function renderLottery(l: LotteryRow, now: Date, note = ''): string {
       ? `<a href="${escapeHtml(url)}" rel="noopener" target="_blank">${escapeHtml(l.name)}</a>`
       : escapeHtml(l.name)
   const noteHtml = note ? `<span class="lot-note">${escapeHtml(note)}</span>` : ''
-  return `<li class="lot lot-${status}">${statusChip(status)}<span class="lot-name">${name}</span>${noteHtml}<span class="lot-period">${escapeHtml(period)}</span></li>`
+  const periodHtml = detail ? `<span class="lot-period">${escapeHtml(period)}</span>` : ''
+  return `<li class="lot lot-${status}"${detail ? ` id="${lotteryAnchor(l)}"` : ''}>${statusChip(status)}<span class="lot-name">${name}</span>${noteHtml}${periodHtml}</li>`
 }
 
 const SOON_LABEL = ['本日公演', '明日公演', '明後日公演']
@@ -273,7 +278,7 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
       ? `<ul class="lots">${shown
           .map((m) => {
             const partial = m.dates.length < events.length
-            return renderLottery(m, now, partial ? `${m.dates.map(md).join('・')} のみ` : '')
+            return renderLottery(m, now, partial ? `${m.dates.map(md).join('・')} のみ` : '', detail)
           })
           .join('')}</ul>`
       : !detail && merged.length > 0
