@@ -53,6 +53,15 @@ jobs:
           INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
         run: node collector/fetch-images.mjs
 
+      # 4段目: 一覧の正方形サムネに切り出す中心を、画像を見て決める(未設定の画像だけ。位置だけ送り、画像は保存しない)
+      - name: Decide thumbnail focus
+        continue-on-error: true
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          INGEST_URL: ${{ vars.INGEST_URL }}
+          INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
+        run: node collector/focus-images.mjs 10
+
       # 購入ページと判定できなかったホストを報告する(新しい販売サイトに気づくため)
       - name: Report unknown ticket hosts
         if: always()

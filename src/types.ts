@@ -16,6 +16,8 @@ export type EventRow = {
   artist_url: string | null
   tour_url: string | null
   image_url: string | null
+  /** 一覧サムネの切り出し中心(CSS object-position)。未設定なら中央 */
+  image_focus?: string | null
   confidence: Confidence
   updated_at: string
 }

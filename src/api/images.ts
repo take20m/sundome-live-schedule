@@ -1,5 +1,6 @@
 import type { Context } from 'hono'
 import { todayInJst } from '../lib/db'
+import { FOCUS_RE } from '../lib/focus'
 import { isDeniedHost } from '../lib/ticket-url'
 import type { Bindings } from '../types'
 
@@ -91,18 +92,72 @@ export async function handleSetImages(c: Context<{ Bindings: Bindings }>): Promi
     const tourUrl = manual && isAcceptableImageUrl(item.tour_url) ? item.tour_url : null
     const res = tourUrl
       ? await c.env.DB.prepare(
-          'UPDATE events SET image_url = ?, image_manual = 1, tour_url = ?, tour_manual = 1, updated_at = ? WHERE id = ?',
+          `UPDATE events SET image_focus = CASE WHEN image_url = ? THEN image_focus ELSE NULL END,
+             image_url = ?, image_manual = 1, tour_url = ?, tour_manual = 1, updated_at = ? WHERE id = ?`,
         )
-          .bind(item.image_url, tourUrl, nowIso, item.event_id)
+          .bind(item.image_url, item.image_url, tourUrl, nowIso, item.event_id)
           .run()
-      : await c.env.DB.prepare('UPDATE events SET image_url = ?, image_manual = ?, updated_at = ? WHERE id = ?')
-          .bind(item.image_url, manual ? 1 : 0, nowIso, item.event_id)
+      : await c.env.DB.prepare(
+          `UPDATE events SET image_focus = CASE WHEN image_url = ? THEN image_focus ELSE NULL END,
+             image_url = ?, image_manual = ?, updated_at = ? WHERE id = ?`,
+        )
+          .bind(item.image_url, item.image_url, manual ? 1 : 0, nowIso, item.event_id)
           .run()
     if (res.meta.changes === 0) {
       skipped.push(`images[${i}] (${item.event_id}): 公演が存在しない`)
       continue
     }
     updated++
+  }
+  return c.json({ updated, skipped })
+}
+
+
+export type PendingFocus = { image_url: string; artist: string; title: string }
+
+/**
+ * 切り出し位置が未設定の画像。同じ画像を使う連日公演は 1 件にまとめる。
+ * 位置が入っているものは返さないので、人が決めた位置を夜間処理が上書きすることはない
+ */
+export async function handlePendingFocus(c: Context<{ Bindings: Bindings }>): Promise<Response> {
+  const denied = unauthorized(c)
+  if (denied) return denied
+  const { results } = await c.env.DB.prepare(
+    `SELECT image_url, MIN(artist) AS artist, MIN(title) AS title FROM events
+     WHERE image_url IS NOT NULL AND image_focus IS NULL
+     GROUP BY image_url ORDER BY MIN(date) ASC`,
+  ).all<PendingFocus>()
+  return c.json({ images: results })
+}
+
+/** POST /api/images/focus { focus: [{ image_url, focus }] }。その画像を使う全公演にまとめて入れる */
+export async function handleSetFocus(c: Context<{ Bindings: Bindings }>): Promise<Response> {
+  const denied = unauthorized(c)
+  if (denied) return denied
+  let body: unknown
+  try {
+    body = await c.req.json()
+  } catch {
+    return c.json({ error: 'invalid JSON' }, 400)
+  }
+  const items = (body as { focus?: unknown })?.focus
+  if (!Array.isArray(items)) return c.json({ error: 'body must be {"focus": [...]}' }, 400)
+  const skipped: string[] = []
+  let updated = 0
+  for (const [i, raw] of items.entries()) {
+    const item = raw as Record<string, unknown>
+    if (typeof item.image_url !== 'string' || typeof item.focus !== 'string' || !FOCUS_RE.test(item.focus)) {
+      skipped.push(`focus[${i}]: image_url または focus が不正`)
+      continue
+    }
+    const res = await c.env.DB.prepare('UPDATE events SET image_focus = ? WHERE image_url = ?')
+      .bind(item.focus, item.image_url)
+      .run()
+    if (res.meta.changes === 0) {
+      skipped.push(`focus[${i}]: その画像を使う公演がない`)
+      continue
+    }
+    updated += res.meta.changes
   }
   return c.json({ updated, skipped })
 }

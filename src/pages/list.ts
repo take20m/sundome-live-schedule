@@ -9,6 +9,7 @@ import { iconSvg } from '../lib/icon'
 import { buildHeadMeta, buildJsonLd, buildMetaDescription } from '../lib/seo'
 import type { LotteryStatus } from '../lib/status'
 import { lotteryStatus } from '../lib/status'
+import { safeFocus } from '../lib/focus'
 import { isPurchasePage } from '../lib/ticket-url'
 import type { LotteryRow } from '../types'
 import { SITE_CSS, SITE_FOOTER, SITE_HEADER } from './style'
@@ -291,17 +292,33 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
   // 画像のリンク先: 一覧では詳細へ、詳細では出典(ツアーページ)へ
   const imageUrl = safeHttpUrl(focus.image_url) ?? events.map((e) => safeHttpUrl(e.image_url)).find((u) => u) ?? null
   const mediaHref = detail ? safeHttpUrl(focus.tour_url) : `/e/${first.id}`
-  // 一覧は低い枠に画像を切らずに収め、余白には同じ画像をぼかして敷く(正方形や縦長のツアー画像でも文字が切れない)。
-  // 同じ URL なので読み込みは 1 回で済む
-  const img = imageUrl
-    ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(first.title)}" loading="lazy" decoding="async" onerror="this.closest('.card-media').remove()">` +
-      (detail ? '' : `<img class="backdrop" src="${escapeHtml(imageUrl)}" alt="" aria-hidden="true" loading="lazy" decoding="async">`)
+  // 詳細は上に 16:9 の帯。一覧は日付タイルの代わりに左の正方形サムネにする(カードが低くなり、公演名と受付が先に目に入る)。
+  // 正方形に切り出す中心は image_focus(夜間処理が画像を見て決める。画像は保存しない)。未設定なら中央
+  const thumbMode = !detail && imageUrl !== null
+  const img = imageUrl && detail
+    ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(first.title)}" loading="lazy" decoding="async" onerror="this.closest('.card-media').remove()">`
     : ''
   const media = !img
     ? ''
     : mediaHref
-      ? `<a class="card-media${detail ? '' : ' card-media-short'}" href="${escapeHtml(mediaHref)}"${detail ? ' rel="noopener" target="_blank"' : ''}>${img}</a>`
-      : `<div class="card-media${detail ? '' : ' card-media-short'}">${img}</div>`
+      ? `<a class="card-media" href="${escapeHtml(mediaHref)}" rel="noopener" target="_blank">${img}</a>`
+      : `<div class="card-media">${img}</div>`
+  const focusPos = safeFocus(events.find((e) => safeHttpUrl(e.image_url) === imageUrl)?.image_focus)
+  // サムネが読み込めなければ日付タイルに戻す(壊れた画像アイコンを見せない)
+  const thumb = thumbMode
+    ? `<div class="thumb"><img src="${escapeHtml(imageUrl!)}" alt="${escapeHtml(first.title)}" loading="lazy" decoding="async"${focusPos ? ` style="object-position: ${focusPos}"` : ''} onerror="var t=this.closest('.thumb');t.nextElementSibling.hidden=false;t.remove()"></div>`
+    : ''
+  // サムネのときは日付を文字で出す。年は今年でなければ付ける
+  const dayShort = (date: string) => {
+    // 同じ月なら日だけ("4(日)")、月をまたぐなら月から("11/1(日)")
+    return first.date.slice(0, 7) === date.slice(0, 7) ? `${dateParts(date).d}(${dateParts(date).dw})` : dayLabel(date)
+  }
+  const dateText =
+    (first.date.slice(0, 4) !== today.slice(0, 4) ? `${first.date.slice(0, 4)}年 ` : '') +
+    (events.length === 1 ? dayLabel(first.date) : `${dayLabel(first.date)}${events.length === 2 ? '・' : '〜'}${dayShort(last.date)}`)
+  const cardDate = thumbMode
+    ? `<p class="card-date">${soonLabel ? `<span class="soon${isToday ? ' today' : ''}">${soonLabel}</span>` : ''}${escapeHtml(dateText)}</p>`
+    : ''
 
   // 一覧とアーティストページでは card-main 全体を詳細への当たり判定にする(タイトルの <a> を CSS で引き伸ばす)。
   // 抽選リストは外に置いたまま ─ 中の外部チケットリンクが <a> の入れ子になるのと、期間の日時が選択できなくなるのを避ける
@@ -311,7 +328,8 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
   ${anchors}
   ${media}
   <div class="card-main${tap ? ' tap' : ''}">
-  <div class="tile">
+  ${thumb}
+  <div class="tile"${thumbMode ? ' hidden' : ''}>
     <span class="tile-bar${soonLabel ? ' soon' : ''}${isToday ? ' today' : ''}">${soonLabel ?? tileYm}</span>
     <span class="tile-body">
       <span class="tile-d${multi ? ' range' : ''}">${tileD}</span>
@@ -319,6 +337,7 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
     </span>
   </div>
   <div class="card-body">
+    ${cardDate}
     <h3 class="card-title">${title}</h3>
     <p class="card-sub">${escapeHtml(first.title)}</p>
     ${schedule}

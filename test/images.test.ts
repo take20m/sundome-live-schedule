@@ -75,28 +75,61 @@ describe('images API と表示', () => {
     expect(all.events.map((e) => e.event_id).sort()).toEqual([`ev-${past}`, `ev-${withTour}`].sort())
   })
 
-  it('画像がある公演だけカード上部にメディアが出て、JSON-LD にも image が載る', async () => {
+  it('一覧は画像を左の正方形サムネにして日付を文字で出し、詳細は上に 16:9。JSON-LD にも image が載る', async () => {
     const html = await (await SELF.fetch('https://example.com/')).text()
     const cardOf = (id: string) => html.slice(html.indexOf(`id="${id}"`), html.indexOf('</article>', html.indexOf(`id="${id}"`)))
     const withImage = cardOf(`ev-${withTour}`)
-    // 一覧の画像は詳細へのリンク
-    // 一覧の画像は低め(card-media-short)、詳細は 16:9 のまま
-    expect(withImage).toContain(`<a class="card-media card-media-short" href="/e/ev-${withTour}"><img src="https://cdn.example.com/kv.jpg"`)
-    // 一覧は切らずに収め、余白にぼかした同じ画像を敷く(装飾なので読み上げない)
-    expect(withImage).toContain('<img class="backdrop" src="https://cdn.example.com/kv.jpg" alt="" aria-hidden="true"')
-    expect(withImage).toContain(`onerror="this.closest('.card-media').remove()"`)
+    // 一覧: サムネ + 日付の文字。日付タイルは画像が読めなかったときの控えとして隠して置く
+    expect(withImage).toContain('<div class="thumb"><img src="https://cdn.example.com/kv.jpg"')
     expect(withImage).toContain('loading="lazy"')
-    expect(cardOf(`ev-${noTour}`)).not.toContain('card-media')
+    expect(withImage).toContain('<p class="card-date">')
+    expect(withImage).toContain('<div class="tile" hidden>')
+    expect(withImage).not.toContain('card-media')
+    // 画像の無い公演は日付タイルのまま
+    const noImage = cardOf(`ev-${noTour}`)
+    expect(noImage).not.toContain('class="thumb"')
+    expect(noImage).toContain('<div class="tile">')
+    expect(noImage).not.toContain('card-date')
     expect(html).toContain('"image":["https://cdn.example.com/kv.jpg"]')
 
-    // 詳細の画像は出典(ツアーページ)へのリンク
+    // 詳細の画像は出典(ツアーページ)へのリンクで、上に 16:9。サムネは出さない
     const detail = await (await SELF.fetch(`https://example.com/e/ev-${withTour}`)).text()
     expect(detail).toContain('<a class="card-media" href="https://example.com/live/" rel="noopener" target="_blank"><img src="https://cdn.example.com/kv.jpg"')
-    expect(detail).not.toContain('class="backdrop"')
+    expect(detail).not.toContain('<div class="thumb">')
     // 共有カード(OG)にもツアー画像。画像の無い公演は会場写真
     expect(detail).toContain('<meta property="og:image" content="https://cdn.example.com/kv.jpg">')
     const noImg = await (await SELF.fetch(`https://example.com/e/ev-${noTour}`)).text()
     expect(noImg).toContain('<meta property="og:image" content="https://example.com/img/og-default.jpg">')
+  })
+
+  it('切り出し位置: 未設定の画像を返し、入れた位置がサムネに効く。不正な値は捨て、画像が変わると位置は消える', async () => {
+    const pending = (await (await SELF.fetch('https://example.com/api/images/focus-pending', { headers })).json()) as {
+      images: { image_url: string }[]
+    }
+    expect(pending.images.map((i) => i.image_url)).toContain('https://cdn.example.com/kv.jpg')
+    const res = await SELF.fetch('https://example.com/api/images/focus', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        focus: [
+          { image_url: 'https://cdn.example.com/kv.jpg', focus: '30% 20%' },
+          { image_url: 'https://cdn.example.com/kv.jpg', focus: 'center; background:url(x)' },
+          { image_url: 'https://cdn.example.com/none.jpg', focus: '50% 50%' },
+        ],
+      }),
+    })
+    const body = (await res.json()) as { updated: number; skipped: string[] }
+    expect(body.updated).toBe(1)
+    expect(body.skipped.length).toBe(2)
+    const html = await (await SELF.fetch('https://example.com/')).text()
+    expect(html).toContain('<img src="https://cdn.example.com/kv.jpg" alt="IMAGE TOUR" loading="lazy" decoding="async" style="object-position: 30% 20%"')
+    // 位置が入った画像は未設定一覧から消える(人が決めた位置を夜間処理が上書きしない)
+    const after = (await (await SELF.fetch('https://example.com/api/images/focus-pending', { headers })).json()) as {
+      images: { image_url: string }[]
+    }
+    expect(after.images.map((i) => i.image_url)).not.toContain('https://cdn.example.com/kv.jpg')
+    // 認証なしは 401
+    expect((await SELF.fetch('https://example.com/api/images/focus-pending')).status).toBe(401)
   })
 
   it('manual: true は人が選んだ画像とツアーページを記録し、取り直し(all=1)の対象から外れる', async () => {
@@ -142,9 +175,11 @@ describe('images API と表示', () => {
         images: [{ event_id: `ev-${withTour}`, image_url: 'https://cdn.example.com/kv2.jpg', tour_url: 'https://evil.example.com/' }],
       }),
     })
-    const row = await env.DB.prepare('SELECT image_url, image_manual, tour_url FROM events WHERE id = ?')
+    const row = await env.DB.prepare('SELECT image_url, image_manual, tour_url, image_focus FROM events WHERE id = ?')
       .bind(`ev-${withTour}`)
-      .first<{ image_url: string; image_manual: number; tour_url: string }>()
+      .first<{ image_url: string; image_manual: number; tour_url: string; image_focus: string | null }>()
+    // 画像が差し替わったので、前の画像に合わせた切り出し位置は消える
+    expect(row?.image_focus).toBeNull()
     expect(row).toMatchObject({
       image_url: 'https://cdn.example.com/kv2.jpg',
       image_manual: 0,

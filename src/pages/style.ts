@@ -127,11 +127,13 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .card-media { display: block; aspect-ratio: 16 / 9; max-width: 100%; background: var(--surface-container-highest); }
 .card-media:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
 .card-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
-/* 一覧のカードでは画像を半分の高さに。公演名と受付が先に目に入るように。
-   ツアー画像は正方形・縦長もあるので切らずに収め(contain)、余白には同じ画像をぼかして敷く */
-.card-media-short { aspect-ratio: 32 / 9; position: relative; overflow: hidden; }
-.card-media-short img { position: relative; z-index: 1; object-fit: contain; }
-.card-media-short img.backdrop { position: absolute; inset: 0; z-index: 0; object-fit: cover; filter: blur(24px) saturate(1.2) brightness(.8); transform: scale(1.25); }
+/* 一覧のカードは日付タイルの代わりに正方形のサムネ。切り出し中心は img の object-position(公演ごとに DB から) */
+.thumb { flex: 0 0 92px; width: 92px; height: 92px; align-self: flex-start; border-radius: 10px; overflow: hidden; background: var(--surface-container-highest); }
+.thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.tile[hidden] { display: none; }
+.card-date { margin: 0 0 2px; font-size: 13px; line-height: 18px; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; }
+.card-date .soon { display: inline-block; margin-right: 6px; padding: 0 6px; border-radius: 4px; background: var(--primary-container); color: var(--on-primary-container); font-size: 11px; }
+.card-date .soon.today { background: var(--primary); color: var(--on-primary); }
 .card:hover { box-shadow: var(--shadow-2); }
 /* 詳細から /#ev-... で戻ってきた直後、該当カードを一瞬強調して位置を示す */
 .card:target, .card:has(.anchor:target) { outline: 3px solid transparent; outline-offset: 3px; animation: card-arrive 2.4s ease-out; }
@@ -188,6 +190,7 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
   .appbar h1 { font-size: 17px; letter-spacing: 2px; }
   .appbar h1 span + span { font-size: 9.5px; letter-spacing: 3.4px; }
   .card-main { padding: 12px; gap: 12px; }
+  .thumb { flex-basis: 76px; width: 76px; height: 76px; }
   .tile { flex-basis: 60px; }
   /* 60px 幅では 2026.10–11 が 11px/字間.5px だと収まらないので帯を詰める */
   .tile-bar { font-size: 10px; line-height: 18px; letter-spacing: 0; }

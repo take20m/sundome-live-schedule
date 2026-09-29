@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import type { Context } from 'hono'
 import { handleIngest } from './api/ingest'
-import { handlePendingImages, handleSetImages } from './api/images'
+import { handlePendingFocus, handlePendingImages, handleSetFocus, handleSetImages } from './api/images'
 import { handleMissing } from './api/missing'
 import { handleUnknownHosts } from './api/unknown-hosts'
 import { buildRss } from './feeds/rss'
@@ -109,5 +109,7 @@ app.get('/api/missing', handleMissing)
 app.get('/api/unknown-hosts', handleUnknownHosts)
 app.get('/api/images/pending', handlePendingImages)
 app.post('/api/images', handleSetImages)
+app.get('/api/images/focus-pending', handlePendingFocus)
+app.post('/api/images/focus', handleSetFocus)
 
 export default app
