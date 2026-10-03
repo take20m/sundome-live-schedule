@@ -144,6 +144,26 @@ describe('RSS', () => {
   })
 })
 
+describe('RSS のまとめ', () => {
+  it('同じ夜・同じアーティスト・同じ受付期間の受付は 1 件にまとめ、guid は最初の通知のもの', async () => {
+    const at = '2026-10-02T15:00:00.000Z'
+    const ins = env.DB.prepare(
+      `INSERT INTO changes (item_id, item_type, change_kind, summary, created_at) VALUES (?, 'lottery', 'added', ?, ?)`,
+    )
+    const p = '10/2 18:00〜10/12 23:59'
+    const first = await ins.bind('lot-ev-2027-04-24-aaaaaaa1', `抽選情報: まとめバンド「最終プレオーダー」受付 ${p}`, at).run()
+    await ins.bind('lot-ev-2027-04-24-aaaaaaa2', `抽選情報: まとめバンド「親子最終プレオーダー」受付 ${p}`, at).run()
+    await ins.bind('lot-ev-2027-04-24-aaaaaaa3', `抽選情報: まとめバンド「車椅子最終プレオーダー」受付 ${p}`, at).run()
+    // 期間が違う受付は別の通知のまま
+    await ins.bind('lot-ev-2027-04-24-aaaaaaa4', '抽選情報: まとめバンド「一般発売」受付 11/1 10:00〜不明', at).run()
+    const xml = await (await SELF.fetch('https://example.com/feed.xml')).text()
+    expect(xml).toContain(`<title>抽選情報: まとめバンド「最終プレオーダー」ほか2件 受付 ${p}</title>`)
+    expect(xml).not.toContain('親子最終プレオーダー')
+    expect(xml).toContain(`<guid isPermaLink="false">change-${first.meta.last_row_id}</guid>`)
+    expect(xml).toContain('まとめバンド「一般発売」受付 11/1 10:00〜不明')
+  })
+})
+
 describe('SEO', () => {
   it('JSON-LD・OGP・canonical が入っている', async () => {
     const res = await SELF.fetch('https://example.com/')
