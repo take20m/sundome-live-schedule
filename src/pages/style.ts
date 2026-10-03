@@ -255,7 +255,7 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .sub-toast.is-shown { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: no-preference) { .sub-toast { transition: opacity .25s, transform .25s; } }
 @media (min-width: 600px) { .sub-toast { left: auto; right: 20px; bottom: 20px; width: 340px; } }
-.sub-toast-link, .sub-card { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 12px 4px 12px 12px; color: inherit; text-decoration: none; }
+.sub-toast-link { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 12px 4px 12px 12px; color: inherit; text-decoration: none; }
 .sub-toast-ic { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--surface-container-low); color: var(--primary); }
 .sub-toast-ic .ic { width: 22px; height: 22px; }
 .sub-toast-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -264,9 +264,12 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .sub-toast-close { flex: none; display: grid; place-items: center; width: 40px; height: 40px; margin: 4px 4px 0 0; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--on-surface-variant); cursor: pointer; }
 .sub-toast-close .ic { width: 20px; height: 20px; }
 .sub-toast-close:hover { background: color-mix(in srgb, var(--on-surface) 8%, transparent); }
-.sub-toast-link:focus-visible, .sub-toast-close:focus-visible, .sub-card:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; border-radius: 14px; }
-.sub-card { margin-top: 14px; padding: 12px; border-radius: 14px; background: var(--secondary-container); color: var(--on-secondary-container); }
-.sub-card > .ic { width: 20px; height: 20px; color: var(--primary); flex: none; }
+.sub-toast-link:focus-visible, .sub-toast-close:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; border-radius: 14px; }
+.sub-card:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+/* 詳細ページの案内は受付一覧と同じくらいの重さに: 文字の幅だけのボタン */
+.sub-card { display: inline-flex; align-items: center; gap: 6px; height: 40px; margin-top: 12px; padding: 0 10px 0 12px; border-radius: 20px; background: var(--secondary-container); color: var(--primary); font-size: 14px; font-weight: 700; letter-spacing: .2px; text-decoration: none; }
+.sub-card .ic { width: 20px; height: 20px; flex: none; }
+.sub-card .ic:last-child { width: 18px; height: 18px; margin-left: 2px; }
 .sub-card:hover { background: color-mix(in srgb, var(--on-secondary-container) 8%, var(--secondary-container)); }
 
 /* 「新着情報を受け取る」ページ */

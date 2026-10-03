@@ -45,5 +45,5 @@ export function promoToast(): string {
 export const PROMO_MARK_SUBSCRIBED = `<script>try { localStorage.setItem('${STORE}', JSON.stringify({ subscribed: true })); } catch (e) {}</script>`
 
 export function promoCard(): string {
-  return `<a class="sub-card" href="/subscribe#mail"><span class="sub-toast-ic">${iconSvg('notification_add')}</span><span class="sub-toast-text"><b>${PROMO_COPY.cardTitle}</b></span>${iconSvg('chevron_right')}</a>`
+  return `<a class="sub-card" href="/subscribe#mail">${iconSvg('notification_add')}<span>${PROMO_COPY.cardTitle}</span>${iconSvg('chevron_right')}</a>`
 }
