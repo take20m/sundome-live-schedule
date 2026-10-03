@@ -51,8 +51,7 @@ describe('過去の公演ページ', () => {
     expect(bogus).toContain('先月のバンド')
     // いちばん下から前の年へ進める(最新の年なので新しい年へのリンクは無い)。前の年からは新しい年へ戻れる
     const y1 = p1.slice(0, 4), y2 = p2.slice(0, 4)
-    expect(html).toContain(`<a class="year-next" href="/past?y=${y1}">`)
-    expect(html).toContain('<span class="year-next-count">1 公演</span>')
+    expect(html).toContain(`<a class="year-next" href="/past?y=${y1}">${y1}年`)
     expect(html).not.toContain(`<a class="btn-text" href="/past?y=`)
     expect(old).toContain(`<a class="btn-text" href="/past?y=${y2}">`)
     expect(old).not.toContain('class="year-next"')

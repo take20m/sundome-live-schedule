@@ -36,7 +36,7 @@ export function renderPastPage(events: EventWithLotteries[], now: Date, canonica
           newer ? `<a class="btn-text" href="/past?y=${newer}">${iconSvg('chevron_left')}${newer}年</a>` : '<span></span>'
         }${
           older
-            ? `<a class="year-next" href="/past?y=${older}"><span class="year-next-label">${older}年の公演へ${iconSvg('chevron_right')}</span><span class="year-next-count">${count(byYear.get(older)!)} 公演</span></a>`
+            ? `<a class="year-next" href="/past?y=${older}">${older}年${iconSvg('chevron_right')}</a>`
             : ''
         }</nav>`
       : ''
