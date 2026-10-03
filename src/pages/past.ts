@@ -87,15 +87,18 @@ ${opts.autoScroll && year ? AUTO_SCROLL_SCRIPT : ''}
 }
 
 /**
- * お試し: ?auto=1 のときだけ、いちばん下に近づいたら前の年を下に足していく(無限スクロール)。
- * 前の年のページを取ってきて、その年の欄(.past-year)だけを差し込む。今見ている年に合わせて
- * 年タブの強調とアドレスバーの ?y= を切り替える。スクリプトが動かなければ「2024年 ›」のボタンのまま
+ * お試し: ?auto=1 のときだけ、年の終わりまで来たら前の年を下に足していく(無限スクロール)。
+ * 「読み込み中」とカードの形の仮表示を見せてから、前の年の欄(.past-year)を差し込み、カードを順に浮き上がらせる。
+ * 各年の見出しは画面の上に貼りつけ、年タブの強調とアドレスバーの ?y= も今見ている年に合わせる。
+ * スクリプトが動かなければ「2024年 ›」のボタンのまま
  */
 const AUTO_SCROLL_SCRIPT = `<script>
 (function(){
   var pager = document.querySelector('.year-pager');
   if (!pager || !('IntersectionObserver' in window)) return;
+  document.body.classList.add('past-auto');
   var back = pager.querySelector('.btn-text'); if (back) back.remove();
+  var still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   var loading = false;
   var tabs = [].slice.call(document.querySelectorAll('.years .chip'));
   function setYear(y){
@@ -110,24 +113,35 @@ const AUTO_SCROLL_SCRIPT = `<script>
     es.forEach(function(e){ if (e.isIntersecting) setYear(e.target.dataset.year); });
   }, { rootMargin: '-35% 0px -60% 0px' });
   document.querySelectorAll('.past-year').forEach(function(s){ seen.observe(s); });
-  function near(){ return pager.getBoundingClientRect().top < innerHeight + 600; }
+  // 年の終わり(ボタン)が見えたら読み込む。読み込み中はボタンを「読み込み中…」にし、カードの形の仮表示を出す
   function load(){
     var next = pager.querySelector('.year-next');
     if (!next || loading) return;
     loading = true;
-    fetch(next.getAttribute('href')).then(function(r){ return r.text(); }).then(function(html){
-      var doc = new DOMParser().parseFromString(html, 'text/html');
+    var y = next.textContent.trim();
+    next.classList.add('is-loading');
+    next.innerHTML = '<span class="spin" aria-hidden="true"></span>' + y + 'を読み込み中…';
+    var skel = document.createElement('div');
+    skel.className = 'past-skeleton';
+    skel.setAttribute('aria-hidden', 'true');
+    skel.innerHTML = '<i></i><i></i>';
+    pager.parentNode.insertBefore(skel, pager);
+    var wait = new Promise(function(r){ setTimeout(r, still ? 0 : 700); });
+    Promise.all([fetch(next.getAttribute('href')).then(function(r){ return r.text(); }), wait]).then(function(res){
+      var doc = new DOMParser().parseFromString(res[0], 'text/html');
       var sec = doc.querySelector('.past-year');
+      skel.remove();
       if (!sec) { next.remove(); return; }
       var added = document.importNode(sec, true);
+      added.classList.add('is-arriving');
+      [].forEach.call(added.querySelectorAll('.card'), function(c, i){ c.style.setProperty('--d', Math.min(i, 8) * 60 + 'ms'); });
       pager.parentNode.insertBefore(added, pager);
       seen.observe(added);
       var after = doc.querySelector('.year-pager .year-next');
       if (after) next.replaceWith(document.importNode(after, true)); else next.remove();
       loading = false;
-      if (near()) load();
-    }).catch(function(){ loading = false; });
+    }).catch(function(){ skel.remove(); next.classList.remove('is-loading'); next.textContent = y; loading = false; });
   }
-  new IntersectionObserver(function(es){ if (es[0].isIntersecting) load(); }, { rootMargin: '0px 0px 600px 0px' }).observe(pager);
+  new IntersectionObserver(function(es){ if (es[0].isIntersecting) load(); }, { rootMargin: '0px 0px -40px 0px' }).observe(pager);
 })();
 </script>`

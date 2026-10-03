@@ -166,6 +166,22 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .year-next .ic { width: 20px; height: 20px; }
 .year-next:hover { background: color-mix(in srgb, var(--on-secondary-container) 8%, var(--secondary-container)); }
 .year-next:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+/* 過去の公演の自動読み込み(お試し ?auto=1) */
+.past-auto .past-year > .section { position: sticky; top: 0; z-index: 5; margin: 0 -16px 8px; padding: 10px 16px 8px; background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(6px); }
+.past-auto .past-year + .past-year { margin-top: 28px; }
+.year-next.is-loading { gap: 8px; padding: 0 18px; color: var(--on-surface-variant); pointer-events: none; }
+.spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; }
+.past-skeleton { display: grid; gap: 16px; margin-top: 16px; }
+.past-skeleton i { display: block; height: 108px; border-radius: 12px; background: linear-gradient(90deg, var(--surface-container-highest) 0%, var(--surface-container) 50%, var(--surface-container-highest) 100%); background-size: 200% 100%; }
+@media (prefers-reduced-motion: no-preference) {
+  .spin { animation: spin .8s linear infinite; }
+  .past-skeleton i { animation: shimmer 1.2s ease-in-out infinite; }
+  .past-year.is-arriving > .section { animation: arrive .45s ease-out both; }
+  .past-year.is-arriving .card { animation: arrive .45s ease-out both; animation-delay: var(--d, 0ms); }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+@keyframes arrive { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 .years .chip { height: 32px; padding: 0 14px; font-size: 13px; text-decoration: none; }
 .years .chip:not(.chip-open):hover { background: color-mix(in srgb, var(--on-surface-variant) 8%, transparent); }
 .chip-closed, .chip-unknown { color: var(--outline); border-color: var(--outline-variant); }
