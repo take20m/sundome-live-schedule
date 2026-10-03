@@ -430,8 +430,9 @@ export const COUNTDOWN_SCRIPT = `<script>
 
 /**
  * 販売中欄のカルーセル。幅に収まらないときだけ、末尾の次に先頭が来るように並びを複製してつなぎ、
- * 4 秒ごとに 1 枚ずつ送る(矢印もマウスのある端末に出す)。人が触る・スクロールする・キーボードで動かすと
- * 以後は自動で送らない。マウスが乗っている間、欄が画面外のとき、タブが裏のときは止める。
+ * 2 秒ごとに 1 枚ずつ送る(矢印もマウスのある端末に出す)。人が横にスクロールしたり矢印を押したりしたら、
+ * 最後の操作から 6 秒は送らない。縦スクロールやタップでは止めない(指が触れている間だけ待つ)。
+ * マウスが乗っている間、中にフォーカスがある間、欄が画面外のとき、タブが裏のときも待つ。
  * 「動きを減らす」設定なら自動では送らず、矢印でも動きを付けない。
  * 送りの動きはブラウザの smooth スクロールに任せず自前で描く。iOS の WebKit は吸着つきの横スクロールを
  * smooth で動かすと元の位置へ吸い戻すことがあり、iPhone の Chrome では自動送りが進まなかった
@@ -443,7 +444,11 @@ const SALE_SCRIPT = `<script>
   var prev = root.querySelector('.sale-prev'), next = root.querySelector('.sale-next');
   var items = [].slice.call(track.children);
   var still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var stopped = still, hover = false, visible = true, looped = false, anim = 0;
+  var INTERVAL = 2000, RESUME = 6000;
+  var hover = false, touching = false, focused = false, visible = true, looped = false, anim = 0;
+  // userAt: 人が横に動かした最後の時刻。selfUntil: それまでの scroll イベントは自分で動かしたもの
+  var userAt = 0, selfUntil = 0;
+  function self(){ selfUntil = Date.now() + 120; }
   function pad(){ return parseFloat(getComputedStyle(track).scrollPaddingLeft) || 0; }
   // 各カードの吸着位置(scrollLeft の値)
   function stops(){
@@ -475,16 +480,17 @@ const SALE_SCRIPT = `<script>
   // 複製側に入ったら、同じ見た目の元の側へ瞬時に戻す
   function wrap(){
     var w = loopWidth();
-    if (w && track.scrollLeft >= w - 1) track.scrollLeft -= w;
+    if (w && track.scrollLeft >= w - 1) { self(); track.scrollLeft -= w; }
   }
   function slideTo(left){
     cancelAnimationFrame(anim);
-    if (still) { track.scrollLeft = left; wrap(); return; }
+    if (still) { self(); track.scrollLeft = left; wrap(); return; }
     var from = track.scrollLeft, d = left - from, t0 = null;
     track.style.scrollSnapType = 'none';
     function frame(t){
       if (t0 === null) t0 = t;
       var k = Math.min(1, (t - t0) / 450);
+      self();
       track.scrollLeft = from + d * (k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
       if (k < 1) { anim = requestAnimationFrame(frame); return; }
       wrap();
@@ -494,25 +500,42 @@ const SALE_SCRIPT = `<script>
   }
   function go(dir){
     var cur = track.scrollLeft, list = stops(), target = null;
-    if (dir < 0 && cur < 4 && looped) { cur += loopWidth(); track.scrollLeft = cur; list = stops(); }
+    if (dir < 0 && cur < 4 && looped) { cur += loopWidth(); self(); track.scrollLeft = cur; list = stops(); }
     if (dir > 0) { for (var i = 0; i < list.length; i++) if (list[i] > cur + 4) { target = list[i]; break; } }
     else { for (var j = list.length - 1; j >= 0; j--) if (list[j] < cur - 4) { target = list[j]; break; } }
     if (target === null) return;
     slideTo(Math.min(target, track.scrollWidth - track.clientWidth));
   }
-  function stop(){ stopped = true; }
   setInterval(function(){
-    if (stopped || hover || !visible || document.hidden || !looped) return;
+    if (still || !looped || hover || touching || focused || !visible || document.hidden) return;
+    if (Date.now() - userAt < RESUME) return;
     go(1);
-  }, 4000);
-  ['pointerdown', 'wheel', 'touchstart', 'keydown', 'focusin'].forEach(function(t){ root.addEventListener(t, stop, { passive: true }); });
-  root.addEventListener('mouseenter', function(){ hover = true; });
-  root.addEventListener('mouseleave', function(){ hover = false; });
-  prev.addEventListener('click', function(){ go(-1); });
-  next.addEventListener('click', function(){ go(1); });
-  // 人が指で複製側までスクロールしたときも、止まったところで元の側へ戻す
+  }, INTERVAL);
+  // マウスが乗っている間だけ待つ(iOS はタップでも mouseenter を出し、離れても戻らないので pointerType で分ける)
+  root.addEventListener('pointerenter', function(e){ if (e.pointerType === 'mouse') hover = true; });
+  root.addEventListener('pointerleave', function(e){ if (e.pointerType === 'mouse') hover = false; });
+  // 指が触れたら送りの途中でも止めて指に任せる。
+  // 縦スクロールで触れただけなら、送りの途中で止めた分の吸着(scroll)は人の横スクロールに数えない
+  root.addEventListener('touchstart', function(){
+    touching = true;
+    if (track.style.scrollSnapType) {
+      cancelAnimationFrame(anim);
+      selfUntil = Date.now() + 300;
+      track.style.scrollSnapType = '';
+    }
+  }, { passive: true });
+  ['touchend', 'touchcancel'].forEach(function(t){ root.addEventListener(t, function(){ touching = false; }, { passive: true }); });
+  root.addEventListener('focusin', function(){ focused = true; });
+  root.addEventListener('focusout', function(e){ focused = root.contains(e.relatedTarget); });
+  prev.addEventListener('click', function(){ userAt = Date.now(); go(-1); });
+  next.addEventListener('click', function(){ userAt = Date.now(); go(1); });
+  // 自分で動かした分を除いた scroll は人の横スクロール。止まったところで、複製側にいれば元の側へ戻す
   var idle;
-  track.addEventListener('scroll', function(){ clearTimeout(idle); idle = setTimeout(function(){ if (!track.style.scrollSnapType) wrap(); }, 150); }, { passive: true });
+  track.addEventListener('scroll', function(){
+    if (Date.now() >= selfUntil) userAt = Date.now();
+    clearTimeout(idle);
+    idle = setTimeout(function(){ if (!track.style.scrollSnapType) wrap(); }, 150);
+  }, { passive: true });
   addEventListener('resize', function(){ setLoop(!fits()); });
   if ('IntersectionObserver' in window) new IntersectionObserver(function(es){ visible = es[0].isIntersecting; }).observe(track);
   setLoop(!fits());
