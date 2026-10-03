@@ -8,7 +8,7 @@ import { LOGO_SVG, iconSvg } from '../lib/icon'
 export const SITE_HEADER = `<header class="appbar">
 <a class="brand" href="/">${LOGO_SVG}<h1><span>サンドーム福井</span> <span>ライブ情報</span></h1></a>
 <span class="spacer"></span>
-<a class="iconbtn" href="/feed.xml" aria-label="RSS フィード" title="RSS">${iconSvg('rss_feed')}</a>
+<a class="follow" href="/subscribe">${iconSvg('notifications')}<span>更新を受け取る</span></a>
 </header>
 <script>
 // 下へスクロールしたらヘッダーを隠し、上へ一定量(48px)戻したら出す。ページ先頭付近では常に出す
@@ -27,6 +27,7 @@ export const SITE_HEADER = `<header class="appbar">
 </script>`
 
 export const SITE_FOOTER = `<footer class="site-f">
+<a href="/subscribe">更新を受け取る</a>
 <a href="/about">このサイトについて</a>
 <span>© 2026 take20m</span>
 </footer>`
@@ -91,6 +92,12 @@ a { color: var(--primary); }
 .spacer { flex: 1; }
 .iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 24px; color: var(--on-surface-variant); text-decoration: none; }
 .iconbtn .ic { width: 24px; height: 24px; }
+/* ヘッダーの「更新を受け取る」。RSS の XML へ直接飛ばすとファイルが保存されるので、案内ページへ */
+.follow { display: inline-flex; align-items: center; gap: 4px; height: 36px; margin-right: 8px; padding: 0 12px 0 10px; border-radius: 18px; background: var(--secondary-container); color: var(--on-secondary-container); font-size: 13px; font-weight: 700; letter-spacing: .3px; text-decoration: none; white-space: nowrap; }
+.follow .ic { width: 18px; height: 18px; }
+.follow:hover { background: color-mix(in srgb, var(--on-secondary-container) 12%, var(--secondary-container)); }
+.follow:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+@media (max-width: 360px) { .follow span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } .follow { padding: 0 9px; } }
 .iconbtn:hover { background: color-mix(in srgb, var(--on-surface-variant) 8%, transparent); }
 
 main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
@@ -248,6 +255,21 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 /* フッター */
 .site-f { background: var(--surface-container); padding: 24px 16px 28px; display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--on-surface-variant); font-size: 12px; line-height: 16px; letter-spacing: .4px; }
 .site-f a { color: var(--on-surface); text-decoration: none; font-weight: 500; font-size: 14px; }
+/* 「更新を受け取る」ページ */
+.sub-block h2 { display: flex; align-items: center; gap: 8px; }
+.sub-block h2 .ic { width: 22px; height: 22px; color: var(--primary); }
+.sub-steps { display: grid; gap: 8px; margin: 12px 0 0; }
+.sub-steps div { display: grid; grid-template-columns: 4.6em 1fr; gap: 8px; }
+.sub-steps dt { font-weight: 700; color: var(--primary); }
+.sub-steps dd { margin: 0; }
+.sub-btn { display: inline-flex; align-items: center; gap: 8px; height: 44px; margin-top: 16px; padding: 0 20px; border: 0; border-radius: 22px; background: var(--primary); color: var(--on-primary); font: inherit; font-weight: 700; cursor: pointer; }
+.sub-btn .ic { width: 20px; height: 20px; }
+.sub-url { display: flex; gap: 8px; margin: 12px 0 0; }
+.sub-url input { flex: 1; min-width: 0; height: 44px; padding: 0 12px; border: 1px solid var(--outline-variant); border-radius: 10px; background: var(--surface-container); color: var(--on-surface); font: 14px/1 ui-monospace, Menlo, monospace; }
+.sub-copy { display: inline-flex; align-items: center; gap: 6px; flex: none; height: 44px; padding: 0 14px; border: 0; border-radius: 10px; background: var(--secondary-container); color: var(--on-secondary-container); font: inherit; font-weight: 700; cursor: pointer; }
+.sub-copy .ic { width: 18px; height: 18px; }
+.sub-btn:focus-visible, .sub-copy:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.sub-links { margin: 8px 0 0 -12px; }
 .more { margin: 24px 0 0 -12px; }
 /* 詳細: 終了・売り切れの受付は畳む。開くと下に並ぶ */
 .lots-ended { margin-top: 8px; border-top: 1px solid var(--outline-variant); }

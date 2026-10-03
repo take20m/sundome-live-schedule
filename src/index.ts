@@ -11,6 +11,7 @@ import { groupRuns } from './lib/group'
 import { FAVICON_SVG } from './lib/icon'
 import { buildRobots, buildSitemap } from './lib/seo'
 import { renderAboutPage } from './pages/about'
+import { renderSubscribePage } from './pages/subscribe'
 import { renderDetailPage } from './pages/detail'
 import { renderListPage } from './pages/list'
 import { renderPastPage } from './pages/past'
@@ -70,6 +71,7 @@ app.get('/guide/:slug', (c) => {
 })
 
 app.get('/about', (c) => c.html(renderAboutPage(siteUrl(c.req.url, '/about'))))
+app.get('/subscribe', (c) => c.html(renderSubscribePage(siteUrl(c.req.url, '/subscribe'))))
 
 app.get('/feed.xml', async (c) => {
   const changes = await listRecentChanges(c.env.DB)

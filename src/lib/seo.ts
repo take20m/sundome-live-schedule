@@ -107,7 +107,7 @@ export function buildSitemap(siteUrl: string, lastmod: string, extraPaths: strin
   const url = (path: string) => `  <url><loc>${new URL(path, siteUrl).toString()}</loc><lastmod>${lastmod}</lastmod></url>`
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${['/', '/past', '/about', ...extraPaths].map(url).join('\n')}
+${['/', '/past', '/about', '/subscribe', ...extraPaths].map(url).join('\n')}
 </urlset>
 `
 }
@@ -155,6 +155,8 @@ ${opts.noindex ? '<meta name="robots" content="noindex,follow">\n' : ''}
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&amp;family=Noto+Sans+JP:wght@400;500;700&amp;display=swap">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="サンドーム福井">
 <link rel="canonical" href="${canonical}">
 <meta property="og:type" content="website">
 <meta property="og:title" content="${t}">
