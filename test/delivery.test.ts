@@ -297,6 +297,7 @@ describe('申込リンク', () => {
     },
     { name: '終了かつ購入ページ', from: -10, to: -5, url: 'https://eplus.jp/linktest/closed-ng/' },
     { name: '受付前かつ購入ページ', from: 5, to: 10, url: 'https://eplus.jp/linktest/upcoming-ng/' },
+    { name: 'FC会員先行(受付前)', from: 6, to: 8, url: 'https://eplus.jp/linktest/upcoming-fc/' },
   ]
 
   beforeAll(async () => {
@@ -380,6 +381,20 @@ describe('申込リンク', () => {
     for (const name of ['受付中かつ購入ページ', '受付中だが会場検索ページ', '受付前かつ購入ページ', '終了かつ購入ページ']) {
       expect(detail).toContain(name)
     }
+  })
+
+  it('受付前は販売中欄に出さず、一覧のカードで「受付前 開始日時〜」だけ予告する(一般申込み可能なものだけ)', async () => {
+    const top = await (await SELF.fetch('https://example.com/')).text()
+    const onSale = await onSaleLotteryNames(SELF, top)
+    expect(onSale).toContain('受付中かつ購入ページ')
+    expect(onSale).not.toContain('受付前かつ購入ページ')
+    const card = top.slice(top.indexOf(`id="ev-${eventDate}"`), top.indexOf('</article>', top.indexOf(`id="ev-${eventDate}"`)))
+    // FC 先行は予告しないので、受付前の行は一般の 1 本だけ。受付名は出さない
+    const rows = [...card.matchAll(/<li class="lot lot-upcoming">(.*?)<\/li>/g)].map((m) => m[1])
+    expect(rows).toEqual([
+      expect.stringMatching(/^<span class="chip chip-upcoming">受付前<\/span><span class="lot-name">\d+\/\d+ \d{2}:\d{2}〜<\/span>$/),
+    ])
+    expect(card).not.toContain('FC会員先行(受付前)')
   })
 
   // JSON-LD の Offer.url は検索結果のチケット導線に使われるので画面と同じ基準で出す

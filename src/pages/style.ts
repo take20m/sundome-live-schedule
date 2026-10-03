@@ -107,9 +107,7 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .row { display: flex; align-items: center; gap: 16px; min-height: 72px; padding: 12px 16px; text-decoration: none; color: inherit; border-top: 1px solid var(--outline-variant); }
 .row:first-child { border-top: 0; }
 .row:hover { background: color-mix(in srgb, var(--on-surface) 8%, transparent); }
-.list-label { margin: 12px 4px 6px; font-size: 12px; line-height: 16px; font-weight: 700; letter-spacing: .4px; color: var(--on-surface-variant); }
-.list + .list-label { margin-top: 16px; }
-/* 右端の状態。受付中は締切までの残り(3日以内は赤)、それ以外(締切未定・開始日時)は控えめに */
+/* 右端の状態。締切までの残り(3日以内は赤)。締切未定は控えめに */
 .cd { flex: none; font-size: 13px; line-height: 20px; font-weight: 500; letter-spacing: .25px; color: var(--on-surface-variant); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .cd-left { font-size: 15px; font-weight: 700; color: var(--primary); }
 .cd-left.cd-soon { color: var(--error); }

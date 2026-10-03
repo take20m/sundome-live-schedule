@@ -92,22 +92,16 @@ function renderDeadlines(events: EventWithLotteries[], now: Date): string {
       // 会員限定・CD封入特典は、資格のない通りすがりの人には申し込めないので載せない
       if (isRestrictedLottery(l.name)) continue
       const status = lotteryStatus(l, now)
-      // 受付中(締切あり/終了未定とも)と受付前を載せる。売り切れ・終了・期間不明は除外
-      if (status === 'open' || (status === 'upcoming' && l.ends_at)) {
+      // 受付中(締切あり/終了未定とも)だけを載せる。受付前は公演カードで開始日時を予告する
+      if (status === 'open') {
         entries.push({ event: e, lottery: l, status })
       }
     }
   }
   if (entries.length === 0) return ''
-  // 並び: ステータス優先。受付中(締切順) → 受付中(終了未定) → 受付前(開始順)
-  const rank = (x: Entry) => (x.status === 'upcoming' ? 2 : x.lottery.ends_at ? 0 : 1)
-  const sortKey = (x: Entry) => x.lottery.ends_at ?? x.lottery.starts_at ?? '9999'
-  entries.sort(
-    (a, b) =>
-      rank(a) - rank(b) ||
-      sortKey(a).localeCompare(sortKey(b)) ||
-      a.event.date.localeCompare(b.event.date),
-  )
+  // 並び: 締切の近い順、終了未定は最後
+  const sortKey = (x: Entry) => x.lottery.ends_at ?? '9999'
+  entries.sort((a, b) => sortKey(a).localeCompare(sortKey(b)) || a.event.date.localeCompare(b.event.date))
 
   // 「アーティスト+締切」でグループ化して1行にまとめる。
   // 同一ツアーの複数公演日や、席種違いの同時受付(プレリザーブ/ステージサイド等)を集約する
@@ -128,13 +122,10 @@ function renderDeadlines(events: EventWithLotteries[], now: Date): string {
     return `${m}/${d}`
   }
   const row = ({ first, dates }: Group) => {
-    const { event, lottery, status } = first
-    // 状態は右端の 1 か所だけで示す(受付中か開始前かは小見出しで分かる)。
-    // 受付中: 締切までの残り(3日以内は赤)、締切が無ければ「締切未定」。開始前: 開始日時
+    const { event, lottery } = first
+    // 状態は右端の 1 か所だけで示す。締切までの残り(3日以内は赤)、締切が無ければ「締切未定」
     let state: string
-    if (status === 'upcoming') {
-      state = `<span class="cd">${escapeHtml(`${formatJst(lottery.starts_at)}〜`)}</span>`
-    } else if (lottery.ends_at) {
+    if (lottery.ends_at) {
       const left = new Date(lottery.ends_at).getTime() - now.getTime()
       state = `<span class="cd cd-left${left < SOON_MS ? ' cd-soon' : ''}" data-ends="${escapeHtml(lottery.ends_at)}">${escapeHtml(formatCountdown(left))}</span>`
     } else {
@@ -148,12 +139,10 @@ function renderDeadlines(events: EventWithLotteries[], now: Date): string {
   ${state}
 </a>`
   }
-  const shown = [...groups.values()].slice(0, 6)
-  const block = (label: string, gs: Group[]) =>
-    gs.length === 0 ? '' : `<p class="list-label">${label}</p>\n<div class="list">\n${gs.map(row).join('\n')}\n</div>`
   return `<div class="section"><h2>販売中のチケット</h2><span class="sup">一般申込み可能</span></div>
-${block('受付中', shown.filter((g) => g.first.status === 'open'))}
-${block('まもなく受付開始', shown.filter((g) => g.first.status === 'upcoming'))}`
+<div class="list">
+${[...groups.values()].slice(0, 6).map(row).join('\n')}
+</div>`
 }
 
 /**
@@ -279,22 +268,39 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
   }
 
   const merged: MergedLottery[] = mergeLotteries(group)
-  // 一覧では、今クリックして申し込める受付(受付中で申込ページがある = renderLottery がリンクにするもの)だけを出す。
-  // 終了・売り切れ・受付前・期間不明や、申込先の無い受付は視線を取るだけなので詳細ページに任せる
+  // 一覧では、今クリックして申し込める受付(受付中で申込ページがある = renderLottery がリンクにするもの)を出す。
+  // 終了・売り切れ・期間不明や、申込先の無い受付は視線を取るだけなので詳細ページに任せる
   const shown = detail ? merged : merged.filter((m) => lotteryStatus(m, now) === 'open' && isPurchasePage(m.url))
+  // 受付前は一覧では「受付前 10/5 12:00〜」の予告だけにする。一般申込み可能なもの(販売中欄と同じ基準)を
+  // 開始日時ごとに 1 行へまとめ、受付名は出さない(詳細ページにある)。開始時刻を過ぎれば上の受付中の行になる
+  const upcomingStarts = new Map<string, Set<string>>()
+  if (!detail) {
+    for (const m of merged) {
+      if (lotteryStatus(m, now) !== 'upcoming' || isRestrictedLottery(m.name)) continue
+      const dates = upcomingStarts.get(m.starts_at!) ?? new Set<string>()
+      m.dates.forEach((d) => dates.add(d))
+      upcomingStarts.set(m.starts_at!, dates)
+    }
+  }
+  const upcomingRows = [...upcomingStarts]
+    .sort(([a], [b]) => Date.parse(a) - Date.parse(b))
+    .map(([startsAt, dates]) => {
+      const note = dates.size < events.length ? `<span class="lot-note">${escapeHtml([...dates].sort().map(md).join('・'))} のみ</span>` : ''
+      return `<li class="lot lot-upcoming">${statusChip('upcoming')}<span class="lot-name">${escapeHtml(formatJst(startsAt))}〜</span>${note}</li>`
+    })
   const lots = opts.compact
     ? merged.length > 0
       ? `<p class="lot-summary"><a href="/e/${escapeHtml(first.id)}">先行・抽選 ${merged.length} 件の記録</a></p>`
       : ''
-    : shown.length > 0
+    : shown.length + upcomingRows.length > 0
       ? `<ul class="lots">${shown
           .map((m) => {
             const partial = m.dates.length < events.length
             return renderLottery(m, now, partial ? `${m.dates.map(md).join('・')} のみ` : '', detail)
           })
-          .join('')}</ul>`
+          .join('')}${upcomingRows.join('')}</ul>`
       : !detail && merged.length > 0
-        ? '' // 受付の記録はあるが今申し込めるものがない。一覧では何も出さない(詳細ページに全部ある)
+        ? '' // 受付の記録はあるが今申し込めるもの・予告するものがない。一覧では何も出さない(詳細ページに全部ある)
       : events[events.length - 1].date < todayInJst(now)
         ? '' // 開催済みの公演はもう収集しないので、「未収集」とは言わない
         : `<p class="none">${detail ? 'チケット情報は未収集です(毎晩調べ直しています)' : 'チケット情報は未収集です'}</p>`
