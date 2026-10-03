@@ -87,8 +87,11 @@ describe('締切セクションとカウントダウン', () => {
     const html = await (await SELF.fetch('https://example.com/')).text()
     // 締切セクション内の受付中カウントダウンは1件だけ(公演カード側は2枚ある)
     expect(html.match(/data-ends=/g)?.length).toBe(1)
-    // 締切行に公演日が出る(2公演日がまとまる)
-    expect(html).toMatch(/公演 \d{4}\/\d+\/\d+・\d+\/\d+/)
+    // カードに公演日が曜日付きで出る(2公演日がまとまる)
+    const section = html.split('販売中のチケット')[1].split('今後の公演')[0]
+    expect(section).toMatch(/<span class="sale-s">\d{4}\/\d+\/\d+\([日月火水木金土]\)・\d+\/\d+\([日月火水木金土]\)<\/span>/)
+    // 画像の無い公演は、画像の位置に公演日を大きく出す
+    expect(section).toMatch(/<span class="sale-date">\d+\/\d+・\d+\/\d+<\/span>/)
   })
 
   it('同一アーティスト・同一締切の複数受付は1行にまとまる', async () => {
@@ -395,6 +398,33 @@ describe('申込リンク', () => {
       expect.stringMatching(/^<span class="chip chip-upcoming">受付前<\/span><span class="lot-name">\d+\/\d+ \d{2}:\d{2}〜<\/span>$/),
     ])
     expect(card).not.toContain('FC会員先行(受付前)')
+  })
+
+  it('販売中欄のカードの画像は 16:10 に切る。切り出し位置と余白色は公演カードと同じ値を使い、正方形用の拡大は使わない', async () => {
+    const saleMedia = async () => {
+      const top = await (await SELF.fetch('https://example.com/')).text()
+      const section = top.split('販売中のチケット')[1].split('今後の公演')[0]
+      const i = section.indexOf(`href="/e/ev-${eventDate}#`)
+      return section.slice(section.indexOf('<span class="sale-media"', i), section.indexOf('<span class="sale-body">', i))
+    }
+    const setImage = (fit: string, bg: string | null) =>
+      env.DB.prepare(`UPDATE events SET image_url = 'https://example.org/tour.jpg', image_focus = '30% 40%', image_fit = ?, image_bg = ?, image_zoom = 1.8 WHERE id = ?`)
+        .bind(fit, bg, `ev-${eventDate}`)
+        .run()
+    await setImage('cover', null)
+    const cover = await saleMedia()
+    expect(cover).toContain('<img src="https://example.org/tour.jpg"')
+    expect(cover).toContain('style="object-position: 30% 40%"')
+    expect(cover).not.toContain('scale(')
+    // 画像が読み込めなかったときに切り替える日付は隠しておく
+    expect(cover).toContain('<span class="sale-date" hidden>')
+    await setImage('contain', '#191919')
+    const contain = await saleMedia()
+    expect(contain).toContain('<span class="sale-media" style="background: #191919">')
+    expect(contain).toContain('style="object-fit: contain; object-position: 30% 40%"')
+    await env.DB.prepare('UPDATE events SET image_url = NULL, image_focus = NULL, image_fit = NULL, image_bg = NULL, image_zoom = NULL WHERE id = ?')
+      .bind(`ev-${eventDate}`)
+      .run()
   })
 
   // JSON-LD の Offer.url は検索結果のチケット導線に使われるので画面と同じ基準で出す

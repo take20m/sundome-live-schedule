@@ -107,13 +107,46 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .row { display: flex; align-items: center; gap: 16px; min-height: 72px; padding: 12px 16px; text-decoration: none; color: inherit; border-top: 1px solid var(--outline-variant); }
 .row:first-child { border-top: 0; }
 .row:hover { background: color-mix(in srgb, var(--on-surface) 8%, transparent); }
-/* 右端の状態。締切までの残り(3日以内は赤)。締切未定は控えめに */
-.cd { flex: none; font-size: 13px; line-height: 20px; font-weight: 500; letter-spacing: .25px; color: var(--on-surface-variant); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.cd-left { font-size: 15px; font-weight: 700; color: var(--primary); }
-.cd-left.cd-soon { color: var(--error); }
 .row-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .row-h { font-size: 16px; line-height: 24px; letter-spacing: .5px; }
 .row-s { color: var(--on-surface-variant); }
+
+/* 販売中欄: 横に流れるカード。幅に収まらないときだけスクロール(スマホは次のカードが右に覗く) */
+.sale { position: relative; }
+.sale-track { list-style: none; display: flex; gap: 10px; margin: 0 -16px; padding: 2px 16px 10px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 16px; overscroll-behavior-x: contain; scrollbar-width: none; }
+.sale-track::-webkit-scrollbar { display: none; }
+.sale-track li { flex: 0 0 158px; display: flex; scroll-snap-align: start; }
+.sale-card { flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--surface-container-low); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow-1); text-decoration: none; color: inherit; }
+.sale-card:hover { background: color-mix(in srgb, var(--on-surface) 6%, var(--surface-container-low)); }
+.sale-card:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+/* 画像の縦横比に引っ張られず 16:10 に固定する(正方形の画像だと枠が縦に伸びていた) */
+.sale-media { position: relative; flex: none; display: block; aspect-ratio: 16 / 10; overflow: hidden; background: var(--surface-container-highest); }
+.sale-media img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
+/* 画像が無い・読み込めないときは公演日を大きく(公演カードの日付タイルと同じ地) */
+.sale-date { display: flex; align-items: center; justify-content: center; height: 100%; background: var(--primary-container); color: var(--on-primary-container); font-size: 24px; line-height: 1; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sale-date[hidden] { display: none; }
+.sale-body { flex: 1; display: flex; flex-direction: column; padding: 9px 10px 10px; }
+.sale-h { font-size: 14px; line-height: 19px; min-height: 38px; letter-spacing: .25px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.sale-s { margin: 2px 0 10px; font-size: 11.5px; line-height: 16px; color: var(--on-surface-variant); font-variant-numeric: tabular-nums; }
+/* 状態は 1 か所だけ。締切までの残り(青、3 日以内は赤)、締切未定はグレー */
+.pill { margin-top: auto; display: flex; align-items: center; gap: 5px; height: 28px; padding: 0 6px 0 8px; border-radius: 14px; background: var(--surface-container-highest); color: var(--on-surface-variant); font-size: 12.5px; font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pill > span { flex: 1; }
+.pill .ic { width: 15px; height: 15px; }
+.pill .ic:last-child { width: 18px; height: 18px; }
+.pill-left { background: var(--secondary-container); color: var(--on-secondary-container); font-weight: 700; }
+.pill-left.cd-soon { background: var(--error-container); color: var(--error); }
+/* 矢印は幅に収まらないとき(JS が hidden を外す)、マウスのある端末だけ */
+.sale-nav { position: absolute; top: 34px; z-index: 1; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: var(--surface-container-low); color: var(--on-surface); box-shadow: var(--shadow-2); cursor: pointer; }
+.sale-nav .ic { width: 22px; height: 22px; }
+.sale-prev { left: -10px; }
+.sale-next { right: -10px; }
+.sale-nav[hidden], .sale-nav:disabled { display: none; }
+.sale-nav:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+@media (hover: none) { .sale-nav { display: none; } }
+@media (min-width: 600px) {
+  .sale-track { margin: 0; padding: 2px 0 10px; scroll-padding: 0; }
+  .sale-track li { flex-basis: 170px; }
+}
 
 /* チップ(受付状態) */
 .chip { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 8px; font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: .5px; white-space: nowrap; border: 1px solid var(--outline); color: var(--on-surface-variant); }
@@ -227,7 +260,7 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
   .lot-period { margin-left: 0; flex-basis: 100%; }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .card, .row, .btn-text, .iconbtn { transition: background-color .15s, box-shadow .15s; }
+  .card, .row, .sale-card, .btn-text, .iconbtn { transition: background-color .15s, box-shadow .15s; }
   .appbar { transition: transform .2s ease; }
 }
 @media (prefers-reduced-motion: reduce) {

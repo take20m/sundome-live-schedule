@@ -103,45 +103,63 @@ function renderDeadlines(events: EventWithLotteries[], now: Date): string {
   const sortKey = (x: Entry) => x.lottery.ends_at ?? '9999'
   entries.sort((a, b) => sortKey(a).localeCompare(sortKey(b)) || a.event.date.localeCompare(b.event.date))
 
-  // 「アーティスト+締切」でグループ化して1行にまとめる。
+  // 「アーティスト+締切」でグループ化して 1 枚にまとめる。
   // 同一ツアーの複数公演日や、席種違いの同時受付(プレリザーブ/ステージサイド等)を集約する
-  type Group = { first: Entry; dates: Set<string> }
+  type Group = { first: Entry; events: EventWithLotteries[] }
   const groups = new Map<string, Group>()
   for (const entry of entries) {
     const key = `${entry.event.artist}|${entry.lottery.ends_at ? Date.parse(entry.lottery.ends_at) : 'endless'}`
     const g = groups.get(key)
     if (!g) {
-      groups.set(key, { first: entry, dates: new Set([entry.event.date]) })
-    } else {
-      g.dates.add(entry.event.date)
+      groups.set(key, { first: entry, events: [entry.event] })
+    } else if (!g.events.some((e) => e.id === entry.event.id)) {
+      g.events.push(entry.event)
     }
   }
 
-  const md = (date: string) => {
-    const [, m, d] = date.split('-').map(Number)
-    return `${m}/${d}`
-  }
-  const row = ({ first, dates }: Group) => {
+  const card = ({ first, events: evs }: Group) => {
     const { event, lottery } = first
-    // 状態は右端の 1 か所だけで示す。締切までの残り(3日以内は赤)、締切が無ければ「締切未定」
+    const sorted = [...evs].sort((a, b) => a.date.localeCompare(b.date))
+    // 公演日: 「2027/5/1(土)・5/2(日)」。画像の代わりの大きい日付は「5/1・5/2」(3 日以上は初日–最終日)
+    const datesLabel = `${sorted[0].date.slice(0, 4)}/${sorted.map((e) => dayLabel(e.date)).join('・')}`
+    const bigDate =
+      sorted.length <= 2 ? sorted.map((e) => md(e.date)).join('・') : `${md(sorted[0].date)}–${md(sorted[sorted.length - 1].date)}`
+    // ツアービジュアルを 16:10 に切る。切り出し位置と「全体を収める + 余白色」は公演カードのサムネと同じ値を使い、
+    // 拡大(正方形に切るときの値)は使わない。読み込めなければ日付に戻す
+    const imgEvent = [event, ...sorted].find((e) => safeHttpUrl(e.image_url))
+    const imageUrl = imgEvent ? safeHttpUrl(imgEvent.image_url) : null
+    const fit = safeFit(imgEvent?.image_fit) ?? 'cover'
+    const bg = fit === 'contain' ? safeBg(imgEvent?.image_bg) : null
+    const focusPos = safeFocus(imgEvent?.image_focus) ?? '50% 50%'
+    const imgStyle = [fit === 'contain' ? 'object-fit: contain' : '', focusPos !== '50% 50%' ? `object-position: ${focusPos}` : '']
+      .filter(Boolean)
+      .join('; ')
+    const media = `<span class="sale-media"${bg ? ` style="background: ${bg}"` : ''}>${
+      imageUrl
+        ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" decoding="async"${imgStyle ? ` style="${imgStyle}"` : ''} onerror="this.nextElementSibling.hidden=false;this.parentNode.style.background='';this.remove()">`
+        : ''
+    }<span class="sale-date"${imageUrl ? ' hidden' : ''}>${escapeHtml(bigDate)}</span></span>`
+    // 状態は 1 か所だけ。締切までの残り(3 日以内は赤)、締切が無ければ「締切未定」
     let state: string
     if (lottery.ends_at) {
       const left = new Date(lottery.ends_at).getTime() - now.getTime()
-      state = `<span class="cd cd-left${left < SOON_MS ? ' cd-soon' : ''}" data-ends="${escapeHtml(lottery.ends_at)}">${escapeHtml(formatCountdown(left))}</span>`
+      state = `<span class="pill pill-left${left < SOON_MS ? ' cd-soon' : ''}">${iconSvg('schedule')}<span data-ends="${escapeHtml(lottery.ends_at)}">${escapeHtml(formatCountdown(left))}</span>${iconSvg('chevron_right')}</span>`
     } else {
-      state = '<span class="cd">締切未定</span>'
+      state = `<span class="pill">${iconSvg('calendar_today')}<span>締切未定</span>${iconSvg('chevron_right')}</span>`
     }
-    // 受付の名前は出さない(行から詳細ページのその受付へ飛べる)。期間と名前は詳細ページにある
-    const sortedDates = [...dates].sort()
-    const datesLabel = `${sortedDates[0].slice(0, 4)}/${sortedDates.map(md).join('・')}`
-    return `<a class="row" href="/e/${escapeHtml(event.id)}#${lotteryAnchor(lottery)}">
-  <span class="row-text"><span class="row-h">${escapeHtml(event.artist)}</span><span class="row-s">公演 ${escapeHtml(datesLabel)}</span></span>
-  ${state}
-</a>`
+    // 受付の名前は出さない(カードから詳細ページのその受付へ飛べる)。期間と名前は詳細ページにある
+    return `<li><a class="sale-card" href="/e/${escapeHtml(event.id)}#${lotteryAnchor(lottery)}">
+  ${media}
+  <span class="sale-body"><span class="sale-h">${escapeHtml(event.artist)}</span><span class="sale-s">${escapeHtml(datesLabel)}</span>${state}</span>
+</a></li>`
   }
-  return `<div class="section"><h2>販売中のチケット</h2><span class="sup">一般申込み可能</span></div>
-<div class="list">
-${[...groups.values()].slice(0, 6).map(row).join('\n')}
+  return `<div class="section"><h2 id="sale-title">販売中のチケット</h2><span class="sup">一般申込み可能</span></div>
+<div class="sale">
+<button class="sale-nav sale-prev" type="button" aria-label="前へ" hidden>${iconSvg('chevron_left')}</button>
+<ul class="sale-track" aria-labelledby="sale-title">
+${[...groups.values()].slice(0, 6).map(card).join('\n')}
+</ul>
+<button class="sale-nav sale-next" type="button" aria-label="次へ" hidden>${iconSvg('chevron_right')}</button>
 </div>`
 }
 
@@ -395,10 +413,50 @@ export const COUNTDOWN_SCRIPT = `<script>
     document.querySelectorAll('[data-ends]').forEach(function(el){
       var ms = new Date(el.dataset.ends).getTime() - Date.now();
       el.textContent = fmt(ms);
-      if (el.classList.contains('cd-left')) el.classList.toggle('cd-soon', ms < ${SOON_MS});
+      var pill = el.closest('.pill-left');
+      if (pill) pill.classList.toggle('cd-soon', ms < ${SOON_MS});
     });
   }
   tick(); setInterval(tick, 30000);
+})();
+</script>`
+
+/**
+ * 販売中欄のカルーセル。幅に収まらないときだけ矢印を出し、4 秒ごとに 1 枚ずつ送る(最後まで行けば先頭へ)。
+ * 人が触る・スクロールする・キーボードで動かすと以後は自動で送らない。マウスが乗っている間、
+ * 欄が画面外のとき、タブが裏のときは止める。「動きを減らす」設定なら最初から動かさない
+ */
+const SALE_SCRIPT = `<script>
+(function(){
+  var root = document.querySelector('.sale'); if (!root) return;
+  var track = root.querySelector('.sale-track');
+  var prev = root.querySelector('.sale-prev'), next = root.querySelector('.sale-next');
+  var still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var stopped = still, hover = false, visible = true;
+  function step(){ var c = track.querySelector('li'); return c ? c.getBoundingClientRect().width + parseFloat(getComputedStyle(track).columnGap || 0) : track.clientWidth; }
+  function overflow(){ return track.scrollWidth - track.clientWidth > 4; }
+  function atEnd(){ return track.scrollLeft + track.clientWidth >= track.scrollWidth - 4; }
+  function sync(){
+    var o = overflow();
+    root.classList.toggle('is-overflow', o);
+    prev.hidden = next.hidden = !o;
+    prev.disabled = track.scrollLeft <= 4; next.disabled = atEnd();
+  }
+  function go(dir){ track.scrollBy({ left: dir * step(), behavior: still ? 'auto' : 'smooth' }); }
+  function stop(){ stopped = true; }
+  setInterval(function(){
+    if (stopped || hover || !visible || document.hidden || !overflow()) return;
+    if (atEnd()) track.scrollTo({ left: 0, behavior: 'smooth' }); else go(1);
+  }, 4000);
+  ['pointerdown', 'wheel', 'touchstart', 'keydown', 'focusin'].forEach(function(t){ root.addEventListener(t, stop, { passive: true }); });
+  root.addEventListener('mouseenter', function(){ hover = true; });
+  root.addEventListener('mouseleave', function(){ hover = false; });
+  prev.addEventListener('click', function(){ go(-1); });
+  next.addEventListener('click', function(){ go(1); });
+  track.addEventListener('scroll', sync, { passive: true });
+  addEventListener('resize', sync);
+  if ('IntersectionObserver' in window) new IntersectionObserver(function(es){ visible = es[0].isIntersecting; }).observe(track);
+  sync();
 })();
 </script>`
 
@@ -441,6 +499,7 @@ ${body}
 </main>
 ${SITE_FOOTER}
 ${COUNTDOWN_SCRIPT}
+${SALE_SCRIPT}
 </body>
 </html>`
 }
