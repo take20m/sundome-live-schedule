@@ -429,52 +429,93 @@ export const COUNTDOWN_SCRIPT = `<script>
 </script>`
 
 /**
- * 販売中欄のカルーセル。幅に収まらないときだけ矢印を出し、4 秒ごとに 1 枚ずつ送る(最後まで行けば先頭へ)。
- * 人が触る・スクロールする・キーボードで動かすと以後は自動で送らない。マウスが乗っている間、
- * 欄が画面外のとき、タブが裏のときは止める。「動きを減らす」設定なら最初から動かさない
+ * 販売中欄のカルーセル。幅に収まらないときだけ、末尾の次に先頭が来るように並びを複製してつなぎ、
+ * 4 秒ごとに 1 枚ずつ送る(矢印もマウスのある端末に出す)。人が触る・スクロールする・キーボードで動かすと
+ * 以後は自動で送らない。マウスが乗っている間、欄が画面外のとき、タブが裏のときは止める。
+ * 「動きを減らす」設定なら自動では送らず、矢印でも動きを付けない。
+ * 送りの動きはブラウザの smooth スクロールに任せず自前で描く。iOS の WebKit は吸着つきの横スクロールを
+ * smooth で動かすと元の位置へ吸い戻すことがあり、iPhone の Chrome では自動送りが進まなかった
  */
 const SALE_SCRIPT = `<script>
 (function(){
   var root = document.querySelector('.sale'); if (!root) return;
   var track = root.querySelector('.sale-track');
   var prev = root.querySelector('.sale-prev'), next = root.querySelector('.sale-next');
+  var items = [].slice.call(track.children);
   var still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var stopped = still, hover = false, visible = true;
-  // 正方形サムネの拡大率 z を 16:10 の枠に換算する。正方形の枠では画像の高さの (縦長なら a) / z を見せていた。
-  // 16:10 の枠はそのままだと高さの (a < 1.6 なら a / 1.6) を見せるので、それが正方形のときを超えない倍率にする
-  root.querySelectorAll('img[data-zoom]').forEach(function(img){
-    function fit(){
-      var a = img.naturalWidth / img.naturalHeight, z = parseFloat(img.dataset.zoom);
-      if (!a || !z) return;
-      var s = Math.min(Math.min(a, 1.6) / 1.6 / (Math.min(a, 1) / z), z);
-      if (s > 1.001) img.style.transform = 'scale(' + s.toFixed(3) + ')';
-    }
-    if (img.complete) fit(); else img.addEventListener('load', fit);
-  });
-  function step(){ var c = track.querySelector('li'); return c ? c.getBoundingClientRect().width + parseFloat(getComputedStyle(track).columnGap || 0) : track.clientWidth; }
-  function overflow(){ return track.scrollWidth - track.clientWidth > 4; }
-  function atEnd(){ return track.scrollLeft + track.clientWidth >= track.scrollWidth - 4; }
-  function sync(){
-    var o = overflow();
-    root.classList.toggle('is-overflow', o);
-    prev.hidden = next.hidden = !o;
-    prev.disabled = track.scrollLeft <= 4; next.disabled = atEnd();
+  var stopped = still, hover = false, visible = true, looped = false, anim = 0;
+  function pad(){ return parseFloat(getComputedStyle(track).scrollPaddingLeft) || 0; }
+  // 各カードの吸着位置(scrollLeft の値)
+  function stops(){
+    var base = track.getBoundingClientRect().left + pad();
+    return [].map.call(track.children, function(li){ return track.scrollLeft + li.getBoundingClientRect().left - base; });
   }
-  function go(dir){ track.scrollBy({ left: dir * step(), behavior: still ? 'auto' : 'smooth' }); }
+  // 元の並びが幅に収まるか。収まらないときだけ複製をつなぐ
+  function fits(){
+    var last = items[items.length - 1].getBoundingClientRect(), first = items[0].getBoundingClientRect();
+    return last.right - first.left <= track.clientWidth - 2 * pad() + 1;
+  }
+  function loopWidth(){ return looped ? stops()[items.length] : 0; }
+  function setLoop(on){
+    if (on === looped) return;
+    if (on) {
+      items.forEach(function(li){
+        var c = li.cloneNode(true);
+        c.setAttribute('aria-hidden', 'true');
+        c.querySelectorAll('a').forEach(function(a){ a.tabIndex = -1; });
+        track.appendChild(c);
+      });
+    } else {
+      while (track.children.length > items.length) track.removeChild(track.lastChild);
+      track.scrollLeft = 0;
+    }
+    looped = on;
+    prev.hidden = next.hidden = !on;
+  }
+  // 複製側に入ったら、同じ見た目の元の側へ瞬時に戻す
+  function wrap(){
+    var w = loopWidth();
+    if (w && track.scrollLeft >= w - 1) track.scrollLeft -= w;
+  }
+  function slideTo(left){
+    cancelAnimationFrame(anim);
+    if (still) { track.scrollLeft = left; wrap(); return; }
+    var from = track.scrollLeft, d = left - from, t0 = null;
+    track.style.scrollSnapType = 'none';
+    function frame(t){
+      if (t0 === null) t0 = t;
+      var k = Math.min(1, (t - t0) / 450);
+      track.scrollLeft = from + d * (k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
+      if (k < 1) { anim = requestAnimationFrame(frame); return; }
+      wrap();
+      track.style.scrollSnapType = '';
+    }
+    anim = requestAnimationFrame(frame);
+  }
+  function go(dir){
+    var cur = track.scrollLeft, list = stops(), target = null;
+    if (dir < 0 && cur < 4 && looped) { cur += loopWidth(); track.scrollLeft = cur; list = stops(); }
+    if (dir > 0) { for (var i = 0; i < list.length; i++) if (list[i] > cur + 4) { target = list[i]; break; } }
+    else { for (var j = list.length - 1; j >= 0; j--) if (list[j] < cur - 4) { target = list[j]; break; } }
+    if (target === null) return;
+    slideTo(Math.min(target, track.scrollWidth - track.clientWidth));
+  }
   function stop(){ stopped = true; }
   setInterval(function(){
-    if (stopped || hover || !visible || document.hidden || !overflow()) return;
-    if (atEnd()) track.scrollTo({ left: 0, behavior: 'smooth' }); else go(1);
+    if (stopped || hover || !visible || document.hidden || !looped) return;
+    go(1);
   }, 4000);
   ['pointerdown', 'wheel', 'touchstart', 'keydown', 'focusin'].forEach(function(t){ root.addEventListener(t, stop, { passive: true }); });
   root.addEventListener('mouseenter', function(){ hover = true; });
   root.addEventListener('mouseleave', function(){ hover = false; });
   prev.addEventListener('click', function(){ go(-1); });
   next.addEventListener('click', function(){ go(1); });
-  track.addEventListener('scroll', sync, { passive: true });
-  addEventListener('resize', sync);
+  // 人が指で複製側までスクロールしたときも、止まったところで元の側へ戻す
+  var idle;
+  track.addEventListener('scroll', function(){ clearTimeout(idle); idle = setTimeout(function(){ if (!track.style.scrollSnapType) wrap(); }, 150); }, { passive: true });
+  addEventListener('resize', function(){ setLoop(!fits()); });
   if ('IntersectionObserver' in window) new IntersectionObserver(function(es){ visible = es[0].isIntersecting; }).observe(track);
-  sync();
+  setLoop(!fits());
 })();
 </script>`
 
