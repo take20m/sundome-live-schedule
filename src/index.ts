@@ -37,7 +37,7 @@ const siteUrl = (reqUrl: string, path = '/') => new URL(path, reqUrl).toString()
 app.get('/', async (c) => {
   const now = new Date()
   const events = await listEvents(c.env.DB, todayInJst(now))
-  return c.html(renderListPage(events, now, siteUrl(c.req.url)))
+  return c.html(renderListPage(events, now, siteUrl(c.req.url), { promo: mailEnabled(c.env) }))
 })
 
 app.get('/e/:id', async (c) => {
@@ -46,7 +46,7 @@ app.get('/e/:id', async (c) => {
   const run = await getEventRun(c.env.DB, id)
   if (!run) return c.notFound()
   // 連日は 2 日目以降も 200 で残しつつ、canonical は初日に寄せる(内容が同じ URL が並ぶため)
-  return c.html(renderDetailPage(run, new Date(), siteUrl(c.req.url, `/e/${run.group.first.id}`)))
+  return c.html(renderDetailPage(run, new Date(), siteUrl(c.req.url, `/e/${run.group.first.id}`), { promo: mailEnabled(c.env) }))
 })
 
 app.get('/past', async (c) => {

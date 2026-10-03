@@ -251,6 +251,25 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 /* フッター */
 .site-f { background: var(--surface-container); padding: 24px 16px 28px; display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--on-surface-variant); font-size: 12px; line-height: 16px; letter-spacing: .4px; }
 .site-f a { color: var(--on-surface); text-decoration: none; font-weight: 500; font-size: 14px; }
+/* 新着情報への案内: トースト(画面下、PC は右下)と詳細ページのカード */
+.sub-toast { position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 20; display: flex; align-items: flex-start; border-radius: 16px; background: var(--secondary-container); color: var(--on-secondary-container); box-shadow: 0 6px 20px rgba(11,61,145,.22), 0 1px 3px rgba(0,0,0,.12); opacity: 0; transform: translateY(12px); }
+.sub-toast.is-shown { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: no-preference) { .sub-toast { transition: opacity .25s, transform .25s; } }
+@media (min-width: 600px) { .sub-toast { left: auto; right: 20px; bottom: 20px; width: 340px; } }
+.sub-toast-link, .sub-card { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 12px 4px 12px 12px; color: inherit; text-decoration: none; }
+.sub-toast-ic { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--surface-container-low); color: var(--primary); }
+.sub-toast-ic .ic { width: 22px; height: 22px; }
+.sub-toast-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sub-toast-text b { font-size: 14px; line-height: 20px; color: var(--primary); }
+.sub-toast-text span { font-size: 12px; line-height: 17px; color: var(--on-surface-variant); }
+.sub-toast-close { flex: none; display: grid; place-items: center; width: 40px; height: 40px; margin: 4px 4px 0 0; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--on-surface-variant); cursor: pointer; }
+.sub-toast-close .ic { width: 20px; height: 20px; }
+.sub-toast-close:hover { background: color-mix(in srgb, var(--on-surface) 8%, transparent); }
+.sub-toast-link:focus-visible, .sub-toast-close:focus-visible, .sub-card:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; border-radius: 14px; }
+.sub-card { margin-top: 14px; padding: 12px; border-radius: 14px; background: var(--secondary-container); color: var(--on-secondary-container); }
+.sub-card > .ic { width: 20px; height: 20px; color: var(--primary); flex: none; }
+.sub-card:hover { background: color-mix(in srgb, var(--on-secondary-container) 8%, var(--secondary-container)); }
+
 /* 「新着情報を受け取る」ページ */
 .sub-block h2 { display: flex; align-items: center; gap: 8px; }
 .sub-block h2 .ic { width: 22px; height: 22px; color: var(--primary); }

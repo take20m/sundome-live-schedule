@@ -4,6 +4,7 @@ import { escapeHtml, safeHttpUrl } from '../lib/html'
 import { iconSvg } from '../lib/icon'
 import { buildHeadMeta, buildJsonLd } from '../lib/seo'
 import { COUNTDOWN_SCRIPT, formatRunDatesJa, renderEventCard } from './list'
+import { promoToast } from './promo'
 import { SITE_CSS, SITE_FOOTER, SITE_HEADER } from './style'
 
 function metaDescription(e: EventWithLotteries, dates: string): string {
@@ -12,7 +13,7 @@ function metaDescription(e: EventWithLotteries, dates: string): string {
   return `${e.artist}のサンドーム福井公演「${e.title}」(${dates})の${lotPart}を毎日更新して掲載。締切カウントダウン付き。`
 }
 
-export function renderDetailPage(run: EventRun, now: Date, canonical: string): string {
+export function renderDetailPage(run: EventRun, now: Date, canonical: string, opts: { promo?: boolean } = {}): string {
   const e = run.focus
   // 連日は 1 本のランが 1 ページ。canonical は初日に寄せてあるので、題も説明も全公演日を名乗る
   // (初日の日付しか書かないと、2 日目で検索した人にこのページが当たらない)
@@ -42,11 +43,12 @@ ${SITE_HEADER}
 <main>
 <div class="back"><a class="btn-text" href="/#${escapeHtml(e.id)}">${iconSvg('arrow_back')}公演一覧</a></div>
 <div class="cards">
-${renderEventCard(run.group, now, { focusDate: e.date })}
+${renderEventCard(run.group, now, { focusDate: e.date, promo: opts.promo })}
 </div>
 </main>
 ${SITE_FOOTER}
 ${COUNTDOWN_SCRIPT}
+${opts.promo && run.group.last.date >= todayInJst(now) ? promoToast() : ''}
 </body>
 </html>`
 }

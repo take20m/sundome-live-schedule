@@ -3,6 +3,7 @@ import { escapeHtml } from '../lib/html'
 import { MAIL_REPLY_TO, sendMail, verifyTurnstile } from '../lib/mail'
 import type { Mail } from '../lib/mail'
 import { confirmToken, findByUnsubscribeToken, normalizeEmail, registerPending, unsubscribe } from '../lib/subscribers'
+import { PROMO_MARK_SUBSCRIBED } from '../pages/promo'
 import { renderMailNotice } from '../pages/subscribe'
 import type { Bindings } from '../types'
 
@@ -86,6 +87,7 @@ export async function handleConfirm(c: C): Promise<Response> {
           title: '登録が完了しました',
           lead: '新しい公演や抽選の受付情報があった日の昼12時ごろに、まとめてメールでお知らせします。',
           body: '<p>メールの末尾のリンクから、いつでも配信を停止できます。</p><p><a class="btn-text" href="/">公演一覧へ</a></p>',
+          extraScripts: PROMO_MARK_SUBSCRIBED,
         })
       : renderMailNotice(canonical, {
           title: 'このリンクは使えません',

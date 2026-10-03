@@ -80,7 +80,10 @@ describe('メール購読: 登録・確認・停止', () => {
     expect(Object.values(raw!)).not.toContain(token)
     const ok = await call(new URL(confirmUrlOf(sent[0])).pathname + '?t=' + token)
     expect(ok.status).toBe(200)
-    expect(await ok.text()).toContain('登録が完了しました')
+    const okHtml = await ok.text()
+    expect(okHtml).toContain('登録が完了しました')
+    // このブラウザでは以後、新着情報のトーストを出さない
+    expect(okHtml).toContain("localStorage.setItem('sundome.promo', JSON.stringify({ subscribed: true }))")
     expect(await statusOf('fan@example.com')).toEqual({ status: 'active' })
     // 同じリンクは二度使えない
     expect((await call('/subscribe/confirm?t=' + token)).status).toBe(400)
@@ -205,5 +208,43 @@ describe('新着まとめメール', () => {
 
   it('Resend のキーがなければ何もしない', async () => {
     expect((await runDigest({ DB: env.DB }, site, new Date())).status).toBe('disabled')
+  })
+})
+
+describe('新着情報への案内(トーストと詳細のカード)', () => {
+  const addEvent = (date: string) =>
+    env.DB.prepare(
+      "INSERT INTO events (id, title, artist, date, confidence, updated_at) VALUES (?, 'PROMO TOUR', 'プロモ', ?, 'official', ?)",
+    )
+      .bind(`ev-${date}`, date, new Date().toISOString())
+      .run()
+  const day = 24 * 60 * 60 * 1000
+  const future = new Date(Date.now() + 20 * day).toISOString().slice(0, 10)
+  const past = new Date(Date.now() - 20 * day).toISOString().slice(0, 10)
+  beforeAll(async () => {
+    await addEvent(future)
+    await addEvent(past)
+  })
+
+  it('メール購読が動いているときだけ、トップと開催前の公演詳細にトーストを出す(5 秒後・7 日は出し直さない)', async () => {
+    const top = await (await call('/')).text()
+    expect(top).toContain('<aside class="sub-toast" id="sub-toast" aria-label="新着情報のお知らせ" hidden>')
+    expect(top).toContain('HIDE = 7 * 864e5')
+    expect(top).toContain('}, 5000);')
+    expect(await (await call(`/e/ev-${future}`)).text()).toContain('id="sub-toast"')
+    expect(await (await call(`/e/ev-${past}`)).text()).not.toContain('id="sub-toast"')
+    expect(await (await call('/subscribe')).text()).not.toContain('id="sub-toast"')
+    // キーがない環境では出さない
+    expect(await (await SELF.fetch('https://example.com/')).text()).not.toContain('id="sub-toast"')
+  })
+
+  it('開催前の公演詳細には、受付の下に案内カードを置く(開催済みには置かない)', async () => {
+    expect(await (await call(`/e/ev-${future}`)).text()).toContain('<a class="sub-card" href="/subscribe#mail">')
+    expect(await (await call(`/e/ev-${past}`)).text()).not.toContain('<a class="sub-card"')
+    expect(await (await SELF.fetch(`https://example.com/e/ev-${future}`)).text()).not.toContain('<a class="sub-card"')
+  })
+
+  it('プライバシーポリシーに localStorage の記録を書く', async () => {
+    expect(await (await call('/about')).text()).toContain('ブラウザの中(localStorage)に記録します')
   })
 })

@@ -95,13 +95,17 @@ ${msg}
 }
 
 /** 確認メールの送信後・登録完了・配信停止などの短いお知らせページ(検索には載せない) */
-export function renderMailNotice(canonical: string, n: { title: string; lead: string; body: string }): string {
+export function renderMailNotice(
+  canonical: string,
+  n: { title: string; lead: string; body: string; extraScripts?: string },
+): string {
   return renderArticle({
     head: buildHeadMeta({ title: `${n.title} | サンドーム福井ライブ情報`, description: n.lead, canonical, noindex: true }),
     crumbs: [{ label: '公演一覧', href: '/' }, { label: '新着情報を受け取る', href: '/subscribe' }, { label: n.title }],
     title: n.title,
     lead: n.lead,
     body: n.body,
+    extraScripts: n.extraScripts,
   })
 }
 

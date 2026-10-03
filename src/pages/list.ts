@@ -12,6 +12,7 @@ import { lotteryStatus } from '../lib/status'
 import { safeBg, safeFit, safeFocus, safeZoom } from '../lib/focus'
 import { isPurchasePage } from '../lib/ticket-url'
 import type { LotteryRow } from '../types'
+import { promoCard, promoToast } from './promo'
 import { SITE_CSS, SITE_FOOTER, SITE_HEADER } from './style'
 
 const WEEKDAYS_JA = ['日', '月', '火', '水', '木', '金', '土']
@@ -211,6 +212,8 @@ export type CardOptions = {
   focusDate?: string
   /** 過去の公演ページ用。抽選は一覧せず件数だけにする */
   compact?: boolean
+  /** 詳細ページで、受付一覧の下に新着情報(メール購読)への案内カードを置く。開催前の公演だけ */
+  promo?: boolean
 }
 
 /**
@@ -409,6 +412,7 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
     ${venue}
     ${actions}
     ${lots}
+    ${detail && opts.promo && last.date >= today ? promoCard() : ''}
   </div>
   </div>
 </article>`
@@ -556,7 +560,12 @@ const SALE_SCRIPT = `<script>
 })();
 </script>`
 
-export function renderListPage(events: EventWithLotteries[], now: Date, canonical: string): string {
+export function renderListPage(
+  events: EventWithLotteries[],
+  now: Date,
+  canonical: string,
+  opts: { promo?: boolean } = {},
+): string {
   const body =
     events.length > 0
       ? `<div class="cards">\n${groupConsecutive(events).map((g) => renderEventCard(g, now)).join('\n')}\n</div>`
@@ -596,6 +605,7 @@ ${body}
 ${SITE_FOOTER}
 ${COUNTDOWN_SCRIPT}
 ${SALE_SCRIPT}
+${opts.promo ? promoToast() : ''}
 </body>
 </html>`
 }

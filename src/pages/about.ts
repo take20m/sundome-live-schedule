@@ -12,6 +12,7 @@ const MAIL_PRIVACY = `<h3>メール購読で預かる情報</h3>
 <li>使う目的: 新しい公演や抽選の受付情報のお知らせメールと、登録の確認メールを送るためだけに使います。ほかの目的には使わず、第三者に売ったり提供したりしません(下の送信・保存の委託を除く)</li>
 <li>保管と削除: 確認されないまま7日たった登録と、配信を停止したメールアドレスは削除します。メールアドレスをサイト上に表示することはありません</li>
 <li>外国の事業者の利用: メールの送信に <a href="https://resend.com/legal/privacy-policy" rel="noopener" target="_blank">Resend</a>(Resend, Inc.、米国)を、データの保存と、フォームのボット対策(Turnstile)に <a href="https://www.cloudflare.com/privacypolicy/" rel="noopener" target="_blank">Cloudflare</a>(Cloudflare, Inc.、米国)を使います。米国には、日本の個人情報保護法に当たる連邦レベルの包括的な法律はなく、分野ごと・州ごとの法律があります。フォームを送るとき、ボットかどうかを判定するためにブラウザの情報が Cloudflare に送られます</li>
+<li>新着情報のお知らせを閉じたことと、メール購読の登録が済んだことを、ブラウザの中(localStorage)に記録します。お知らせを出し直さないためだけに使い、サーバーには送りません</li>
 <li>開示・訂正・削除のご依頼は、下の連絡先までお知らせください</li>
 </ul>`
 
