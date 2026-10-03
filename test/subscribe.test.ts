@@ -12,7 +12,7 @@ describe('更新を受け取る', () => {
     for (const path of ['/', '/about', '/guide/access']) {
       const html = await (await SELF.fetch(`https://example.com${path}`)).text()
       const header = html.slice(html.indexOf('<header class="appbar">'), html.indexOf('</header>'))
-      expect(header, path).toContain('<a class="iconbtn" href="/subscribe" aria-label="更新を受け取る" title="更新を受け取る">')
+      expect(header, path).toContain('<a class="iconbtn sub-ic" href="/subscribe" aria-label="更新を受け取る" title="更新を受け取る">')
       expect(header, path).not.toContain('feed.xml')
       expect(html, path).toContain('<footer class="site-f">\n<a href="/subscribe">更新を受け取る</a>')
     }
@@ -21,14 +21,19 @@ describe('更新を受け取る', () => {
     expect(top).toContain('<link rel="alternate" type="application/rss+xml" title="更新情報" href="/feed.xml">')
   })
 
-  it('/subscribe は RSS の URL・コピー・Feedly、ホーム画面に追加の案内を出す', async () => {
+  it('/subscribe は RSS の URL とコピー、端末ごとのホーム画面に追加の手順を出す', async () => {
     const res = await SELF.fetch('https://example.com/subscribe')
     expect(res.status).toBe(200)
     const html = await res.text()
     expect(html).toContain('<input id="feed-url" type="text" readonly value="https://example.com/feed.xml"')
     expect(html).toContain('id="copy-feed"')
-    expect(html).toContain('href="https://feedly.com/i/subscription/feed%2Fhttps%3A%2F%2Fexample.com%2Ffeed.xml"')
-    expect(html).toContain('<code>/feed subscribe https://example.com/feed.xml</code>')
+    expect(html).not.toContain('feedly.com')
+    expect(html).not.toContain('/feed subscribe')
+    // iPhone / Android / PC の手順を用意し、スクリプトが端末に合うものだけを残す
+    for (const os of ['ios', 'android', 'desktop']) expect(html).toContain(`<div class="os-guide" data-os="${os}">`)
+    expect(html).toContain('<div class="demo" data-demo="ios">')
+    expect(html).toContain('<div class="demo" data-demo="android">')
+    expect(html).toContain('<img src="/img/subscribe-qr.svg"')
     expect(html).toContain('id="install-btn" hidden')
     expect(html).toContain("navigator.serviceWorker.register('/sw.js')")
     // 通知と SNS は仕組みができるまで出さない

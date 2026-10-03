@@ -8,7 +8,7 @@ import { LOGO_SVG, iconSvg } from '../lib/icon'
 export const SITE_HEADER = `<header class="appbar">
 <a class="brand" href="/">${LOGO_SVG}<h1><span>サンドーム福井</span> <span>ライブ情報</span></h1></a>
 <span class="spacer"></span>
-<a class="iconbtn" href="/subscribe" aria-label="更新を受け取る" title="更新を受け取る">${iconSvg('notifications')}</a>
+<a class="iconbtn sub-ic" href="/subscribe" aria-label="更新を受け取る" title="更新を受け取る">${iconSvg('notification_add')}</a>
 </header>
 <script>
 // 下へスクロールしたらヘッダーを隠し、上へ一定量(48px)戻したら出す。ページ先頭付近では常に出す
@@ -93,6 +93,8 @@ a { color: var(--primary); }
 .iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 24px; color: var(--on-surface-variant); text-decoration: none; }
 .iconbtn .ic { width: 24px; height: 24px; }
 .iconbtn:hover { background: color-mix(in srgb, var(--on-surface-variant) 8%, transparent); }
+/* 「更新を受け取る」の入口はベル＋プラスを紺で(押せるものだと分かるように、飾りのグレーにしない) */
+.iconbtn.sub-ic { color: var(--primary); }
 
 main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 /* 会場写真のバナー(PC 21:9 / スマホ 16:9)。写真は CC BY-SA、クレジットは about ページ(CC BY-SA 4.0 §3(a)(2) によりリンク先での表記で足りる) */
@@ -252,10 +254,6 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 /* 「更新を受け取る」ページ */
 .sub-block h2 { display: flex; align-items: center; gap: 8px; }
 .sub-block h2 .ic { width: 22px; height: 22px; color: var(--primary); }
-.sub-steps { display: grid; gap: 8px; margin: 12px 0 0; }
-.sub-steps div { display: grid; grid-template-columns: 4.6em 1fr; gap: 8px; }
-.sub-steps dt { font-weight: 700; color: var(--primary); }
-.sub-steps dd { margin: 0; }
 .sub-btn { display: inline-flex; align-items: center; gap: 8px; height: 44px; margin-top: 16px; padding: 0 20px; border: 0; border-radius: 22px; background: var(--primary); color: var(--on-primary); font: inherit; font-weight: 700; cursor: pointer; }
 .sub-btn .ic { width: 20px; height: 20px; }
 .sub-url { display: flex; gap: 8px; margin: 12px 0 0; }
@@ -263,7 +261,83 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .sub-copy { display: inline-flex; align-items: center; gap: 6px; flex: none; height: 44px; padding: 0 14px; border: 0; border-radius: 10px; background: var(--secondary-container); color: var(--on-secondary-container); font: inherit; font-weight: 700; cursor: pointer; }
 .sub-copy .ic { width: 18px; height: 18px; }
 .sub-btn:focus-visible, .sub-copy:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-.sub-links { margin: 8px 0 0 -12px; }
+/* 端末ごとの手順。スクリプトが端末を見分けたら、その端末の分だけ出す */
+#install.os-ios .os-guide:not([data-os="ios"]), #install.os-android .os-guide:not([data-os="android"]), #install.os-desktop .os-guide:not([data-os="desktop"]), #install.is-standalone .os-guide { display: none; }
+.os-label { margin: 16px 0 0; font-weight: 700; color: var(--primary); }
+.sub-qr { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 12px; }
+.sub-qr img { flex: none; width: 132px; height: 132px; padding: 6px; border-radius: 10px; background: #FFFFFF; box-shadow: 0 0 0 1px var(--outline-variant); }
+.sub-qr p { flex: 1 1 220px; margin: 0; }
+.sub-qr-url { word-break: break-all; }
+/* 追加手順の図。4 コマを 2.5 秒ずつ順に見せ、下の手順の該当行を同じ間隔で強調する */
+.demo { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px; margin-top: 12px; }
+.demo-steps { flex: 1 1 220px; margin: 0; padding-left: 1.4em; display: grid; gap: 6px; }
+.demo-steps li { color: var(--on-surface-variant); }
+.d-phone { --w: 172px; position: relative; flex: none; width: var(--w); height: calc(var(--w) * 2); border-radius: 26px; border: 6px solid #1B1B18; background: #F7F6F2; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,.18); font-family: "Noto Sans JP", "Hiragino Sans", sans-serif; color: #1B1B18; font-size: 9px; line-height: 1.3; }
+.d-phone svg { width: 14px; height: 14px; display: block; }
+.d-frame { position: absolute; inset: 0; opacity: 0; }
+.d-frame:first-child { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  .d-frame { animation: d-show 10s infinite; animation-delay: calc(var(--i) * 2.5s); }
+  .d-frame:first-child { opacity: 0; }
+  .demo-steps li { animation: d-step 10s infinite; animation-delay: calc(var(--i) * 2.5s); }
+  .d-tap::after { animation: d-pulse 1.25s ease-out infinite; }
+  .d-app { animation: d-pop 10s infinite; animation-delay: 7.5s; }
+}
+@media (prefers-reduced-motion: reduce) { .d-phone { display: none; } }
+@keyframes d-show { 0%, 24% { opacity: 1; } 25%, 100% { opacity: 0; } }
+@keyframes d-step { 0%, 24% { color: var(--on-surface); font-weight: 700; } 25%, 100% { color: var(--on-surface-variant); font-weight: 400; } }
+@keyframes d-pulse { 0% { box-shadow: 0 0 0 0 rgba(242,183,5,.75); } 100% { box-shadow: 0 0 0 10px rgba(242,183,5,0); } }
+@keyframes d-pop { 0% { transform: scale(.4); opacity: 0; } 4%, 24% { transform: scale(1); opacity: 1; } 25%, 100% { transform: scale(1); opacity: 1; } }
+/* 押す場所: 黄色の輪で囲み、脈打たせる */
+.d-tap { position: relative; border-radius: 8px; box-shadow: 0 0 0 2px #F2B705; }
+.d-tap::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+/* 画面の中のサイトの縮図 */
+.d-site { position: absolute; inset: 0; padding-top: 6px; }
+.d-and-bar ~ .d-site { top: 30px; }
+.d-bar { display: flex; align-items: center; gap: 6px; height: 26px; padding: 0 8px; background: #FFFFFF; border-bottom: 2px solid #F7D33B; }
+.d-bar i { width: 60px; height: 7px; border-radius: 4px; background: #1B1B18; opacity: .75; }
+.d-logo { display: block; width: 16px; height: 16px; flex: none; }
+.d-logo svg { width: 100%; height: 100%; }
+.d-logo.big { width: 40px; height: 40px; }
+.d-card { height: 44px; margin: 8px 8px 0; border-radius: 6px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.d-card.short { height: 30px; }
+/* iPhone の Safari */
+.d-ios-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 38px; display: flex; align-items: center; justify-content: space-around; padding-bottom: 6px; background: rgba(249,249,249,.96); border-top: 1px solid #DDDDDD; color: #0A64D8; }
+.d-ios-bar > span { display: grid; place-items: center; width: 24px; height: 24px; }
+.d-ios-bar svg { width: 17px; height: 17px; }
+.d-dim { position: absolute; inset: 0; background: rgba(0,0,0,.28); }
+.d-sheet { position: absolute; left: 0; right: 0; bottom: 0; padding: 10px 8px 14px; border-radius: 14px 14px 0 0; background: #F2F2F7; display: grid; gap: 6px; }
+.d-sheet-h { display: flex; align-items: center; gap: 6px; padding: 0 2px 4px; }
+.d-sheet-h b { font-size: 8.5px; }
+.d-row { display: flex; align-items: center; justify-content: space-between; flex-direction: row-reverse; height: 26px; padding: 0 8px; border-radius: 8px; background: #FFFFFF; font-size: 9.5px; }
+.d-row svg { width: 14px; height: 14px; color: #3C3C43; }
+.d-add { position: absolute; inset: 0; background: #F2F2F7; }
+.d-add-bar { display: flex; align-items: center; justify-content: space-between; gap: 4px; height: 32px; margin-top: 10px; padding: 0 6px; font-size: 8px; color: #0A64D8; white-space: nowrap; }
+.d-add-bar b { color: #1B1B18; font-size: 8px; }
+.d-add-bar .d-tap { padding: 2px 6px; font-weight: 700; }
+.d-add-body { display: flex; align-items: center; gap: 8px; margin: 8px; padding: 10px; border-radius: 10px; background: #FFFFFF; }
+.d-add-body b { display: block; font-size: 10px; }
+.d-add-body small { display: block; font-size: 8px; color: #8A8A8E; }
+/* Android の Chrome */
+.d-and-bar { position: absolute; top: 0; left: 0; right: 0; height: 30px; display: flex; align-items: center; gap: 4px; padding: 6px 4px 0 8px; background: #FFFFFF; }
+.d-url { flex: 1; height: 18px; display: flex; align-items: center; padding: 0 8px; border-radius: 9px; background: #EEF0F3; font-size: 8px; color: #44474E; overflow: hidden; white-space: nowrap; }
+.d-and-bar > span:last-child { display: grid; place-items: center; width: 20px; height: 20px; color: #44474E; }
+.d-menu { position: absolute; top: 30px; right: 6px; width: 118px; padding: 4px 0; border-radius: 8px; background: #FFFFFF; box-shadow: 0 4px 14px rgba(0,0,0,.22); }
+.d-menu div { display: flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; font-size: 9px; }
+.d-menu .d-tap { margin: 0 4px; padding: 0 6px; }
+.d-menu svg { width: 13px; height: 13px; }
+.d-dialog { position: absolute; left: 12px; right: 12px; top: 34%; padding: 12px; border-radius: 14px; background: #FFFFFF; display: grid; gap: 10px; }
+.d-dialog b { font-size: 10.5px; }
+.d-dialog-app { display: flex; align-items: center; gap: 8px; font-size: 9.5px; }
+.d-dialog-btns { display: flex; justify-content: flex-end; gap: 6px; font-size: 9px; color: #0B57D0; font-weight: 700; white-space: nowrap; }
+.d-dialog-btns span { padding: 3px 6px; }
+/* ホーム画面 */
+.d-home { position: absolute; inset: 0; padding: 26px 12px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-content: start; gap: 16px 10px; background: linear-gradient(160deg, #6E8FCB, #1E3F7A); }
+.d-home i { aspect-ratio: 1; border-radius: 9px; background: rgba(255,255,255,.28); }
+.d-app { position: relative; min-width: 0; }
+.d-app .d-logo { width: 100%; height: auto; aspect-ratio: 1; border-radius: 9px; overflow: hidden; box-shadow: 0 0 0 2px #F2B705; }
+.d-app b { position: absolute; top: calc(100% + 2px); left: 50%; transform: translateX(-50%); font-size: 6.5px; font-weight: 500; color: #FFFFFF; white-space: nowrap; }
+
 .more { margin: 24px 0 0 -12px; }
 /* 詳細: 終了・売り切れの受付は畳む。開くと下に並ぶ */
 .lots-ended { margin-top: 8px; border-top: 1px solid var(--outline-variant); }
