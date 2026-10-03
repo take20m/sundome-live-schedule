@@ -428,7 +428,7 @@ export const COUNTDOWN_SCRIPT = `<script>
 /**
  * 販売中欄のカルーセル。幅に収まらないときだけ、末尾の次に先頭が来るように並びを複製してつなぎ、
  * 2 秒ごとに 1 枚ずつ送る(矢印もマウスのある端末に出す)。人が横にスクロールしたり矢印を押したりしたら、
- * 最後の操作から 6 秒は送らない。縦スクロールやタップでは止めない(指が触れている間だけ待つ)。
+ * スクロールが止まってからちょうど 3 秒後に送りを再開する。縦スクロールやタップでは止めない(指が触れている間だけ待つ)。
  * マウスが乗っている間、中にフォーカスがある間、欄が画面外のとき、タブが裏のときも待つ。
  * 「動きを減らす」設定なら自動では送らず、矢印でも動きを付けない。
  * 送りの動きはブラウザの smooth スクロールに任せず自前で描く。iOS の WebKit は吸着つきの横スクロールを
@@ -441,7 +441,7 @@ const SALE_SCRIPT = `<script>
   var prev = root.querySelector('.sale-prev'), next = root.querySelector('.sale-next');
   var items = [].slice.call(track.children);
   var still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var INTERVAL = 2000, RESUME = 6000;
+  var INTERVAL = 2000, RESUME = 3000, timer = 0;
   var hover = false, touching = false, focused = false, visible = true, looped = false, anim = 0;
   // userAt: 人が横に動かした最後の時刻。selfUntil: それまでの scroll イベントは自分で動かしたもの
   var userAt = 0, selfUntil = 0;
@@ -503,11 +503,15 @@ const SALE_SCRIPT = `<script>
     if (target === null) return;
     slideTo(Math.min(target, track.scrollWidth - track.clientWidth));
   }
-  setInterval(function(){
-    if (still || !looped || hover || touching || focused || !visible || document.hidden) return;
-    if (Date.now() - userAt < RESUME) return;
+  // 決まった刻みではなく、次に送る時刻を毎回予約する(人の操作のあとは止まってから RESUME ちょうどで再開)
+  function schedule(ms){ clearTimeout(timer); if (!still) timer = setTimeout(tick, ms); }
+  function tick(){
+    if (!looped || hover || touching || focused || !visible || document.hidden) return schedule(INTERVAL);
+    var wait = RESUME - (Date.now() - userAt);
+    if (wait > 0) return schedule(wait);
     go(1);
-  }, INTERVAL);
+    schedule(INTERVAL);
+  }
   // マウスが乗っている間だけ待つ(iOS はタップでも mouseenter を出し、離れても戻らないので pointerType で分ける)
   root.addEventListener('pointerenter', function(e){ if (e.pointerType === 'mouse') hover = true; });
   root.addEventListener('pointerleave', function(e){ if (e.pointerType === 'mouse') hover = false; });
@@ -524,18 +528,19 @@ const SALE_SCRIPT = `<script>
   ['touchend', 'touchcancel'].forEach(function(t){ root.addEventListener(t, function(){ touching = false; }, { passive: true }); });
   root.addEventListener('focusin', function(){ focused = true; });
   root.addEventListener('focusout', function(e){ focused = root.contains(e.relatedTarget); });
-  prev.addEventListener('click', function(){ userAt = Date.now(); go(-1); });
-  next.addEventListener('click', function(){ userAt = Date.now(); go(1); });
+  prev.addEventListener('click', function(){ userAt = Date.now(); go(-1); schedule(RESUME); });
+  next.addEventListener('click', function(){ userAt = Date.now(); go(1); schedule(RESUME); });
   // 自分で動かした分を除いた scroll は人の横スクロール。止まったところで、複製側にいれば元の側へ戻す
   var idle;
   track.addEventListener('scroll', function(){
-    if (Date.now() >= selfUntil) userAt = Date.now();
+    if (Date.now() >= selfUntil) { userAt = Date.now(); schedule(RESUME); }
     clearTimeout(idle);
     idle = setTimeout(function(){ if (!track.style.scrollSnapType) wrap(); }, 150);
   }, { passive: true });
   addEventListener('resize', function(){ setLoop(!fits()); });
   if ('IntersectionObserver' in window) new IntersectionObserver(function(es){ visible = es[0].isIntersecting; }).observe(track);
   setLoop(!fits());
+  schedule(INTERVAL);
 })();
 </script>`
 
