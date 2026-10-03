@@ -283,17 +283,19 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .d-frame { position: absolute; inset: 0; opacity: 0; }
 .d-frame:first-child { opacity: 1; }
 @media (prefers-reduced-motion: no-preference) {
-  .d-frame { animation: d-show 10s infinite; animation-delay: calc(var(--i) * 2.5s); }
+  .d-frame { animation: d-show4 10s infinite; animation-delay: calc(var(--i) * 2.5s); }
+  .n5 .d-frame { animation-name: d-show5; animation-duration: 12.5s; }
   .d-frame:first-child { opacity: 0; }
-  .demo-steps li { animation: d-step 10s infinite; animation-delay: calc(var(--i) * 2.5s); }
+  .demo-steps li { animation: d-step4 10s infinite; animation-delay: calc(var(--i) * 2.5s); }
+  .demo-steps.n5 li { animation-name: d-step5; animation-duration: 12.5s; }
   .d-tap::after { animation: d-pulse 1.25s ease-out infinite; }
-  .d-app { animation: d-pop 10s infinite; animation-delay: 7.5s; }
 }
 @media (prefers-reduced-motion: reduce) { .d-phone { display: none; } }
-@keyframes d-show { 0%, 24% { opacity: 1; } 25%, 100% { opacity: 0; } }
-@keyframes d-step { 0%, 24% { color: var(--on-surface); font-weight: 700; } 25%, 100% { color: var(--on-surface-variant); font-weight: 400; } }
+@keyframes d-show4 { 0%, 24% { opacity: 1; } 25%, 100% { opacity: 0; } }
+@keyframes d-show5 { 0%, 19% { opacity: 1; } 20%, 100% { opacity: 0; } }
+@keyframes d-step4 { 0%, 24% { color: var(--on-surface); font-weight: 700; } 25%, 100% { color: var(--on-surface-variant); font-weight: 400; } }
+@keyframes d-step5 { 0%, 19% { color: var(--on-surface); font-weight: 700; } 20%, 100% { color: var(--on-surface-variant); font-weight: 400; } }
 @keyframes d-pulse { 0% { box-shadow: 0 0 0 0 rgba(242,183,5,.75); } 100% { box-shadow: 0 0 0 10px rgba(242,183,5,0); } }
-@keyframes d-pop { 0% { transform: scale(.4); opacity: 0; } 4%, 24% { transform: scale(1); opacity: 1; } 25%, 100% { transform: scale(1); opacity: 1; } }
 /* 押す場所: 黄色の輪で囲み、脈打たせる */
 .d-tap { position: relative; border-radius: 8px; box-shadow: 0 0 0 2px #F2B705; }
 .d-tap::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
@@ -308,15 +310,30 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .d-card { height: 44px; margin: 8px 8px 0; border-radius: 6px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
 .d-card.short { height: 30px; }
 /* iPhone の Safari */
-.d-ios-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 38px; display: flex; align-items: center; justify-content: space-around; padding-bottom: 6px; background: rgba(249,249,249,.96); border-top: 1px solid #DDDDDD; color: #0A64D8; }
-.d-ios-bar > span { display: grid; place-items: center; width: 24px; height: 24px; }
-.d-ios-bar svg { width: 17px; height: 17px; }
+/* iOS 26 の Safari: 下に「‹」・アドレス・「…」が浮いた形 */
+.d-ios-bar { position: absolute; left: 6px; right: 6px; bottom: 8px; height: 30px; display: flex; align-items: center; gap: 5px; color: #1B1B18; }
+.d-ios-bar > span:first-child, .d-more { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,.92); box-shadow: 0 1px 4px rgba(0,0,0,.18); }
+.d-more { border-radius: 50%; }
+.d-pill { flex: 1; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 14px; background: rgba(255,255,255,.92); box-shadow: 0 1px 4px rgba(0,0,0,.18); font-size: 8px; color: #1B1B18; }
+.d-ios-bar svg { width: 15px; height: 15px; }
+.d-pop { position: absolute; right: 6px; bottom: 44px; width: 134px; padding: 4px; border-radius: 14px; background: rgba(250,250,250,.98); box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+.d-pop div { display: flex; align-items: center; gap: 6px; height: 22px; padding: 0 6px; font-size: 8px; border-radius: 8px; white-space: nowrap; }
+.d-pop svg { width: 12px; height: 12px; }
+.d-apps { display: flex; justify-content: space-around; padding: 2px 0 4px; }
+.d-apps i { width: 22px; height: 22px; border-radius: 50%; background: #D7DAE0; }
+.d-acts { display: flex; justify-content: space-around; }
+.d-acts span { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; background: #FFFFFF; color: #3C3C43; }
+.d-acts svg { width: 13px; height: 13px; }
+.d-list { display: grid; margin-bottom: 8px; border-radius: 10px; background: #FFFFFF; }
+.d-list div { display: flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; font-size: 9px; border-top: 1px solid #ECECEC; }
+.d-list div:first-child { border-top: 0; }
+.d-list svg { width: 12px; height: 12px; color: #3C3C43; }
+.d-list .d-tap { border-radius: 8px; }
+.demo-note { flex-basis: 100%; margin: 0; font-size: 13px; color: var(--on-surface-variant); }
 .d-dim { position: absolute; inset: 0; background: rgba(0,0,0,.28); }
 .d-sheet { position: absolute; left: 0; right: 0; bottom: 0; padding: 10px 8px 14px; border-radius: 14px 14px 0 0; background: #F2F2F7; display: grid; gap: 6px; }
 .d-sheet-h { display: flex; align-items: center; gap: 6px; padding: 0 2px 4px; }
 .d-sheet-h b { font-size: 8.5px; }
-.d-row { display: flex; align-items: center; justify-content: space-between; flex-direction: row-reverse; height: 26px; padding: 0 8px; border-radius: 8px; background: #FFFFFF; font-size: 9.5px; }
-.d-row svg { width: 14px; height: 14px; color: #3C3C43; }
 .d-add { position: absolute; inset: 0; background: #F2F2F7; }
 .d-add-bar { display: flex; align-items: center; justify-content: space-between; gap: 4px; height: 32px; margin-top: 10px; padding: 0 6px; font-size: 8px; color: #0A64D8; white-space: nowrap; }
 .d-add-bar b { color: #1B1B18; font-size: 8px; }

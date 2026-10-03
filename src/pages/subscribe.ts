@@ -24,6 +24,10 @@ const P = {
   more: 'M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z',
   copy: 'M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z',
   star: 'M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z',
+  dots: 'M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z',
+  plus: 'M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z',
+  up: 'M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z',
+  search: 'M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z',
   install: 'M18 1.01L8 1c-1.1 0-2 .9-2 2v3h2V5h10v14H8v-1H6v3c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM10 15h2V8H5v2h3.59L3 15.59 4.41 17 10 11.41z',
 }
 const ic = (d: string) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="${d}"/></svg>`
@@ -32,11 +36,17 @@ const ic = (d: string) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path fil
 const MINI_SITE = `<div class="d-site"><div class="d-bar"><span class="d-logo">${LOGO_SVG}</span><i></i></div><div class="d-card"></div><div class="d-card short"></div><div class="d-card"></div></div>`
 const HOME = `<div class="d-home">${'<i></i>'.repeat(5)}<span class="d-app"><span class="d-logo">${LOGO_SVG}</span><b>サンドーム福井</b></span>${'<i></i>'.repeat(6)}</div>`
 
-/** iPhone(Safari): 共有 → 「ホーム画面に追加」 → 「追加」 → ホーム画面にアイコン */
+/**
+ * iPhone(Safari, iOS 26): 右下の「…」 → 「共有」 → 共有シートを下へたどって「ホーム画面に追加」 → 「追加」 → ホーム画面にアイコン。
+ * 2026-10 に実機の画面収録で確かめた流れ。古い iOS は下の共有ボタンから始まる(手順の下に一文添える)
+ */
+const IOS_BAR = `<div class="d-ios-bar"><span>${ic(P.back)}</span><span class="d-pill">sundome.take20m.dev</span><span class="d-more">${ic(P.dots)}</span></div>`
 const IOS_FRAMES = [
-  `${MINI_SITE}<div class="d-ios-bar"><span>${ic(P.back)}</span><span>${ic(P.fwd)}</span><span class="d-tap">${ic(P.share)}</span><span>${ic(P.book)}</span><span>${ic(P.tabs)}</span></div>`,
-  `${MINI_SITE}<div class="d-dim"></div><div class="d-sheet"><div class="d-sheet-h"><span class="d-logo">${LOGO_SVG}</span><b>サンドーム福井ライブ情報</b></div>
-<div class="d-row">${ic(P.copy)}コピー</div><div class="d-row">${ic(P.star)}お気に入りに追加</div><div class="d-row d-tap">${ic(P.addBox)}ホーム画面に追加</div></div>`,
+  `${MINI_SITE}${IOS_BAR.replace('class="d-more"', 'class="d-more d-tap"')}`,
+  `${MINI_SITE}${IOS_BAR}<div class="d-pop"><div class="d-tap">${ic(P.share)}共有</div><div>${ic(P.book)}ブックマークに追加</div><div>${ic(P.book)}ブックマークの追加先…</div><div>${ic(P.plus)}新規タブ</div><div>${ic(P.plus)}新規プライベートタブ</div></div>`,
+  `${MINI_SITE}<div class="d-dim"></div><div class="d-sheet"><div class="d-sheet-h"><span class="d-logo">${LOGO_SVG}</span><b>新着情報を受け取る | サンドーム福井…</b></div>
+<div class="d-apps"><i></i><i></i><i></i><i></i></div><div class="d-acts"><span>${ic(P.copy)}</span><span>${ic(P.book)}</span><span>${ic(P.star)}</span><span>${ic(P.up)}</span></div>
+<div class="d-list"><div>${ic(P.star)}お気に入りに追加</div><div>${ic(P.search)}ページを検索</div><div class="d-tap">${ic(P.addBox)}ホーム画面に追加</div></div></div>`,
   `<div class="d-add"><div class="d-add-bar"><span>キャンセル</span><b>ホーム画面に追加</b><span class="d-tap">追加</span></div>
 <div class="d-add-body"><span class="d-logo big">${LOGO_SVG}</span><div><b>サンドーム福井</b><small>sundome.take20m.dev</small></div></div></div>`,
   HOME,
@@ -51,12 +61,12 @@ const ANDROID_FRAMES = [
   HOME,
 ]
 
-function demo(os: 'ios' | 'android', frames: string[], steps: string[]): string {
+function demo(os: 'ios' | 'android', frames: string[], steps: string[], note = ''): string {
   return `<div class="demo" data-demo="${os}">
-<div class="d-phone${os === 'android' ? ' android' : ''}" aria-hidden="true">${frames
+<div class="d-phone${os === 'android' ? ' android' : ''} n${frames.length}" aria-hidden="true">${frames
     .map((f, i) => `<div class="d-frame" style="--i:${i}">${f}</div>`)
     .join('')}</div>
-<ol class="demo-steps">${steps.map((s, i) => `<li style="--i:${i}">${s}</li>`).join('')}</ol>
+<ol class="demo-steps n${steps.length}">${steps.map((s, i) => `<li style="--i:${i}">${s}</li>`).join('')}</ol>${note ? `\n<p class="demo-note">${note}</p>` : ''}
 </div>`
 }
 
@@ -108,11 +118,12 @@ export function renderSubscribePage(
 <div class="os-guide" data-os="ios">
 <p class="os-label">iPhone(Safari)</p>
 ${demo('ios', IOS_FRAMES, [
-  '画面下の共有ボタン(四角に上向きの矢印)を押します。見当たらないときは、右下の「…」を押すと出てきます。',
-  'メニューを下へたどり、「ホーム画面に追加」を選びます。',
+  '画面右下の「…」を押します。',
+  'メニューの「共有」を選びます。',
+  '下へたどって「ホーム画面に追加」を選びます。',
   '右上の「追加」を押します。',
   'ホーム画面にアイコンができます。',
-])}
+], '古い iOS では、画面下の共有ボタン(四角に上向きの矢印)から始まります。')}
 </div>
 <div class="os-guide" data-os="android">
 <p class="os-label">Android(Chrome)</p>
