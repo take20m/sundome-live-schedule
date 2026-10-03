@@ -167,16 +167,18 @@ describe('カードの当たり判定', () => {
     expect(html).toContain('<a href="/e/ev-2026-11-07">')
   })
 
-  it('詳細ページと過去公演(compact)では広げない', () => {
+  it('過去公演(compact)でも広げ、詳細ページでは広げない', () => {
+    expect(card({ compact: true })).toContain('<div class="card-main tap">')
     expect(card({ focusDate: '2026-11-07' })).toContain('<div class="card-main">')
-    expect(card({ compact: true })).toContain('<div class="card-main">')
   })
 
-  it('抽選リストは card-main の中にあるので、CSS で引き伸ばしたリンクより上に出す', () => {
-    // マークアップ上 lots は card-body の中 = 当たり判定の下。この 1 行が消えると
-    // 受付中の外部チケットリンクがオーバーレイに覆われて押せなくなる(ブラウザで実測して判明)
+  it('申込リンクだけを引き伸ばしたリンクより上に出し、チップや行の余白はカードの当たり判定にする', () => {
+    // マークアップ上 lots は card-body の中 = 当たり判定の下。申込リンクを上に出さないと
+    // オーバーレイに覆われて押せない(ブラウザで実測して判明)。一方で lots 全体を上に出すと、
+    // チップや余白を押しても何も起きない(スマホで「押しても飛ばない」)
     expect(card()).toContain('<ul class="lots">')
-    expect(SITE_CSS).toContain('.card-main.tap .lots { position: relative; z-index: 1;')
+    expect(SITE_CSS).toContain('.card-main.tap .lots a, .card-main.tap .lot-summary a { position: relative; z-index: 1; }')
+    expect(SITE_CSS).not.toContain('.card-main.tap .lots { position: relative')
   })
 
   it('受付中の抽選は外部リンクのまま残る', () => {
@@ -243,9 +245,9 @@ describe('日付タイル', () => {
   })
 
   it('本日・明日・明後日は帯が告知に置き換わり、本日だけ紺になる', () => {
-    expect(tileOf(['2026-10-03', '2026-10-04'])).toContain('<span class="tile-bar soon today">本日公演</span>')
-    expect(tileOf(['2026-10-04'])).toContain('<span class="tile-bar soon">明日公演</span>')
-    expect(tileOf(['2026-10-05'])).toContain('<span class="tile-bar soon">明後日公演</span>')
+    expect(tileOf(['2026-10-03', '2026-10-04'])).toContain('<span class="tile-bar soon today">本日</span>')
+    expect(tileOf(['2026-10-04'])).toContain('<span class="tile-bar soon">明日</span>')
+    expect(tileOf(['2026-10-05'])).toContain('<span class="tile-bar soon">明後日</span>')
     // 通常の帯は年月のまま。today は本日以外には付かない
     expect(tileOf(['2026-11-07'])).toContain('<span class="tile-bar">2026.11</span>')
   })

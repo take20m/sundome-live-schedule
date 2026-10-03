@@ -58,7 +58,7 @@ export const SITE_CSS = `
   --surface-container-low: #FFFFFF; --surface-container: #FAF9F6; --surface-container-highest: #F0EEE8;
   --on-surface: #1B1B18; --on-surface-variant: #5C594F; --outline: #8A8578; --outline-variant: #E6E3DC;
   --brand-yellow: #F7D33B;
-  /* 年月帯。タイル地と明度を近づけて券面の主張を抑える。本日公演だけ .tile-bar.today が --primary を使う */
+  /* 年月帯。タイル地と明度を近づけて券面の主張を抑える。本日だけ .tile-bar.today が --primary を使う */
   --tile-bar: #E8E4D8; --on-tile-bar: #4A4639;
   --error-container: #F9DEDC; --on-error-container: #410E0B;
   --shadow-1: 0 1px 2px rgba(0,0,0,.30), 0 1px 3px 1px rgba(0,0,0,.15);
@@ -129,14 +129,14 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .cards { display: grid; gap: 16px; }
 .card { display: flex; flex-direction: column; background: var(--surface-container-low); border-radius: 12px; box-shadow: var(--shadow-1); scroll-margin-top: 84px; overflow: hidden; }
 .card-main { display: flex; gap: 16px; padding: 16px; }
-/* 一覧・アーティストページ: タイトルのリンクを card-main いっぱいに引き伸ばして当たり判定にする */
+/* 一覧・アーティスト・過去公演: タイトルのリンクを card-main いっぱいに引き伸ばし、カードのどこを押しても詳細へ */
 .card-main.tap { position: relative; cursor: pointer; }
 .card-main.tap .card-title a::after { content: ""; position: absolute; inset: 0; }
-/* 抽選リストは card-body の中、つまり引き伸ばしたリンクの下にある。ここだけ上に出さないと
-   受付中の外部チケットリンクが押せず、期間の日時も選択できなくなる */
-.card-main.tap .lots { position: relative; z-index: 1; cursor: auto; }
-/* 抽選リストの上にいるときはカードの当たり判定ではないので、色も付けない */
-.card-main.tap:hover:not(:has(.lots:hover)) { background: color-mix(in srgb, var(--on-surface) 8%, transparent); }
+/* 受付の申込リンク(と過去公演の件数リンク)だけを引き伸ばしたリンクより上に出す。
+   チップや行の余白まで上に出すと、そこを押しても何も起きなかった(スマホで「押しても飛ばない」) */
+.card-main.tap .lots a, .card-main.tap .lot-summary a { position: relative; z-index: 1; }
+/* 申込リンクの上にいるときはカードの当たり判定ではないので、色も付けない */
+.card-main.tap:hover:not(:has(.lots a:hover, .lot-summary a:hover)) { background: color-mix(in srgb, var(--on-surface) 8%, transparent); }
 /* フォーカスリングは文字ではなく実際の当たり判定に出す */
 .card-main.tap:has(.card-title a:focus-visible) { outline: 2px solid var(--primary); outline-offset: -2px; }
 .card-main.tap .card-title a:focus-visible { outline: none; }
@@ -155,12 +155,12 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 /* 詳細から /#ev-... で戻ってきた直後、該当カードを一瞬強調して位置を示す */
 .card:target, .card:has(.anchor:target) { outline: 3px solid transparent; outline-offset: 3px; animation: card-arrive 2.4s ease-out; }
 @keyframes card-arrive { 0%, 40% { outline-color: var(--primary); } 100% { outline-color: transparent; } }
-/* 日付タイル。年月を帯に切り離した券面。帯は「本日公演」の告知枠も兼ねる */
+/* 日付タイル。年月を帯に切り離した券面。帯は「本日」「明日」「明後日」の告知枠も兼ねる */
 .tile { flex: 0 0 72px; display: flex; flex-direction: column; align-items: center; align-self: flex-start; padding: 0; border-radius: 8px; overflow: hidden; background: var(--surface-container-highest); color: var(--on-surface-variant); font-variant-numeric: tabular-nums; text-align: center; }
 .card.is-open .tile, .card.is-today .tile { background: var(--primary-container); color: var(--on-primary-container); }
 .tile-bar { display: block; width: 100%; background: var(--tile-bar); color: var(--on-tile-bar); font-size: 11px; line-height: 20px; letter-spacing: .2px; font-weight: 500; white-space: nowrap; }
 .tile-bar.soon { font-weight: 700; }
-/* 本日公演だけ帯を紺に。明日・明後日は太字のまま通常の帯色で、近さの順に段が付く */
+/* 本日だけ帯を紺に。明日・明後日は太字のまま通常の帯色で、近さの順に段が付く */
 .tile-bar.today { background: var(--primary); color: var(--on-primary); }
 .tile-body { display: flex; flex-direction: column; align-items: center; padding: 6px 4px 9px; }
 .tile-d { font-size: 30px; line-height: 38px; font-weight: 400; white-space: nowrap; }

@@ -173,7 +173,7 @@ export function renderLottery(l: LotteryRow, now: Date, note = '', detail = fals
   return `<li class="lot lot-${status}"${detail ? ` id="${lotteryAnchor(l)}"` : ''}>${statusChip(status)}<span class="lot-name">${name}</span>${noteHtml}${periodHtml}</li>`
 }
 
-const SOON_LABEL = ['本日公演', '明日公演', '明後日公演']
+const SOON_LABEL = ['本日', '明日', '明後日']
 
 /** "10/3(土)" */
 function dayLabel(date: string): string {
@@ -343,9 +343,9 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
     ? `<p class="card-date">${soonLabel ? `<span class="soon${isToday ? ' today' : ''}">${soonLabel}</span>` : ''}${escapeHtml(dateText)}</p>`
     : ''
 
-  // 一覧とアーティストページでは card-main 全体を詳細への当たり判定にする(タイトルの <a> を CSS で引き伸ばす)。
-  // 抽選リストは外に置いたまま ─ 中の外部チケットリンクが <a> の入れ子になるのと、期間の日時が選択できなくなるのを避ける
-  const tap = !detail && !opts.compact
+  // 一覧・アーティスト・過去公演では card-main 全体を詳細への当たり判定にする(タイトルの <a> を CSS で引き伸ばす)。
+  // 抽選リストの申込リンクは <a> の入れ子にできないので、引き伸ばしたリンクの上に重ねて出す
+  const tap = !detail
 
   return `<article class="card${hasOpen ? ' is-open' : ''}${isToday ? ' is-today' : ''}" id="${escapeHtml(first.id)}">
   ${anchors}

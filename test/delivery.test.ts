@@ -106,7 +106,7 @@ describe('締切セクションとカウントダウン', () => {
     expect(html).not.toContain('他1件') // 受付名を出さないので件数も出さない
   })
 
-  it('今日開催の公演には「本日公演」マーカーが付く', async () => {
+  it('今日開催の公演には「本日」マーカーが付く', async () => {
     const today = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
     await env.DB.prepare(
       `INSERT INTO events (id, title, artist, date, confidence, updated_at) VALUES (?, 'TODAY LIVE', '今日のアーティスト', ?, 'official', ?)`,
@@ -114,7 +114,7 @@ describe('締切セクションとカウントダウン', () => {
       .bind(`ev-${today}`, today, new Date().toISOString())
       .run()
     const html = await (await SELF.fetch('https://example.com/')).text()
-    expect(html).toContain('本日公演')
+    expect(html).toMatch(/class="(?:tile-bar soon today|soon today)">本日</)
     expect(html).toContain('is-today')
   })
 })
