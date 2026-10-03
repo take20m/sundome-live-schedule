@@ -50,7 +50,8 @@
 
 - Worker の Cron Trigger(`0 3 * * *` = 12:00 JST)で動かす。毎晩 17:00 JST の収集のあとのデータを使う
 - 前回送った `changes.id` より後の新着を、RSS と同じ基準で集める(`listRecentChanges` の会員限定除外と、`groupLotteryChanges` の同じ受付期間のまとめ)
-- 新着が 0 件なら送らず、`digest_state` も進めない
+- 新着が 0 件なら送らない。見送った変更(更新・会員限定)を次回また読まないよう、`digest_state` の位置だけは進める
+- 購読者が上限を超えて送らなかった日は、`digest_state` を進めない(次回、同じ新着から送れるように)
 - Resend のバッチ API(1 回 100 通まで)で 1 人 1 通ずつ送る(配信停止リンクが人ごとに違うため)。`Idempotency-Key` に日付と区切り番号を入れ、再実行で二重に送らない
 - 送れたら `digest_state` を今回の最後の id に進める
 
