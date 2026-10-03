@@ -249,10 +249,10 @@ describe('日付タイル', () => {
     expect(tileOf(['2026-12-31', '2027-01-01'])).toContain('<span class="tile-bar">12<span class="sep-en">–</span>1月</span>')
   })
 
-  it('本日・明日・明後日はカレンダーの下に付け、帯は月のまま。本日だけ today', () => {
+  it('当日は帯を「本日」に置き換え、明日・明後日はカレンダーの下に付ける', () => {
     const today = tileOf(['2026-10-03', '2026-10-04'])
-    expect(today).toContain('<span class="tile-bar">10月</span>')
-    expect(today).toContain('<span class="tile-soon today">本日</span>')
+    expect(today).toContain('<span class="tile-bar today">本日</span>')
+    expect(today).not.toContain('tile-soon')
     expect(tileOf(['2026-10-04'])).toContain('<span class="tile-soon">明日</span>')
     expect(tileOf(['2026-10-05'])).toContain('<span class="tile-soon">明後日</span>')
     expect(tileOf(['2026-11-07'])).not.toContain('tile-soon')

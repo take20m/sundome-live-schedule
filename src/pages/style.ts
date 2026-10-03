@@ -42,7 +42,7 @@ const DARK_TOKENS = `color-scheme: dark;
   --surface-container-low: #1C1C1C; --surface-container: #212121; --surface-container-highest: #2C2C2C;
   --on-surface: #E9E9E6; --on-surface-variant: #A3A29C; --outline: #8C8B85; --outline-variant: #2C2C2C;
   --brand-yellow: #F7D33B;
-  --tile-bar: #2E5AAC; --on-tile-bar: #FFFFFF; --tile-body: #2C2C2C; --tile-edge: rgba(255,255,255,.08);
+  --tile-bar: #2E5AAC; --on-tile-bar: #FFFFFF; --tile-today: #C62828; --tile-body: #2C2C2C; --tile-edge: rgba(255,255,255,.08);
   --error: #F2B8B5; --error-container: #8C1D18; --on-error-container: #F9DEDC;`
 
 const DARK_SHEET_TOKENS = `--paper: #1A1A1A; --surface-container-low: #1C1C1C; --surface-container: #212121; --surface-container-highest: #2C2C2C; --on-surface: #E9E9E6; --on-surface-variant: #A3A29C; --outline-variant: #2C2C2C; --yellow-pale: #2A2614; --yellow-soft: #453D1E; --red-soft: #38201D; --blue-soft: #15263B; --blue: #8FB8F0; --red: #F2B8B5; --muted: #8C8B85;`
@@ -59,7 +59,7 @@ export const SITE_CSS = `
   --on-surface: #1B1B18; --on-surface-variant: #5C594F; --outline: #8A8578; --outline-variant: #E6E3DC;
   --brand-yellow: #F7D33B;
   /* 日付カレンダー: 紺の月の帯と白い地(Apple のカレンダー風)。ダークは帯を少し明るく、地を暗いグレーに */
-  --tile-bar: #0B3D91; --on-tile-bar: #FFFFFF; --tile-body: #FFFFFF; --tile-edge: rgba(0,0,0,.10);
+  --tile-bar: #0B3D91; --on-tile-bar: #FFFFFF; --tile-today: #C62828; --tile-body: #FFFFFF; --tile-edge: rgba(0,0,0,.10);
   --error: #B3261E; --error-container: #F9DEDC; --on-error-container: #410E0B;
   --shadow-1: 0 1px 2px rgba(0,0,0,.30), 0 1px 3px 1px rgba(0,0,0,.15);
   --shadow-2: 0 1px 2px rgba(0,0,0,.30), 0 2px 6px 2px rgba(0,0,0,.15);
@@ -197,18 +197,18 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 /* 詳細から /#ev-... で戻ってきた直後、該当カードを一瞬強調して位置を示す */
 .card:target, .card:has(.anchor:target) { outline: 3px solid transparent; outline-offset: 3px; animation: card-arrive 2.4s ease-out; }
 @keyframes card-arrive { 0%, 40% { outline-color: var(--primary); } 100% { outline-color: transparent; } }
-/* 日付カレンダー。紺の帯に月、白い地に日と曜日。「本日」「明日」「明後日」はカレンダーの下に付ける */
+/* 日付カレンダー。紺の帯に月、白い地に日と曜日。当日は帯を赤い「本日」に、明日・明後日はカレンダーの下に付ける */
 .tile-wrap { flex: 0 0 72px; display: flex; flex-direction: column; align-items: center; gap: 6px; align-self: flex-start; }
 .tile { width: 100%; display: flex; flex-direction: column; align-items: center; border-radius: 10px; overflow: hidden; background: var(--tile-body); color: var(--on-surface); box-shadow: 0 0 0 1px var(--tile-edge), 0 1px 3px rgba(0,0,0,.12); font-variant-numeric: tabular-nums; text-align: center; }
 .tile-bar { display: block; width: 100%; background: var(--tile-bar); color: var(--on-tile-bar); font-size: 11px; line-height: 20px; letter-spacing: .2px; font-weight: 700; white-space: nowrap; }
+.tile-bar.today { background: var(--tile-today); letter-spacing: 1px; }
 .tile-body { display: flex; flex-direction: column; align-items: center; padding: 6px 4px 9px; }
 .tile-d { font-size: 30px; line-height: 38px; font-weight: 500; white-space: nowrap; }
 /* 24px は「28・29」(2桁+中黒+2桁)が 72px の枠に収まる上限 */
 .tile-d.range { font-size: 24px; letter-spacing: 0; }
 .tile-w { font-size: 12px; line-height: 16px; letter-spacing: 0; font-weight: 500; white-space: nowrap; color: var(--on-surface-variant); }
-/* 本日だけ紺の塗り、明日・明後日は淡い青(一覧カードのバッジと同じ色分け) */
+/* 明日・明後日は淡い青のピル(一覧カードのバッジと同じ色) */
 .tile-soon { padding: 1px 10px; border-radius: 9px; background: var(--secondary-container); color: var(--on-secondary-container); font-size: 12px; line-height: 18px; font-weight: 700; letter-spacing: .5px; white-space: nowrap; }
-.tile-soon.today { background: var(--tile-bar); color: var(--on-tile-bar); }
 /* 区切りは減光せずサイズだけ落とす。地が淡いと 45% で 2.4:1、70% でも 3.6:1 しか出ないため */
 .tile-d .sep { font-size: 13px; margin: 0 -2px; vertical-align: 2px; }
 .tile-d .sep-en { font-size: 16px; margin: 0 1px; vertical-align: 3px; }

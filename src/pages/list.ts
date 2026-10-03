@@ -234,7 +234,8 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
   // 以下 3 つは組み立て済みの HTML。dateParts は不正な日付でそのまま date を d に返すのでパーツ単位でエスケープする
   const f = dateParts(first.date)
   const l = dateParts(last.date)
-  // カレンダーの帯は月だけ(「10月」、月をまたげば「10–11月」)。今年でなければ年を付ける(「2027年2月」)
+  // カレンダーの帯は月だけ(「10月」、月をまたげば「10–11月」)。今年でなければ年を付ける(「2027年2月」)。
+  // 公演当日は帯そのものを赤い「本日」に置き換え、明日・明後日はカレンダーの下に小さく付ける
   const [fy, fm] = first.date.split('-').map(Number)
   const lm = Number(last.date.split('-')[1])
   const tileYm =
@@ -391,13 +392,13 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
   ${thumb}
   <div class="tile-wrap"${thumbMode ? ' hidden' : ''}>
     <div class="tile">
-      <span class="tile-bar">${tileYm}</span>
+      <span class="tile-bar${isToday ? ' today' : ''}">${isToday ? '本日' : tileYm}</span>
       <span class="tile-body">
         <span class="tile-d${multi ? ' range' : ''}">${tileD}</span>
         <span class="tile-w">${tileW}</span>
       </span>
     </div>
-    ${soonLabel ? `<span class="tile-soon${isToday ? ' today' : ''}">${soonLabel}</span>` : ''}
+    ${soonLabel && !isToday ? `<span class="tile-soon">${soonLabel}</span>` : ''}
   </div>
   <div class="card-body">
     ${cardDate}
