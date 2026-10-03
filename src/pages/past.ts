@@ -26,6 +26,21 @@ export function renderPastPage(events: EventWithLotteries[], now: Date, canonica
   const groups = year ? byYear.get(year)! : []
   const count = (gs: Groups) => gs.reduce((n, g) => n + g.events.length, 0)
 
+  // いちばん下から前の年(古い年)へ進める。新しい年へ戻るリンクも左に添える
+  const i = year ? years.indexOf(year) : -1
+  const older = i >= 0 ? years[i + 1] : undefined
+  const newer = i > 0 ? years[i - 1] : undefined
+  const pager =
+    older || newer
+      ? `<nav class="year-pager" aria-label="ほかの年">${
+          newer ? `<a class="btn-text" href="/past?y=${newer}">${iconSvg('chevron_left')}${newer}年</a>` : '<span></span>'
+        }${
+          older
+            ? `<a class="year-next" href="/past?y=${older}"><span class="year-next-label">${older}年の公演へ${iconSvg('chevron_right')}</span><span class="year-next-count">${count(byYear.get(older)!)} 公演</span></a>`
+            : ''
+        }</nav>`
+      : ''
+
   const tabs = years
     .map((y) => `<a class="chip${y === year ? ' chip-open' : ''}" href="/past?y=${y}"${y === year ? ' aria-current="page"' : ''}>${y}年</a>`)
     .join('')
@@ -34,7 +49,8 @@ export function renderPastPage(events: EventWithLotteries[], now: Date, canonica
 <div class="section"><h2>${year}年</h2><span class="sup">${count(groups)} 公演</span></div>
 <div class="cards">
 ${groups.map((g) => renderEventCard(g, now, { compact: true })).join('\n')}
-</div>`
+</div>
+${pager}`
     : '<p class="none">過去の公演の記録はまだありません。</p>'
 
   const head = buildHeadMeta({

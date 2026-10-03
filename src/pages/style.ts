@@ -159,6 +159,15 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .chip-soldout { background: var(--error-container); border-color: transparent; color: var(--on-error-container); }
 /* 過去の公演の年タブ */
 .years { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; }
+/* 過去の公演のいちばん下: 前の年へ進むボタン(右)と、新しい年へ戻るリンク(左) */
+.year-pager { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 24px; }
+.year-pager .btn-text .ic { width: 20px; height: 20px; }
+.year-next { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 2px; padding: 12px 14px 12px 20px; border-radius: 16px; background: var(--secondary-container); color: var(--primary); text-decoration: none; }
+.year-next:hover { background: color-mix(in srgb, var(--on-secondary-container) 8%, var(--secondary-container)); }
+.year-next:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.year-next-label { display: inline-flex; align-items: center; gap: 2px; font-size: 16px; line-height: 22px; font-weight: 700; }
+.year-next-label .ic { width: 20px; height: 20px; }
+.year-next-count { margin-right: 22px; font-size: 12px; line-height: 16px; color: var(--on-surface-variant); font-variant-numeric: tabular-nums; }
 .years .chip { height: 32px; padding: 0 14px; font-size: 13px; text-decoration: none; }
 .years .chip:not(.chip-open):hover { background: color-mix(in srgb, var(--on-surface-variant) 8%, transparent); }
 .chip-closed, .chip-unknown { color: var(--outline); border-color: var(--outline-variant); }

@@ -49,6 +49,13 @@ describe('過去の公演ページ', () => {
     expect(old).not.toContain('先月のバンド')
     const bogus = await (await SELF.fetch('https://example.com/past?y=1999')).text()
     expect(bogus).toContain('先月のバンド')
+    // いちばん下から前の年へ進める(最新の年なので新しい年へのリンクは無い)。前の年からは新しい年へ戻れる
+    const y1 = p1.slice(0, 4), y2 = p2.slice(0, 4)
+    expect(html).toContain(`<a class="year-next" href="/past?y=${y1}">`)
+    expect(html).toContain('<span class="year-next-count">1 公演</span>')
+    expect(html).not.toContain(`<a class="btn-text" href="/past?y=`)
+    expect(old).toContain(`<a class="btn-text" href="/past?y=${y2}">`)
+    expect(old).not.toContain('class="year-next"')
     // 開催済みの公演の詳細では「未収集」と言わない(もう収集しない)
     const detail = await (await SELF.fetch(`https://example.com/e/ev-${p1}`)).text()
     expect(detail).not.toContain('未収集')
