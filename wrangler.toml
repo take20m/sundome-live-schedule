@@ -25,6 +25,10 @@ fallthrough = true
 [assets]
 directory = "./public"
 
+# メール購読のフォームの Turnstile サイトキー(公開値)。RESEND_API_KEY と TURNSTILE_SECRET は secret
+[vars]
+TURNSTILE_SITE_KEY = "0x4AAAAAAFM10veDlSgFw8cS"
+
 # 新着まとめメール(docs/email-digest.md)。毎日 12:00 JST(UTC 03:00)。
 # RESEND_API_KEY が無いあいだは何もしない
 [triggers]

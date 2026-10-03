@@ -82,6 +82,13 @@ app.get('/subscribe', (c) =>
   ),
 )
 app.post('/api/subscribe', handleSubscribe)
+// まとめメールを今すぐ送る(運用用: 送り損ねた日のやり直しや、公開時の確認)。収集と同じトークンが要る
+app.post('/api/digest', async (c) => {
+  if (!c.env.INGEST_TOKEN || c.req.header('authorization') !== `Bearer ${c.env.INGEST_TOKEN}`) {
+    return c.json({ error: 'unauthorized' }, 401)
+  }
+  return c.json(await runDigest(c.env, siteUrl(c.req.url), new Date()))
+})
 app.get('/subscribe/sent', handleSent)
 app.get('/subscribe/confirm', handleConfirm)
 app.get('/subscribe/stop', handleStopPage)

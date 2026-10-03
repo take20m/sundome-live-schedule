@@ -196,6 +196,13 @@ describe('新着まとめメール', () => {
     expect(again.status).toBe('over-limit')
   })
 
+  it('運用用の /api/digest はトークンが要る', async () => {
+    expect((await call('/api/digest', { method: 'POST' })).status).toBe(401)
+    const ok = await call('/api/digest', { method: 'POST', headers: { Authorization: 'Bearer test-token' } })
+    expect(ok.status).toBe(200)
+    expect(await ok.json()).toHaveProperty('status')
+  })
+
   it('Resend のキーがなければ何もしない', async () => {
     expect((await runDigest({ DB: env.DB }, site, new Date())).status).toBe('disabled')
   })
