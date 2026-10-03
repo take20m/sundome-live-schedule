@@ -8,7 +8,7 @@ import { LOGO_SVG, iconSvg } from '../lib/icon'
 export const SITE_HEADER = `<header class="appbar">
 <a class="brand" href="/">${LOGO_SVG}<h1><span>サンドーム福井</span> <span>ライブ情報</span></h1></a>
 <span class="spacer"></span>
-<a class="iconbtn sub-ic" href="/subscribe" aria-label="更新を受け取る" title="更新を受け取る">${iconSvg('notification_add')}</a>
+<a class="iconbtn sub-ic" href="/subscribe" aria-label="新着情報を受け取る" title="新着情報を受け取る">${iconSvg('notification_add')}</a>
 </header>
 <script>
 // 下へスクロールしたらヘッダーを隠し、上へ一定量(48px)戻したら出す。ページ先頭付近では常に出す
@@ -27,7 +27,7 @@ export const SITE_HEADER = `<header class="appbar">
 </script>`
 
 export const SITE_FOOTER = `<footer class="site-f">
-<a href="/subscribe">更新を受け取る</a>
+<a href="/subscribe">新着情報を受け取る</a>
 <a href="/about">このサイトについて</a>
 <span>© 2026 take20m</span>
 </footer>`
@@ -93,7 +93,7 @@ a { color: var(--primary); }
 .iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 24px; color: var(--on-surface-variant); text-decoration: none; }
 .iconbtn .ic { width: 24px; height: 24px; }
 .iconbtn:hover { background: color-mix(in srgb, var(--on-surface-variant) 8%, transparent); }
-/* 「更新を受け取る」の入口はベル＋プラスを紺で(押せるものだと分かるように、飾りのグレーにしない) */
+/* 「新着情報を受け取る」の入口はベル＋プラスを紺で(押せるものだと分かるように、飾りのグレーにしない) */
 .iconbtn.sub-ic { color: var(--primary); }
 
 main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
@@ -251,7 +251,7 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 /* フッター */
 .site-f { background: var(--surface-container); padding: 24px 16px 28px; display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--on-surface-variant); font-size: 12px; line-height: 16px; letter-spacing: .4px; }
 .site-f a { color: var(--on-surface); text-decoration: none; font-weight: 500; font-size: 14px; }
-/* 「更新を受け取る」ページ */
+/* 「新着情報を受け取る」ページ */
 .sub-block h2 { display: flex; align-items: center; gap: 8px; }
 .sub-block h2 .ic { width: 22px; height: 22px; color: var(--primary); }
 .sub-btn { display: inline-flex; align-items: center; gap: 8px; height: 44px; margin-top: 16px; padding: 0 20px; border: 0; border-radius: 22px; background: var(--primary); color: var(--on-primary); font: inherit; font-weight: 700; cursor: pointer; }

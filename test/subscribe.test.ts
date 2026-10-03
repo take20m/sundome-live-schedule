@@ -7,14 +7,14 @@ beforeAll(async () => {
   await seedSample(env.DB)
 })
 
-describe('更新を受け取る', () => {
+describe('新着情報を受け取る', () => {
   it('ヘッダーとフッターの入口は /subscribe。RSS の XML へ直接は飛ばさない(開くとファイルが保存されるため)', async () => {
     for (const path of ['/', '/about', '/guide/access']) {
       const html = await (await SELF.fetch(`https://example.com${path}`)).text()
       const header = html.slice(html.indexOf('<header class="appbar">'), html.indexOf('</header>'))
-      expect(header, path).toContain('<a class="iconbtn sub-ic" href="/subscribe" aria-label="更新を受け取る" title="更新を受け取る">')
+      expect(header, path).toContain('<a class="iconbtn sub-ic" href="/subscribe" aria-label="新着情報を受け取る" title="新着情報を受け取る">')
       expect(header, path).not.toContain('feed.xml')
-      expect(html, path).toContain('<footer class="site-f">\n<a href="/subscribe">更新を受け取る</a>')
+      expect(html, path).toContain('<footer class="site-f">\n<a href="/subscribe">新着情報を受け取る</a>')
     }
     // RSS リーダー向けの自動検出は残す
     const top = await (await SELF.fetch('https://example.com/')).text()

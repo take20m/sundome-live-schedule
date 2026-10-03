@@ -4,7 +4,7 @@ import { buildHeadMeta } from '../lib/seo'
 import { renderArticle } from './article'
 
 /**
- * 「更新を受け取る」ページ。ヘッダーのベルから来る。RSS の XML を直接開くとファイルが保存されて
+ * 「新着情報を受け取る」ページ。ヘッダーのベルから来る。RSS の XML を直接開くとファイルが保存されて
  * しまうので、ここで受け取り方を案内する。通知と SNS は仕組みができてから欄を足す(作りかけは出さない)。
  *
  * ホーム画面への追加は、開いた端末(iPhone / Android / PC)を見分けて、その手順だけを出す。
@@ -135,13 +135,13 @@ ${demo('android', ANDROID_FRAMES, [
 </script>`
   return renderArticle({
     head: buildHeadMeta({
-      title: '更新を受け取る | サンドーム福井ライブ情報',
-      description: 'サンドーム福井の新しい公演と抽選の受付開始を、ホーム画面への追加や RSS で受け取る方法。',
+      title: '新着情報を受け取る | サンドーム福井ライブ情報',
+      description: 'サンドーム福井の新しい公演と抽選の受付情報を、ホーム画面への追加やRSSで受け取る方法。',
       canonical,
     }),
-    crumbs: [{ label: '公演一覧', href: '/' }, { label: '更新を受け取る' }],
-    title: '更新を受け取る',
-    lead: '新しい公演や抽選の受付が始まったことを、サイトを見に来なくても知るための方法です。',
+    crumbs: [{ label: '公演一覧', href: '/' }, { label: '新着情報を受け取る' }],
+    title: '新着情報を受け取る',
+    lead: '新しい公演や抽選の受付情報を受け取る方法です。',
     body,
     extraScripts: script,
   })
