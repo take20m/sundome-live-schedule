@@ -6,7 +6,7 @@
 import { LOGO_SVG, iconSvg } from '../lib/icon'
 
 export const SITE_HEADER = `<header class="appbar">
-<a class="brand" href="/">${LOGO_SVG}<h1><span>サンドーム福井</span> <span>コンサート・ライブ情報</span></h1></a>
+<a class="brand" href="/">${LOGO_SVG}<h1><span>サンドーム福井</span> <span>ライブ情報</span></h1></a>
 <span class="spacer"></span>
 <a class="iconbtn" href="/feed.xml" aria-label="RSS フィード" title="RSS">${iconSvg('rss_feed')}</a>
 </header>
@@ -43,7 +43,7 @@ const DARK_TOKENS = `color-scheme: dark;
   --on-surface: #E9E9E6; --on-surface-variant: #A3A29C; --outline: #8C8B85; --outline-variant: #2C2C2C;
   --brand-yellow: #F7D33B;
   --tile-bar: #3A3216; --on-tile-bar: #E0D6A8;
-  --error-container: #8C1D18; --on-error-container: #F9DEDC;`
+  --error: #F2B8B5; --error-container: #8C1D18; --on-error-container: #F9DEDC;`
 
 const DARK_SHEET_TOKENS = `--paper: #1A1A1A; --surface-container-low: #1C1C1C; --surface-container: #212121; --surface-container-highest: #2C2C2C; --on-surface: #E9E9E6; --on-surface-variant: #A3A29C; --outline-variant: #2C2C2C; --yellow-pale: #2A2614; --yellow-soft: #453D1E; --red-soft: #38201D; --blue-soft: #15263B; --blue: #8FB8F0; --red: #F2B8B5; --muted: #8C8B85;`
 
@@ -60,7 +60,7 @@ export const SITE_CSS = `
   --brand-yellow: #F7D33B;
   /* 年月帯。タイル地と明度を近づけて券面の主張を抑える。本日だけ .tile-bar.today が --primary を使う */
   --tile-bar: #E8E4D8; --on-tile-bar: #4A4639;
-  --error-container: #F9DEDC; --on-error-container: #410E0B;
+  --error: #B3261E; --error-container: #F9DEDC; --on-error-container: #410E0B;
   --shadow-1: 0 1px 2px rgba(0,0,0,.30), 0 1px 3px 1px rgba(0,0,0,.15);
   --shadow-2: 0 1px 2px rgba(0,0,0,.30), 0 2px 6px 2px rgba(0,0,0,.15);
 }
@@ -107,12 +107,15 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .row { display: flex; align-items: center; gap: 16px; min-height: 72px; padding: 12px 16px; text-decoration: none; color: inherit; border-top: 1px solid var(--outline-variant); }
 .row:first-child { border-top: 0; }
 .row:hover { background: color-mix(in srgb, var(--on-surface) 8%, transparent); }
-.cd { flex: 0 0 7em; font-size: 16px; line-height: 24px; font-weight: 500; letter-spacing: .15px; color: var(--on-surface-variant); font-variant-numeric: tabular-nums; }
-.row-open .cd { color: var(--primary); }
+.list-label { margin: 12px 4px 6px; font-size: 12px; line-height: 16px; font-weight: 700; letter-spacing: .4px; color: var(--on-surface-variant); }
+.list + .list-label { margin-top: 16px; }
+/* 右端の状態。受付中は締切までの残り(3日以内は赤)、それ以外(締切未定・開始日時)は控えめに */
+.cd { flex: none; font-size: 13px; line-height: 20px; font-weight: 500; letter-spacing: .25px; color: var(--on-surface-variant); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cd-left { font-size: 15px; font-weight: 700; color: var(--primary); }
+.cd-left.cd-soon { color: var(--error); }
 .row-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .row-h { font-size: 16px; line-height: 24px; letter-spacing: .5px; }
 .row-s { color: var(--on-surface-variant); }
-.row .chip { flex: none; }
 
 /* チップ(受付状態) */
 .chip { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 8px; font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: .5px; white-space: nowrap; border: 1px solid var(--outline); color: var(--on-surface-variant); }
@@ -222,7 +225,6 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
   .tile-d .sep-en { font-size: 13px; }
   .tile-w { font-size: 11px; }
   .card-title { font-size: 20px; line-height: 26px; }
-  .cd { flex-basis: 6em; font-size: 14px; }
   .row { gap: 12px; padding: 12px; }
   .lot-period { margin-left: 0; flex-basis: 100%; }
 }

@@ -70,6 +70,9 @@ function statusChip(status: LotteryStatus): string {
   return `<span class="chip chip-${status}">${STATUS_LABEL[status]}</span>`
 }
 
+/** 販売中欄で締切を赤くする残り時間(表示が「あと3日」以下) */
+const SOON_MS = 4 * 24 * 60 * 60 * 1000
+
 /** サーバー側の静的カウントダウン文字列(クライアントJSが30秒ごとに更新) */
 export function formatCountdown(ms: number): string {
   if (ms <= 0) return '終了'
@@ -124,32 +127,33 @@ function renderDeadlines(events: EventWithLotteries[], now: Date): string {
     const [, m, d] = date.split('-').map(Number)
     return `${m}/${d}`
   }
-  const items = [...groups.values()]
-    .slice(0, 6)
-    .map(({ first, dates }) => {
-      const { event, lottery, status } = first
-      const hasEnd = lottery.ends_at !== null
-      const countdown =
-        status === 'open'
-          ? hasEnd
-            ? formatCountdown(new Date(lottery.ends_at!).getTime() - now.getTime())
-            : '販売中'
-          : `${formatJst(lottery.starts_at)}〜`
-      // 締切の日時は左のカウントダウン(「あと5日」「販売中」)と重なるので出さない。
-      // 受付の名前も出さない(行から詳細ページのその受付へ飛べる)。期間と名前は詳細ページにある
-      const sortedDates = [...dates].sort()
-      const datesLabel = `${sortedDates[0].slice(0, 4)}/${sortedDates.map(md).join('・')}`
-      return `<a class="row${status === 'open' ? ' row-open' : ''}" href="/e/${escapeHtml(event.id)}#${lotteryAnchor(lottery)}">
-  <span class="cd"${status === 'open' && hasEnd ? ` data-ends="${escapeHtml(lottery.ends_at!)}"` : ''}>${escapeHtml(countdown)}</span>
+  const row = ({ first, dates }: Group) => {
+    const { event, lottery, status } = first
+    // 状態は右端の 1 か所だけで示す(受付中か開始前かは小見出しで分かる)。
+    // 受付中: 締切までの残り(3日以内は赤)、締切が無ければ「締切未定」。開始前: 開始日時
+    let state: string
+    if (status === 'upcoming') {
+      state = `<span class="cd">${escapeHtml(`${formatJst(lottery.starts_at)}〜`)}</span>`
+    } else if (lottery.ends_at) {
+      const left = new Date(lottery.ends_at).getTime() - now.getTime()
+      state = `<span class="cd cd-left${left < SOON_MS ? ' cd-soon' : ''}" data-ends="${escapeHtml(lottery.ends_at)}">${escapeHtml(formatCountdown(left))}</span>`
+    } else {
+      state = '<span class="cd">締切未定</span>'
+    }
+    // 受付の名前は出さない(行から詳細ページのその受付へ飛べる)。期間と名前は詳細ページにある
+    const sortedDates = [...dates].sort()
+    const datesLabel = `${sortedDates[0].slice(0, 4)}/${sortedDates.map(md).join('・')}`
+    return `<a class="row" href="/e/${escapeHtml(event.id)}#${lotteryAnchor(lottery)}">
   <span class="row-text"><span class="row-h">${escapeHtml(event.artist)}</span><span class="row-s">公演 ${escapeHtml(datesLabel)}</span></span>
-  ${statusChip(status)}
+  ${state}
 </a>`
-    })
-    .join('\n')
+  }
+  const shown = [...groups.values()].slice(0, 6)
+  const block = (label: string, gs: Group[]) =>
+    gs.length === 0 ? '' : `<p class="list-label">${label}</p>\n<div class="list">\n${gs.map(row).join('\n')}\n</div>`
   return `<div class="section"><h2>販売中のチケット</h2><span class="sup">一般申込み可能</span></div>
-<div class="list">
-${items}
-</div>`
+${block('受付中', shown.filter((g) => g.first.status === 'open'))}
+${block('まもなく受付開始', shown.filter((g) => g.first.status === 'upcoming'))}`
 }
 
 /**
@@ -383,7 +387,9 @@ export const COUNTDOWN_SCRIPT = `<script>
   }
   function tick(){
     document.querySelectorAll('[data-ends]').forEach(function(el){
-      el.textContent = fmt(new Date(el.dataset.ends).getTime() - Date.now());
+      var ms = new Date(el.dataset.ends).getTime() - Date.now();
+      el.textContent = fmt(ms);
+      if (el.classList.contains('cd-left')) el.classList.toggle('cd-soon', ms < ${SOON_MS});
     });
   }
   tick(); setInterval(tick, 30000);
@@ -396,7 +402,7 @@ export function renderListPage(events: EventWithLotteries[], now: Date, canonica
       ? `<div class="cards">\n${groupConsecutive(events).map((g) => renderEventCard(g, now)).join('\n')}\n</div>`
       : '<p class="none">今後の公演情報はまだありません。</p>'
   const head = buildHeadMeta({
-    title: 'サンドーム福井 コンサート・ライブ情報｜チケット抽選・先行',
+    title: 'サンドーム福井ライブ情報｜コンサート・チケット抽選・先行',
     description: buildMetaDescription(events),
     canonical,
   })

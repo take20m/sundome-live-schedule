@@ -38,7 +38,7 @@ ${groups.map((g) => renderEventCard(g, now, { compact: true })).join('\n')}
     : '<p class="none">過去の公演の記録はまだありません。</p>'
 
   const head = buildHeadMeta({
-    title: `${year ? `${year}年の公演 | ` : ''}過去の公演 | サンドーム福井 コンサート・ライブ情報`,
+    title: `${year ? `${year}年の公演 | ` : ''}過去の公演 | サンドーム福井ライブ情報`,
     description: 'サンドーム福井(福井県越前市)で開催されたライブ・コンサートの記録。各公演のチケット先行・抽選の受付履歴も残しています。',
     canonical,
   })

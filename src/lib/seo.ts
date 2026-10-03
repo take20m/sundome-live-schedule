@@ -76,7 +76,9 @@ export function buildJsonLd(events: EventWithLotteries[], siteUrl: string): stri
     '@graph': [
       {
         '@type': 'WebSite',
-        name: 'サンドーム福井 コンサート・ライブ情報',
+        name: 'サンドーム福井ライブ情報',
+        // 検索結果のサイト名。name が採られなかったときの候補として旧名も渡す
+        alternateName: 'サンドーム福井 コンサート・ライブ情報',
         url: siteUrl,
       },
       ...items,
@@ -154,7 +156,7 @@ ${opts.noindex ? '<meta name="robots" content="noindex,follow">\n' : ''}
 <meta property="og:url" content="${canonical}">
 <meta property="og:image" content="${escapeHtml(image.url)}">${size}
 <meta property="og:image:alt" content="${escapeHtml(image.alt)}">
-<meta property="og:site_name" content="サンドーム福井 コンサート・ライブ情報">
+<meta property="og:site_name" content="サンドーム福井ライブ情報">
 <meta property="og:locale" content="ja_JP">
 <meta name="twitter:card" content="summary_large_image">`
 }

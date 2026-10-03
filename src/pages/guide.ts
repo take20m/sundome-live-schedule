@@ -13,7 +13,7 @@ export function renderGuidePage(doc: Doc, canonical: string): string {
       : ''
   return renderArticle({
     head: buildHeadMeta({
-      title: `${title} | サンドーム福井 コンサート・ライブ情報`,
+      title: `${title} | サンドーム福井ライブ情報`,
       description: doc.meta.description ?? title,
       canonical,
     }),
