@@ -181,6 +181,13 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 /* 一覧のカードは日付タイルの代わりに正方形のサムネ。切り出し中心は img の object-position(公演ごとに DB から) */
 .thumb { flex: 0 0 92px; width: 92px; height: 92px; align-self: flex-start; border-radius: 10px; overflow: hidden; background: var(--surface-container-highest); }
 .thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* 一覧のサムネつきカード: 画像と文字を縦中央にそろえ、日付と名前の間を少し空ける。
+   白地の画像でも輪郭が見えるよう薄い縁を重ねる(画像が読み込めず日付タイルに戻ったら :has が外れて元の並び) */
+.card-main:has(> .thumb) { align-items: center; }
+.card-main:has(> .thumb) .thumb { position: relative; align-self: center; }
+.card-main:has(> .thumb) .thumb::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--on-surface) 10%, transparent); pointer-events: none; }
+.card-main:has(> .thumb) .card-date { margin-bottom: 6px; }
+.card-main:has(> .thumb) .card-title { font-size: 20px; line-height: 26px; }
 .tile[hidden] { display: none; }
 .card-date { margin: 0 0 2px; font-size: 15px; line-height: 20px; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; }
 /* 「本日/明日/明後日」は日付の後ろに。本日だけ濃い塗り、明日・明後日は淡い青 */
@@ -266,6 +273,7 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
   .tile-d .sep-en { font-size: 13px; }
   .tile-w { font-size: 11px; }
   .card-title { font-size: 20px; line-height: 26px; }
+  .card-main:has(> .thumb) .card-title { font-size: 19px; line-height: 25px; }
   .row { gap: 12px; padding: 12px; }
   .lot-period { margin-left: 0; flex-basis: 100%; }
 }
