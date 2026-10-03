@@ -52,7 +52,9 @@ app.get('/e/:id', async (c) => {
 app.get('/past', async (c) => {
   const now = new Date()
   const events = await listPastEvents(c.env.DB, todayInJst(now))
-  return c.html(renderPastPage(events, now, siteUrl(c.req.url, '/past'), c.req.query('y') ?? null))
+  return c.html(
+    renderPastPage(events, now, siteUrl(c.req.url, '/past'), c.req.query('y') ?? null, { autoScroll: c.req.query('auto') === '1' }),
+  )
 })
 
 app.get('/a/:name', async (c) => {
