@@ -27,7 +27,6 @@ export const SITE_HEADER = `<header class="appbar">
 </script>`
 
 export const SITE_FOOTER = `<footer class="site-f">
-<a href="/subscribe">新着情報を受け取る</a>
 <a href="/about">このサイトについて</a>
 <span>© 2026 take20m</span>
 </footer>`

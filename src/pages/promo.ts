@@ -10,10 +10,9 @@ import { iconSvg } from '../lib/icon'
 
 /** 文言はここだけで持つ(トーストとカードの両方) */
 export const PROMO_COPY = {
-  toastTitle: '抽選の通知を受け取る',
+  toastTitle: '新着情報を受け取る',
   toastText: '新しい公演や受付が出た日に、メールでお知らせします',
   cardTitle: '次の受付が出たらお知らせ',
-  cardText: '一般発売や追加の抽選が決まった日に、メールで届きます',
 }
 
 const STORE = 'sundome.promo'
@@ -46,5 +45,5 @@ export function promoToast(): string {
 export const PROMO_MARK_SUBSCRIBED = `<script>try { localStorage.setItem('${STORE}', JSON.stringify({ subscribed: true })); } catch (e) {}</script>`
 
 export function promoCard(): string {
-  return `<a class="sub-card" href="/subscribe#mail"><span class="sub-toast-ic">${iconSvg('notification_add')}</span><span class="sub-toast-text"><b>${PROMO_COPY.cardTitle}</b><span>${PROMO_COPY.cardText}</span></span>${iconSvg('chevron_right')}</a>`
+  return `<a class="sub-card" href="/subscribe#mail"><span class="sub-toast-ic">${iconSvg('notification_add')}</span><span class="sub-toast-text"><b>${PROMO_COPY.cardTitle}</b></span>${iconSvg('chevron_right')}</a>`
 }
