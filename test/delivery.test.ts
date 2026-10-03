@@ -414,7 +414,9 @@ describe('申込リンク', () => {
     await setImage('cover', null)
     const cover = await saleMedia()
     expect(cover).toContain('<img src="https://example.org/tour.jpg"')
-    expect(cover).toContain('style="object-position: 30% 40%"')
+    expect(cover).toContain('style="object-position: 30% 40%; transform-origin: 30% 40%"')
+    // 拡大率はそのまま掛けず、画像の縦横比が分かってからスクリプトが 16:10 用に換算する
+    expect(cover).toContain('data-zoom="1.8"')
     expect(cover).not.toContain('scale(')
     // 画像が読み込めなかったときに切り替える日付は隠しておく
     expect(cover).toContain('<span class="sale-date" hidden>')
@@ -422,6 +424,7 @@ describe('申込リンク', () => {
     const contain = await saleMedia()
     expect(contain).toContain('<span class="sale-media" style="background: #191919">')
     expect(contain).toContain('style="object-fit: contain; object-position: 30% 40%"')
+    expect(contain).not.toContain('data-zoom') // 縮めて収める画像には拡大を使わない
     await env.DB.prepare('UPDATE events SET image_url = NULL, image_focus = NULL, image_fit = NULL, image_bg = NULL, image_zoom = NULL WHERE id = ?')
       .bind(`ev-${eventDate}`)
       .run()

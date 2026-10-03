@@ -131,12 +131,19 @@ function renderDeadlines(events: EventWithLotteries[], now: Date): string {
     const fit = safeFit(imgEvent?.image_fit) ?? 'cover'
     const bg = fit === 'contain' ? safeBg(imgEvent?.image_bg) : null
     const focusPos = safeFocus(imgEvent?.image_focus) ?? '50% 50%'
-    const imgStyle = [fit === 'contain' ? 'object-fit: contain' : '', focusPos !== '50% 50%' ? `object-position: ${focusPos}` : '']
+    // 正方形用の拡大(上下の帯を枠外へ出すなど)は、そのままでは 16:10 に効きすぎる。画像の縦横比が分かってから
+    // スクリプトが「正方形で見せていた高さを超えない」倍率に換算する。縮めて収める画像には使わない
+    const zoom = fit === 'cover' ? safeZoom(imgEvent?.image_zoom) : null
+    const imgStyle = [
+      fit === 'contain' ? 'object-fit: contain' : '',
+      focusPos !== '50% 50%' ? `object-position: ${focusPos}` : '',
+      zoom && zoom > 1 ? `transform-origin: ${focusPos}` : '',
+    ]
       .filter(Boolean)
       .join('; ')
     const media = `<span class="sale-media"${bg ? ` style="background: ${bg}"` : ''}>${
       imageUrl
-        ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" decoding="async"${imgStyle ? ` style="${imgStyle}"` : ''} onerror="this.nextElementSibling.hidden=false;this.parentNode.style.background='';this.remove()">`
+        ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" decoding="async"${zoom && zoom > 1 ? ` data-zoom="${zoom}"` : ''}${imgStyle ? ` style="${imgStyle}"` : ''} onerror="this.nextElementSibling.hidden=false;this.parentNode.style.background='';this.remove()">`
         : ''
     }<span class="sale-date"${imageUrl ? ' hidden' : ''}>${escapeHtml(bigDate)}</span></span>`
     // 状態は 1 か所だけ。締切までの残り(3 日以内は赤)、締切が無ければ「締切未定」
@@ -433,6 +440,17 @@ const SALE_SCRIPT = `<script>
   var prev = root.querySelector('.sale-prev'), next = root.querySelector('.sale-next');
   var still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   var stopped = still, hover = false, visible = true;
+  // 正方形サムネの拡大率 z を 16:10 の枠に換算する。正方形の枠では画像の高さの (縦長なら a) / z を見せていた。
+  // 16:10 の枠はそのままだと高さの (a < 1.6 なら a / 1.6) を見せるので、それが正方形のときを超えない倍率にする
+  root.querySelectorAll('img[data-zoom]').forEach(function(img){
+    function fit(){
+      var a = img.naturalWidth / img.naturalHeight, z = parseFloat(img.dataset.zoom);
+      if (!a || !z) return;
+      var s = Math.min(Math.min(a, 1.6) / 1.6 / (Math.min(a, 1) / z), z);
+      if (s > 1.001) img.style.transform = 'scale(' + s.toFixed(3) + ')';
+    }
+    if (img.complete) fit(); else img.addEventListener('load', fit);
+  });
   function step(){ var c = track.querySelector('li'); return c ? c.getBoundingClientRect().width + parseFloat(getComputedStyle(track).columnGap || 0) : track.clientWidth; }
   function overflow(){ return track.scrollWidth - track.clientWidth > 4; }
   function atEnd(){ return track.scrollLeft + track.clientWidth >= track.scrollWidth - 4; }
