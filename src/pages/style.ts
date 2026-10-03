@@ -8,7 +8,7 @@ import { LOGO_SVG, iconSvg } from '../lib/icon'
 export const SITE_HEADER = `<header class="appbar">
 <a class="brand" href="/">${LOGO_SVG}<h1><span>サンドーム福井</span> <span>ライブ情報</span></h1></a>
 <span class="spacer"></span>
-<a class="follow" href="/subscribe">${iconSvg('notifications')}<span>更新を受け取る</span></a>
+<a class="iconbtn" href="/subscribe" aria-label="更新を受け取る" title="更新を受け取る">${iconSvg('notifications')}</a>
 </header>
 <script>
 // 下へスクロールしたらヘッダーを隠し、上へ一定量(48px)戻したら出す。ページ先頭付近では常に出す
@@ -92,12 +92,6 @@ a { color: var(--primary); }
 .spacer { flex: 1; }
 .iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 24px; color: var(--on-surface-variant); text-decoration: none; }
 .iconbtn .ic { width: 24px; height: 24px; }
-/* ヘッダーの「更新を受け取る」。RSS の XML へ直接飛ばすとファイルが保存されるので、案内ページへ */
-.follow { display: inline-flex; align-items: center; gap: 4px; height: 36px; margin-right: 8px; padding: 0 12px 0 10px; border-radius: 18px; background: var(--secondary-container); color: var(--on-secondary-container); font-size: 13px; font-weight: 700; letter-spacing: .3px; text-decoration: none; white-space: nowrap; }
-.follow .ic { width: 18px; height: 18px; }
-.follow:hover { background: color-mix(in srgb, var(--on-secondary-container) 12%, var(--secondary-container)); }
-.follow:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-@media (max-width: 360px) { .follow span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } .follow { padding: 0 9px; } }
 .iconbtn:hover { background: color-mix(in srgb, var(--on-surface-variant) 8%, transparent); }
 
 main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }

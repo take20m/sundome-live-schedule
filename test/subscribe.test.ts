@@ -12,7 +12,7 @@ describe('更新を受け取る', () => {
     for (const path of ['/', '/about', '/guide/access']) {
       const html = await (await SELF.fetch(`https://example.com${path}`)).text()
       const header = html.slice(html.indexOf('<header class="appbar">'), html.indexOf('</header>'))
-      expect(header, path).toContain('<a class="follow" href="/subscribe">')
+      expect(header, path).toContain('<a class="iconbtn" href="/subscribe" aria-label="更新を受け取る" title="更新を受け取る">')
       expect(header, path).not.toContain('feed.xml')
       expect(html, path).toContain('<footer class="site-f">\n<a href="/subscribe">更新を受け取る</a>')
     }
