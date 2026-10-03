@@ -22,6 +22,23 @@ describe('一覧ページ', () => {
   })
 })
 
+describe('サイト名の構造化データ', () => {
+  it('どのページでも WebSite の url はトップ。公演ページや アーティストページの URL にしない', async () => {
+    const top = await (await SELF.fetch('https://example.com/')).text()
+    const id = top.match(/id="(ev-\d{4}-\d{2}-\d{2})"/)![1]
+    for (const path of ['/', `/e/${id}`, `/a/${encodeURIComponent('SAMPLE ARTIST')}`]) {
+      const html = await (await SELF.fetch(`https://example.com${path}`)).text()
+      const json = html.match(/<script type="application\/ld\+json">(.*?)<\/script>/s)![1]
+      const site = JSON.parse(json)['@graph'].find((n: { '@type': string }) => n['@type'] === 'WebSite')
+      expect(site, path).toMatchObject({
+        '@id': 'https://example.com/#website',
+        name: 'サンドーム福井ライブ情報',
+        url: 'https://example.com/',
+      })
+    }
+  })
+})
+
 describe('締切セクションとカウントダウン', () => {
   it('受付中の抽選が販売中セクションにカウントダウン付きで出る', async () => {
     const res = await SELF.fetch('https://example.com/')

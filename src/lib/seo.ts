@@ -13,8 +13,13 @@ function offerAvailability(l: { starts_at: string | null; ends_at: string | null
   return null
 }
 
-/** schema.org MusicEvent の JSON-LD(Googleイベントリッチリザルト対応) */
-export function buildJsonLd(events: EventWithLotteries[], siteUrl: string): string {
+/**
+ * schema.org MusicEvent の JSON-LD(Googleイベントリッチリザルト対応)。pageUrl はそのページの canonical。
+ * WebSite はサイト全体を指すので、どのページでも url はトップにする(ページの URL を入れると
+ * 公演ページごとに別の WebSite があるように読まれ、検索結果のサイト名が採られにくい)
+ */
+export function buildJsonLd(events: EventWithLotteries[], pageUrl: string): string {
+  const siteRoot = new URL('/', pageUrl).toString()
   const now = Date.now()
   const nowDate = new Date(now)
   const items = events.map((e) => ({
@@ -76,10 +81,11 @@ export function buildJsonLd(events: EventWithLotteries[], siteUrl: string): stri
     '@graph': [
       {
         '@type': 'WebSite',
+        '@id': `${siteRoot}#website`,
         name: 'サンドーム福井ライブ情報',
         // 検索結果のサイト名。name が採られなかったときの候補として旧名も渡す
         alternateName: 'サンドーム福井 コンサート・ライブ情報',
-        url: siteUrl,
+        url: siteRoot,
       },
       ...items,
     ],
