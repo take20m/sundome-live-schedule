@@ -211,19 +211,19 @@ describe('日付タイル', () => {
   const tileOf = (dates: string[]) => {
     const [g] = groupConsecutive(dates.map((d) => ev(d)))
     const html = renderEventCard(g, now)
-    return html.slice(html.indexOf('<div class="tile">'), html.indexOf('<div class="card-body">'))
+    return html.slice(html.indexOf('<div class="tile-wrap">'), html.indexOf('<div class="card-body">'))
   }
 
   it('連日2日は日も曜日も中黒でつなぐ', () => {
     const t = tileOf(['2026-11-07', '2026-11-08'])
-    expect(t).toContain('<span class="tile-bar">2026.11</span>')
+    expect(t).toContain('<span class="tile-bar">11月</span>')
     expect(t).toContain('<span class="tile-d range">7<span class="sep">・</span>8</span>')
     expect(t).toContain('<span class="tile-w">土<span class="sep">・</span>日</span>')
   })
 
   it('単日は区切りを出さない', () => {
     const t = tileOf(['2026-11-07'])
-    expect(t).toContain('<span class="tile-bar">2026.11</span>')
+    expect(t).toContain('<span class="tile-bar">11月</span>')
     expect(t).toContain('<span class="tile-d">7</span>')
     expect(t).toContain('<span class="tile-w">土</span>')
     expect(t).not.toContain('class="sep"')
@@ -239,17 +239,23 @@ describe('日付タイル', () => {
 
   it('月またぎは帯だけ en dash、日は中黒のまま', () => {
     const t = tileOf(['2026-10-31', '2026-11-01'])
-    expect(t).toContain('<span class="tile-bar">2026.10<span class="sep-en">–</span>11</span>')
+    expect(t).toContain('<span class="tile-bar">10<span class="sep-en">–</span>11月</span>')
     expect(t).toContain('<span class="tile-d range">31<span class="sep">・</span>1</span>')
     expect(t).toContain('<span class="tile-w">土<span class="sep">・</span>日</span>')
   })
 
-  it('本日・明日・明後日は帯が告知に置き換わり、本日だけ紺になる', () => {
-    expect(tileOf(['2026-10-03', '2026-10-04'])).toContain('<span class="tile-bar soon today">本日</span>')
-    expect(tileOf(['2026-10-04'])).toContain('<span class="tile-bar soon">明日</span>')
-    expect(tileOf(['2026-10-05'])).toContain('<span class="tile-bar soon">明後日</span>')
-    // 通常の帯は年月のまま。today は本日以外には付かない
-    expect(tileOf(['2026-11-07'])).toContain('<span class="tile-bar">2026.11</span>')
+  it('帯は月だけ。今年でなければ年を付ける', () => {
+    expect(tileOf(['2027-02-13', '2027-02-14'])).toContain('<span class="tile-bar">2027年2月</span>')
+    expect(tileOf(['2026-12-31', '2027-01-01'])).toContain('<span class="tile-bar">12<span class="sep-en">–</span>1月</span>')
+  })
+
+  it('本日・明日・明後日はカレンダーの下に付け、帯は月のまま。本日だけ today', () => {
+    const today = tileOf(['2026-10-03', '2026-10-04'])
+    expect(today).toContain('<span class="tile-bar">10月</span>')
+    expect(today).toContain('<span class="tile-soon today">本日</span>')
+    expect(tileOf(['2026-10-04'])).toContain('<span class="tile-soon">明日</span>')
+    expect(tileOf(['2026-10-05'])).toContain('<span class="tile-soon">明後日</span>')
+    expect(tileOf(['2026-11-07'])).not.toContain('tile-soon')
   })
 
   it('画像があるカードでは「本日/明日/明後日」を日付の後ろに付け、本日だけ today', () => {

@@ -27,7 +27,7 @@ export function dateParts(date: string): { ym: string; d: string; dw: string } {
 /**
  * タイル内の区切り。連日は中黒(3・4)、月の範囲と3日以上は en dash(10–11 / 3–5)。
  * 中黒は「並列」、en dash は「範囲」で意味が違うため字種を分ける。
- * 色は落とさない ─ 黄地(--primary-container)の上で 4.5:1 を満たせないので、階層はサイズ差で作る
+ * 色は落とさず、階層はサイズ差で作る
  */
 const SEP_NAKAGURO = '<span class="sep">・</span>'
 const SEP_DASH = '<span class="sep-en">–</span>'
@@ -234,8 +234,13 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
   // 以下 3 つは組み立て済みの HTML。dateParts は不正な日付でそのまま date を d に返すのでパーツ単位でエスケープする
   const f = dateParts(first.date)
   const l = dateParts(last.date)
+  // カレンダーの帯は月だけ(「10月」、月をまたげば「10–11月」)。今年でなければ年を付ける(「2027年2月」)
+  const [fy, fm] = first.date.split('-').map(Number)
+  const lm = Number(last.date.split('-')[1])
   const tileYm =
-    multi && f.ym !== l.ym ? `${escapeHtml(f.ym)}${SEP_DASH}${escapeHtml(l.ym.slice(5))}` : escapeHtml(f.ym)
+    !fy || !fm
+      ? escapeHtml(f.ym)
+      : `${String(fy) !== today.slice(0, 4) ? `${fy}年` : ''}${fm}${lm && lm !== fm ? `${SEP_DASH}${lm}` : ''}月`
   // 2 日は中黒で並列に。3 日以上は中黒だと「3 と 5」に読めるので範囲の en dash へ倒し、
   // 曜日も中日を畳んで初日–最終日だけにする(全部並べると 72px / 60px の枠に収まらない)
   const rangeSep = events.length === 2 ? SEP_NAKAGURO : SEP_DASH
@@ -384,12 +389,15 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
   ${media}
   <div class="card-main${tap ? ' tap' : ''}">
   ${thumb}
-  <div class="tile"${thumbMode ? ' hidden' : ''}>
-    <span class="tile-bar${soonLabel ? ' soon' : ''}${isToday ? ' today' : ''}">${soonLabel ?? tileYm}</span>
-    <span class="tile-body">
-      <span class="tile-d${multi ? ' range' : ''}">${tileD}</span>
-      <span class="tile-w">${tileW}</span>
-    </span>
+  <div class="tile-wrap"${thumbMode ? ' hidden' : ''}>
+    <div class="tile">
+      <span class="tile-bar">${tileYm}</span>
+      <span class="tile-body">
+        <span class="tile-d${multi ? ' range' : ''}">${tileD}</span>
+        <span class="tile-w">${tileW}</span>
+      </span>
+    </div>
+    ${soonLabel ? `<span class="tile-soon${isToday ? ' today' : ''}">${soonLabel}</span>` : ''}
   </div>
   <div class="card-body">
     ${cardDate}

@@ -134,7 +134,7 @@ describe('締切セクションとカウントダウン', () => {
       .bind(`ev-${today}`, today, new Date().toISOString())
       .run()
     const html = await (await SELF.fetch('https://example.com/')).text()
-    expect(html).toMatch(/class="(?:tile-bar soon today|soon today)">本日</)
+    expect(html).toMatch(/class="(?:tile-soon today|soon today)">本日</)
     expect(html).toContain('is-today')
   })
 })

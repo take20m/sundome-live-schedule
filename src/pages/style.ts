@@ -42,7 +42,7 @@ const DARK_TOKENS = `color-scheme: dark;
   --surface-container-low: #1C1C1C; --surface-container: #212121; --surface-container-highest: #2C2C2C;
   --on-surface: #E9E9E6; --on-surface-variant: #A3A29C; --outline: #8C8B85; --outline-variant: #2C2C2C;
   --brand-yellow: #F7D33B;
-  --tile-bar: #3A3216; --on-tile-bar: #E0D6A8;
+  --tile-bar: #2E5AAC; --on-tile-bar: #FFFFFF; --tile-body: #2C2C2C; --tile-edge: rgba(255,255,255,.08);
   --error: #F2B8B5; --error-container: #8C1D18; --on-error-container: #F9DEDC;`
 
 const DARK_SHEET_TOKENS = `--paper: #1A1A1A; --surface-container-low: #1C1C1C; --surface-container: #212121; --surface-container-highest: #2C2C2C; --on-surface: #E9E9E6; --on-surface-variant: #A3A29C; --outline-variant: #2C2C2C; --yellow-pale: #2A2614; --yellow-soft: #453D1E; --red-soft: #38201D; --blue-soft: #15263B; --blue: #8FB8F0; --red: #F2B8B5; --muted: #8C8B85;`
@@ -58,8 +58,8 @@ export const SITE_CSS = `
   --surface-container-low: #FFFFFF; --surface-container: #FAF9F6; --surface-container-highest: #F0EEE8;
   --on-surface: #1B1B18; --on-surface-variant: #5C594F; --outline: #8A8578; --outline-variant: #E6E3DC;
   --brand-yellow: #F7D33B;
-  /* 年月帯。タイル地と明度を近づけて券面の主張を抑える。本日だけ .tile-bar.today が --primary を使う */
-  --tile-bar: #E8E4D8; --on-tile-bar: #4A4639;
+  /* 日付カレンダー: 紺の月の帯と白い地(Apple のカレンダー風)。ダークは帯を少し明るく、地を暗いグレーに */
+  --tile-bar: #0B3D91; --on-tile-bar: #FFFFFF; --tile-body: #FFFFFF; --tile-edge: rgba(0,0,0,.10);
   --error: #B3261E; --error-container: #F9DEDC; --on-error-container: #410E0B;
   --shadow-1: 0 1px 2px rgba(0,0,0,.30), 0 1px 3px 1px rgba(0,0,0,.15);
   --shadow-2: 0 1px 2px rgba(0,0,0,.30), 0 2px 6px 2px rgba(0,0,0,.15);
@@ -188,7 +188,7 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .card-main:has(> .thumb) .thumb::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--on-surface) 10%, transparent); pointer-events: none; }
 .card-main:has(> .thumb) .card-date { margin-bottom: 6px; }
 .card-main:has(> .thumb) .card-title { font-size: 20px; line-height: 26px; }
-.tile[hidden] { display: none; }
+.tile-wrap[hidden] { display: none; }
 .card-date { margin: 0 0 2px; font-size: 15px; line-height: 20px; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; }
 /* 「本日/明日/明後日」は日付の後ろに。本日だけ濃い塗り、明日・明後日は淡い青 */
 .card-date .soon { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 6px; background: var(--secondary-container); color: var(--on-secondary-container); font-size: 13px; line-height: 18px; letter-spacing: .5px; vertical-align: 1px; }
@@ -197,18 +197,18 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 /* 詳細から /#ev-... で戻ってきた直後、該当カードを一瞬強調して位置を示す */
 .card:target, .card:has(.anchor:target) { outline: 3px solid transparent; outline-offset: 3px; animation: card-arrive 2.4s ease-out; }
 @keyframes card-arrive { 0%, 40% { outline-color: var(--primary); } 100% { outline-color: transparent; } }
-/* 日付タイル。年月を帯に切り離した券面。帯は「本日」「明日」「明後日」の告知枠も兼ねる */
-.tile { flex: 0 0 72px; display: flex; flex-direction: column; align-items: center; align-self: flex-start; padding: 0; border-radius: 8px; overflow: hidden; background: var(--surface-container-highest); color: var(--on-surface-variant); font-variant-numeric: tabular-nums; text-align: center; }
-.card.is-open .tile, .card.is-today .tile { background: var(--primary-container); color: var(--on-primary-container); }
-.tile-bar { display: block; width: 100%; background: var(--tile-bar); color: var(--on-tile-bar); font-size: 11px; line-height: 20px; letter-spacing: .2px; font-weight: 500; white-space: nowrap; }
-.tile-bar.soon { font-weight: 700; }
-/* 本日だけ帯を紺に。明日・明後日は太字のまま通常の帯色で、近さの順に段が付く */
-.tile-bar.today { background: var(--primary); color: var(--on-primary); }
+/* 日付カレンダー。紺の帯に月、白い地に日と曜日。「本日」「明日」「明後日」はカレンダーの下に付ける */
+.tile-wrap { flex: 0 0 72px; display: flex; flex-direction: column; align-items: center; gap: 6px; align-self: flex-start; }
+.tile { width: 100%; display: flex; flex-direction: column; align-items: center; border-radius: 10px; overflow: hidden; background: var(--tile-body); color: var(--on-surface); box-shadow: 0 0 0 1px var(--tile-edge), 0 1px 3px rgba(0,0,0,.12); font-variant-numeric: tabular-nums; text-align: center; }
+.tile-bar { display: block; width: 100%; background: var(--tile-bar); color: var(--on-tile-bar); font-size: 11px; line-height: 20px; letter-spacing: .2px; font-weight: 700; white-space: nowrap; }
 .tile-body { display: flex; flex-direction: column; align-items: center; padding: 6px 4px 9px; }
-.tile-d { font-size: 30px; line-height: 38px; font-weight: 400; white-space: nowrap; }
+.tile-d { font-size: 30px; line-height: 38px; font-weight: 500; white-space: nowrap; }
 /* 24px は「28・29」(2桁+中黒+2桁)が 72px の枠に収まる上限 */
 .tile-d.range { font-size: 24px; letter-spacing: 0; }
-.tile-w { font-size: 12px; line-height: 16px; letter-spacing: 0; font-weight: 500; white-space: nowrap; }
+.tile-w { font-size: 12px; line-height: 16px; letter-spacing: 0; font-weight: 500; white-space: nowrap; color: var(--on-surface-variant); }
+/* 本日だけ紺の塗り、明日・明後日は淡い青(一覧カードのバッジと同じ色分け) */
+.tile-soon { padding: 1px 10px; border-radius: 9px; background: var(--secondary-container); color: var(--on-secondary-container); font-size: 12px; line-height: 18px; font-weight: 700; letter-spacing: .5px; white-space: nowrap; }
+.tile-soon.today { background: var(--tile-bar); color: var(--on-tile-bar); }
 /* 区切りは減光せずサイズだけ落とす。地が淡いと 45% で 2.4:1、70% でも 3.6:1 しか出ないため */
 .tile-d .sep { font-size: 13px; margin: 0 -2px; vertical-align: 2px; }
 .tile-d .sep-en { font-size: 16px; margin: 0 1px; vertical-align: 3px; }
@@ -263,8 +263,8 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
   .appbar h1 span + span { font-size: 9.5px; letter-spacing: 3.4px; }
   .card-main { padding: 12px; gap: 12px; }
   .thumb { flex-basis: 76px; width: 76px; height: 76px; }
-  .tile { flex-basis: 60px; }
-  /* 60px 幅では 2026.10–11 が 11px/字間.5px だと収まらないので帯を詰める */
+  .tile-wrap { flex-basis: 60px; }
+  /* 60px 幅では「2027年10–11月」が 11px だと収まらないので帯を詰める */
   .tile-bar { font-size: 10px; line-height: 18px; letter-spacing: 0; }
   .tile-body { padding: 5px 3px 8px; }
   .tile-d { font-size: 26px; line-height: 34px; }

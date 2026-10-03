@@ -83,7 +83,7 @@ describe('images API と表示', () => {
     expect(withImage).toContain('<div class="thumb"><img src="https://cdn.example.com/kv.jpg"')
     expect(withImage).toContain('loading="lazy"')
     expect(withImage).toContain('<p class="card-date">')
-    expect(withImage).toContain('<div class="tile" hidden>')
+    expect(withImage).toContain('<div class="tile-wrap" hidden>')
     expect(withImage).not.toContain('card-media')
     // 画像の無い公演は日付タイルのまま
     const noImage = cardOf(`ev-${noTour}`)
