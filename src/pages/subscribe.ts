@@ -80,7 +80,7 @@ function mailSection(siteKey: string, error: string | null): string {
   const msg = error && MAIL_ERRORS[error] ? `<p class="sub-error" role="alert">${MAIL_ERRORS[error]}</p>` : ''
   return `<section class="sub-block" id="mail">
 <h2>${iconSvg('mail')}メールで受け取る</h2>
-<p>新しい公演や抽選の受付情報があった際にメールでお知らせします。</p>
+<p>新しい公演や抽選の受付情報をメールでお知らせします。</p>
 ${msg}
 <form class="sub-form" method="post" action="/api/subscribe">
 <label for="sub-email">メールアドレス</label>
