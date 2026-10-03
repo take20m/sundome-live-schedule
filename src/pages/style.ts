@@ -190,9 +190,10 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .card-main:has(> .thumb) .card-title { font-size: 20px; line-height: 26px; }
 .tile-wrap[hidden] { display: none; }
 .card-date { margin: 0 0 2px; font-size: 15px; line-height: 20px; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; }
-/* 「本日/明日/明後日」は日付の後ろに。本日だけ濃い塗り、明日・明後日は淡い青 */
+/* 「本日/明日/明後日」は日付の後ろに。本日だけ赤の塗り、明日・明後日は淡い青 */
 .card-date .soon { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 6px; background: var(--secondary-container); color: var(--on-secondary-container); font-size: 13px; line-height: 18px; letter-spacing: .5px; vertical-align: 1px; }
-.card-date .soon.today { background: var(--primary); color: var(--on-primary); }
+/* 本日は詳細のカレンダーの帯と同じ赤(どの画面でも「赤は今日」) */
+.card-date .soon.today { background: var(--tile-today); color: #FFFFFF; }
 .card:hover { box-shadow: var(--shadow-2); }
 /* 詳細から /#ev-... で戻ってきた直後、該当カードを一瞬強調して位置を示す */
 .card:target, .card:has(.anchor:target) { outline: 3px solid transparent; outline-offset: 3px; animation: card-arrive 2.4s ease-out; }
