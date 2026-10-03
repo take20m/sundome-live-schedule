@@ -183,7 +183,8 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .tile[hidden] { display: none; }
 .card-date { margin: 0 0 2px; font-size: 15px; line-height: 20px; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; }
-.card-date .soon { display: inline-block; margin-right: 6px; padding: 0 6px; border-radius: 4px; background: var(--primary-container); color: var(--on-primary-container); font-size: 11px; }
+/* 「本日/明日/明後日」は日付の後ろに。本日だけ濃い塗り、明日・明後日は淡い青 */
+.card-date .soon { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 6px; background: var(--secondary-container); color: var(--on-secondary-container); font-size: 13px; line-height: 18px; letter-spacing: .5px; vertical-align: 1px; }
 .card-date .soon.today { background: var(--primary); color: var(--on-primary); }
 .card:hover { box-shadow: var(--shadow-2); }
 /* 詳細から /#ev-... で戻ってきた直後、該当カードを一瞬強調して位置を示す */
@@ -238,6 +239,15 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .site-f { background: var(--surface-container); padding: 24px 16px 28px; display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--on-surface-variant); font-size: 12px; line-height: 16px; letter-spacing: .4px; }
 .site-f a { color: var(--on-surface); text-decoration: none; font-weight: 500; font-size: 14px; }
 .more { margin: 24px 0 0 -12px; }
+/* 詳細: 終了・売り切れの受付は畳む。開くと下に並ぶ */
+.lots-ended { margin-top: 8px; border-top: 1px solid var(--outline-variant); }
+.lots-ended > summary { display: flex; align-items: center; gap: 6px; padding: 8px 0; list-style: none; cursor: pointer; color: var(--on-surface-variant); font-size: 14px; line-height: 20px; font-weight: 500; }
+.lots-ended > summary::-webkit-details-marker { display: none; }
+.lots-ended > summary .ic { width: 20px; height: 20px; }
+.lots-ended[open] > summary .ic { transform: rotate(180deg); }
+.lots-ended > summary:hover { color: var(--on-surface); }
+.lots-ended > summary:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
+.lots-ended > .lots { margin-top: 0; padding-top: 4px; border-top: 0; }
 .lot-summary { margin: 12px 0 0; padding-top: 12px; border-top: 1px solid var(--outline-variant); }
 .lot-summary a { text-decoration: none; font-weight: 500; }
 

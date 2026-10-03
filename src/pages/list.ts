@@ -247,31 +247,19 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
     ? `<a href="/a/${encodeURIComponent(first.artist)}">${escapeHtml(first.artist)}</a>`
     : `<a href="/e/${escapeHtml(first.id)}">${escapeHtml(first.artist)}</a>`
 
-  // 詳細: 日ごとに「日付 開場 / 開演」。一覧: 日付は上の行(サムネ時)か日付タイルが示すので繰り返さず、
-  // 連日なら曜日だけ、時刻は開演だけにする(開演が未確認なら開場)
+  // 詳細: 日ごとに「日付 開場 / 開演」(同一ツアーでも曜日で時刻が違う)。
+  // 一覧には時刻を出さない(日付と公演名だけにして読む量を減らす)。日付は上の行か日付タイルが示す
   const timesOf = (e: EventWithLotteries) =>
-    detail
-      ? [e.open_time && `開場 ${e.open_time}`, e.start_time && `開演 ${e.start_time}`].filter(Boolean).join(' / ')
-      : e.start_time
-        ? `開演 ${e.start_time}`
-        : e.open_time
-          ? `開場 ${e.open_time}`
-          : ''
-  let schedule = ''
-  if (multi || detail) {
-    // 日ごとに並べる(同一ツアーでも曜日で時刻が違う)。
-    // 連日は 1 本のランを 1 ページとして扱うので、どの日で開いたかは強調しない
-    schedule = `<div class="days">${events
-      .map((e) => {
-        const t = timesOf(e)
-        const day = detail ? dayLabel(e.date) : dateParts(e.date).dw
-        return `<span class="meta-item day">${iconSvg('schedule')}<span>${escapeHtml(day)}${t ? ` ${escapeHtml(t)}` : ''}</span></span>`
-      })
-      .join('')}</div>`
-  } else {
-    const t = timesOf(first)
-    schedule = t ? `<div class="meta"><span class="meta-item">${iconSvg('schedule')}${escapeHtml(t)}</span></div>` : ''
-  }
+    [e.open_time && `開場 ${e.open_time}`, e.start_time && `開演 ${e.start_time}`].filter(Boolean).join(' / ')
+  // 連日は 1 本のランを 1 ページとして扱うので、どの日で開いたかは強調しない
+  const schedule = detail
+    ? `<div class="days">${events
+        .map((e) => {
+          const t = timesOf(e)
+          return `<span class="meta-item day">${iconSvg('schedule')}<span>${escapeHtml(dayLabel(e.date))}${t ? ` ${escapeHtml(t)}` : ''}</span></span>`
+        })
+        .join('')}</div>`
+    : ''
   const venue = detail
     ? `<div class="meta"><span class="meta-item">${iconSvg('place')}サンドーム福井(福井県越前市)</span></div>`
     : ''
@@ -307,6 +295,16 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
       upcomingStarts.set(m.starts_at!, dates)
     }
   }
+  const lotRow = (m: MergedLottery) => {
+    const partial = m.dates.length < events.length
+    return renderLottery(m, now, partial ? `${m.dates.map(md).join('・')} のみ` : '', detail)
+  }
+  // 詳細では、もう申し込めない受付(終了・売り切れ)を「終了した受付 N件」に畳んで下に置く。
+  // 全部が終わっているとき(開催済みの公演など)は畳まずに並べる
+  const isEnded = (m: MergedLottery) => ['closed', 'soldout'].includes(lotteryStatus(m, now))
+  const foldable = detail && shown.some(isEnded) && shown.some((m) => !isEnded(m))
+  const active = foldable ? shown.filter((m) => !isEnded(m)) : shown
+  const ended = foldable ? shown.filter(isEnded) : []
   const upcomingRows = [...upcomingStarts]
     .sort(([a], [b]) => Date.parse(a) - Date.parse(b))
     .map(([startsAt, dates]) => {
@@ -318,12 +316,11 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
       ? `<p class="lot-summary"><a href="/e/${escapeHtml(first.id)}">先行・抽選 ${merged.length} 件の記録</a></p>`
       : ''
     : shown.length + upcomingRows.length > 0
-      ? `<ul class="lots">${shown
-          .map((m) => {
-            const partial = m.dates.length < events.length
-            return renderLottery(m, now, partial ? `${m.dates.map(md).join('・')} のみ` : '', detail)
-          })
-          .join('')}${upcomingRows.join('')}</ul>`
+      ? `<ul class="lots">${active.map(lotRow).join('')}${upcomingRows.join('')}</ul>${
+          ended.length > 0
+            ? `<details class="lots-ended"><summary>${iconSvg('expand_more')}終了した受付 ${ended.length}件</summary><ul class="lots">${ended.map(lotRow).join('')}</ul></details>`
+            : ''
+        }`
       : !detail && merged.length > 0
         ? '' // 受付の記録はあるが今申し込めるもの・予告するものがない。一覧では何も出さない(詳細ページに全部ある)
       : events[events.length - 1].date < todayInJst(now)
@@ -375,7 +372,7 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
     (first.date.slice(0, 4) !== today.slice(0, 4) ? `${first.date.slice(0, 4)}年 ` : '') +
     (events.length === 1 ? dayLabel(first.date) : `${dayLabel(first.date)}${events.length === 2 ? '・' : '〜'}${dayShort(last.date)}`)
   const cardDate = thumbMode
-    ? `<p class="card-date">${soonLabel ? `<span class="soon${isToday ? ' today' : ''}">${soonLabel}</span>` : ''}${escapeHtml(dateText)}</p>`
+    ? `<p class="card-date">${escapeHtml(dateText)}${soonLabel ? `<span class="soon${isToday ? ' today' : ''}">${soonLabel}</span>` : ''}</p>`
     : ''
 
   // 一覧・アーティスト・過去公演では card-main 全体を詳細への当たり判定にする(タイトルの <a> を CSS で引き伸ばす)。

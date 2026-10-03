@@ -93,17 +93,17 @@ describe('連日公演の表示', () => {
     await lotIns.bind(`lot-${d2}-b`, `ev-${d2}`, '2日目限定当日券', null, ends, now.toISOString()).run()
   })
 
-  it('一覧では連日公演が1枚のカードになり、日ごとに曜日と開演、2日目のアンカーを持つ', async () => {
+  it('一覧では連日公演が1枚のカードになり、2日目のアンカーを持つ。時刻は一覧に出さず詳細に出す', async () => {
     const html = await (await SELF.fetch('https://example.com/')).text()
     const cards = html.split('今後の公演')[1]
     expect(cards.match(/<article class="card/g)?.length).toBe(2) // 連日で1枚 + 別タイトルで1枚
     expect(cards).toContain(`id="ev-${d1}"`)
     expect(cards).toContain(`<span class="anchor" id="ev-${d2}"></span>`)
-    // 一覧: 日付はタイル(画像があれば上の行)が示すので、時刻の行は曜日と開演だけ
-    const wd = (s: string) => '日月火水木金土'[new Date(`${s}T00:00:00Z`).getUTCDay()]
-    expect(cards).toContain(`<span>${wd(d1)} 開演 18:00</span>`)
-    expect(cards).toContain(`<span>${wd(d2)} 開演 17:00</span>`)
-    expect(cards).not.toContain('開場 17:00')
+    // 一覧: 日付と公演名だけにして読む量を減らす(開場・開演は出さない)
+    const cardsOnly = cards.split('<h2>ガイド</h2>')[0]
+    expect(cardsOnly).not.toContain('開演')
+    expect(cardsOnly).not.toContain('開場')
+    expect(cardsOnly).not.toContain('class="days"')
     // 詳細は日付・開場・開演を全部出す
     const detailPage = await (await SELF.fetch(`https://example.com/e/ev-${d1}`)).text()
     expect(detailPage).toContain('開場 17:00 / 開演 18:00')
@@ -252,9 +252,68 @@ describe('日付タイル', () => {
     expect(tileOf(['2026-11-07'])).toContain('<span class="tile-bar">2026.11</span>')
   })
 
+  it('画像があるカードでは「本日/明日/明後日」を日付の後ろに付け、本日だけ today', () => {
+    const dateOf = (dates: string[]) => {
+      const [g] = groupConsecutive(dates.map((d) => ({ ...ev(d), image_url: 'https://example.org/a.jpg' })))
+      const html = renderEventCard(g, now)
+      return html.slice(html.indexOf('<p class="card-date">'), html.indexOf('</p>', html.indexOf('<p class="card-date">')) + 4)
+    }
+    expect(dateOf(['2026-10-03', '2026-10-04'])).toBe('<p class="card-date">10/3(土)・4(日)<span class="soon today">本日</span></p>')
+    expect(dateOf(['2026-10-04'])).toBe('<p class="card-date">10/4(日)<span class="soon">明日</span></p>')
+    expect(dateOf(['2026-11-07'])).toBe('<p class="card-date">11/7(土)</p>')
+  })
+
   it('タイルは HTML を組み立てるので、日付が壊れていてもエスケープされる', () => {
     const t = tileOf(['2026-10-03"><script>alert(1)</script>'])
     expect(t).not.toContain('<script>')
     expect(t).toContain('&lt;script&gt;')
+  })
+})
+
+describe('詳細の終了した受付', () => {
+  // JST 2026-10-03 12:00
+  const now = new Date('2026-10-03T03:00:00Z')
+  const detailLots = (lotteries: LotteryRow[]) => {
+    const e = ev('2026-11-01', 'A', 'T', lotteries)
+    const [g] = groupConsecutive([e])
+    const html = renderEventCard(g, now, { focusDate: e.date })
+    return html.slice(html.indexOf('<ul class="lots">'), html.indexOf('</div>', html.lastIndexOf('</ul>')))
+  }
+
+  it('終了・売り切れは「終了した受付 N件」に畳み、受付中・受付前・期間不明は上に出す', () => {
+    const id = 'ev-2026-11-01'
+    const lots = detailLots([
+      lot(id, '終わったFC先行', '2026-08-01T12:00:00+09:00', '2026-08-10T23:59:00+09:00'),
+      { ...lot(id, '売り切れの先着', '2026-09-01T12:00:00+09:00', null), sold_out: 1 },
+      lot(id, '受付中の一般', '2026-10-01T10:00:00+09:00', '2026-10-20T23:59:00+09:00'),
+      lot(id, '受付前の追加', '2026-10-10T10:00:00+09:00', '2026-10-15T23:59:00+09:00'),
+      lot(id, '期間不明の当日券', null, null),
+    ])
+    const [shown, folded] = lots.split('<details class="lots-ended">')
+    for (const name of ['受付中の一般', '受付前の追加', '期間不明の当日券']) expect(shown).toContain(name)
+    expect(folded).toContain('終了した受付 2件</summary>')
+    for (const name of ['終わったFC先行', '売り切れの先着']) expect(folded).toContain(name)
+    // 既定では閉じている
+    expect(lots).not.toContain('<details class="lots-ended" open')
+  })
+
+  it('全部が終わっているとき(開催済みなど)は畳まずに並べる', () => {
+    const id = 'ev-2026-11-01'
+    const lots = detailLots([
+      lot(id, '終わったFC先行', '2026-08-01T12:00:00+09:00', '2026-08-10T23:59:00+09:00'),
+      lot(id, '終わった一般', '2026-09-01T12:00:00+09:00', '2026-09-10T23:59:00+09:00'),
+    ])
+    expect(lots).not.toContain('lots-ended')
+    expect(lots).toContain('終わったFC先行')
+    expect(lots).toContain('終わった一般')
+  })
+
+  it('一覧のカードには畳む行を出さない', () => {
+    const id = 'ev-2026-11-01'
+    const [g] = groupConsecutive([ev('2026-11-01', 'A', 'T', [
+      lot(id, '終わったFC先行', '2026-08-01T12:00:00+09:00', '2026-08-10T23:59:00+09:00'),
+      lot(id, '受付中の一般', '2026-10-01T10:00:00+09:00', '2026-10-20T23:59:00+09:00', 'https://eplus.jp/x/'),
+    ])])
+    expect(renderEventCard(g, now)).not.toContain('lots-ended')
   })
 })
