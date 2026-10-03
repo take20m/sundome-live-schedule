@@ -261,6 +261,12 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .sub-copy { display: inline-flex; align-items: center; gap: 6px; flex: none; height: 44px; padding: 0 14px; border: 0; border-radius: 10px; background: var(--secondary-container); color: var(--on-secondary-container); font: inherit; font-weight: 700; cursor: pointer; }
 .sub-copy .ic { width: 18px; height: 18px; }
 .sub-btn:focus-visible, .sub-copy:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.sub-form { margin-top: 12px; display: grid; gap: 10px; }
+.sub-form label { font-weight: 700; font-size: 14px; }
+.sub-form .sub-url { margin: 0; }
+.sub-form input[type="email"] { font: inherit; }
+.sub-note { margin: 0; font-size: 13px; color: var(--on-surface-variant); }
+.sub-error { margin: 12px 0 0; padding: 8px 12px; border-radius: 8px; background: var(--error-container); color: var(--on-error-container); font-weight: 500; }
 /* 端末ごとの手順。スクリプトが端末を見分けたら、その端末の分だけ出す */
 #install.os-ios .os-guide:not([data-os="ios"]), #install.os-android .os-guide:not([data-os="android"]), #install.os-desktop .os-guide:not([data-os="desktop"]), #install.is-standalone .os-guide { display: none; }
 .os-label { margin: 16px 0 0; font-weight: 700; color: var(--primary); }

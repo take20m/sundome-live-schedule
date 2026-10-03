@@ -6,7 +6,7 @@ import { escapeXml } from '../lib/html'
  * クエリ ?c=<change id> で item ごとに一意(リーダーのlink重複判定対策)。
  * lottery の item_id は `lot-<eventId>-<hash8>` 形式なので eventId を取り出す
  */
-function itemLink(c: ChangeRow, siteUrl: string): string {
+export function itemLink(c: ChangeRow, siteUrl: string): string {
   const eventId =
     c.item_type === 'event' ? c.item_id : c.item_id.replace(/^lot-/, '').replace(/-[0-9a-f]{8}$/, '')
   const path = /^ev-\d{4}-\d{2}-\d{2}$/.test(eventId) ? `/e/${eventId}` : '/'

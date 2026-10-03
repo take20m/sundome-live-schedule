@@ -1,6 +1,11 @@
 export type Bindings = {
   DB: D1Database
   INGEST_TOKEN: string
+  /** メール購読(docs/email-digest.md)。どれかが無ければメールの欄を出さず、送信もしない */
+  RESEND_API_KEY?: string
+  TURNSTILE_SECRET?: string
+  /** Turnstile のサイトキー(公開値なので wrangler.toml の vars) */
+  TURNSTILE_SITE_KEY?: string
 }
 
 export type Confidence = 'official' | 'inferred'

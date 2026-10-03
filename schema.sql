@@ -59,3 +59,23 @@ CREATE TABLE IF NOT EXISTS changes (
 );
 
 CREATE INDEX IF NOT EXISTS idx_changes_created ON changes(created_at DESC);
+
+-- メール購読(docs/email-digest.md)。確認リンクのトークンはハッシュだけを持つ。
+-- 停止用トークンは毎回のメールに載せるのでそのまま持つ(漏れても、できるのはその人の配信停止だけ)
+CREATE TABLE IF NOT EXISTS subscribers (
+  id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+  email                  TEXT NOT NULL UNIQUE,
+  status                 TEXT NOT NULL CHECK (status IN ('pending', 'active')),
+  confirm_token_hash     TEXT,
+  confirm_expires_at     TEXT,
+  unsubscribe_token      TEXT NOT NULL UNIQUE,
+  created_at             TEXT NOT NULL,
+  confirmed_at           TEXT
+);
+
+-- 前回のまとめメールに入れた最後の changes.id(1 行だけ)
+CREATE TABLE IF NOT EXISTS digest_state (
+  id              INTEGER PRIMARY KEY CHECK (id = 1),
+  last_change_id  INTEGER NOT NULL,
+  updated_at      TEXT NOT NULL
+);

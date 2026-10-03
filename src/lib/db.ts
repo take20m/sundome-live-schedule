@@ -139,10 +139,27 @@ export async function listAllEventIds(
   return results
 }
 
+type ChangeWithLottery = ChangeRow & { lottery_name: string | null }
+
 /**
- * RSS に流す変更。受付の通知は誰でも申し込めるものだけにする(会員限定・CD 封入などは流さない)。
- * ingest でも記録しないようにしたが、それ以前に記録された分もここで落とす
+ * 受付の通知は誰でも申し込めるものだけにする(会員限定・CD 封入などは流さない)。
+ * ingest でも記録しないようにしたが、それ以前に記録された分もここで落とす。
+ * 受付の ID が後から変わって元の行が無い通知もある。そのときはサマリ
+ * (「抽選情報: アーティスト「受付名」受付 期間」、ingest の lotterySummary の書式)から受付名を取り出す
  */
+function dropRestricted(rows: ChangeWithLottery[]): ChangeRow[] {
+  const nameOf = (r: ChangeWithLottery) =>
+    r.lottery_name ?? r.summary.match(/^抽選(?:情報|更新): .*?「(.*)」受付 /)?.[1] ?? null
+  return rows
+    .filter((r) => {
+      if (r.item_type !== 'lottery') return true
+      const name = nameOf(r)
+      return name === null || !isRestrictedLottery(name)
+    })
+    .map(({ lottery_name: _, ...r }) => r)
+}
+
+/** RSS に流す変更(新しい順) */
 export async function listRecentChanges(db: D1Database, limit = 50): Promise<ChangeRow[]> {
   const { results } = await db
     .prepare(
@@ -151,19 +168,28 @@ export async function listRecentChanges(db: D1Database, limit = 50): Promise<Cha
        ORDER BY c.created_at DESC, c.id DESC LIMIT ?`,
     )
     .bind(limit * 2)
-    .all<ChangeRow & { lottery_name: string | null }>()
-  // 受付の ID が後から変わって元の行が無い通知もある。そのときはサマリ
-  // (「抽選情報: アーティスト「受付名」受付 期間」、ingest の lotterySummary の書式)から受付名を取り出す
-  const nameOf = (r: ChangeRow & { lottery_name: string | null }) =>
-    r.lottery_name ?? r.summary.match(/^抽選(?:情報|更新): .*?「(.*)」受付 /)?.[1] ?? null
-  return results
-    .filter((r) => {
-      if (r.item_type !== 'lottery') return true
-      const name = nameOf(r)
-      return name === null || !isRestrictedLottery(name)
-    })
-    .slice(0, limit)
-    .map(({ lottery_name: _, ...r }) => r)
+    .all<ChangeWithLottery>()
+  return dropRestricted(results).slice(0, limit)
+}
+
+/**
+ * まとめメールに入れる新着(古い順)。afterId より後に記録された「追加」だけ(更新は送らない)。
+ * maxId は会員限定などを除く前の最後の id(次回はここより後から見る)
+ */
+export async function listNewChangesSince(
+  db: D1Database,
+  afterId: number,
+): Promise<{ changes: ChangeRow[]; maxId: number }> {
+  const { results } = await db
+    .prepare(
+      `SELECT c.*, l.name AS lottery_name FROM changes c
+       LEFT JOIN lotteries l ON c.item_type = 'lottery' AND l.id = c.item_id
+       WHERE c.id > ? ORDER BY c.id ASC`,
+    )
+    .bind(afterId)
+    .all<ChangeWithLottery>()
+  const maxId = results.length > 0 ? results[results.length - 1].id : afterId
+  return { changes: dropRestricted(results.filter((r) => r.change_kind === 'added')), maxId }
 }
 
 /** JSTでの今日の日付 (YYYY-MM-DD) */

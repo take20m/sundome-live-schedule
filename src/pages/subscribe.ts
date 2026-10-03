@@ -60,10 +60,48 @@ function demo(os: 'ios' | 'android', frames: string[], steps: string[]): string 
 </div>`
 }
 
-export function renderSubscribePage(canonical: string): string {
+const MAIL_ERRORS: Record<string, string> = {
+  bot: '確認がうまくいきませんでした。もう一度お試しください。',
+  email: 'メールアドレスの形式を確かめてください。',
+  send: '確認メールを送れませんでした。時間をおいてもう一度お試しください。',
+}
+
+function mailSection(siteKey: string, error: string | null): string {
+  const msg = error && MAIL_ERRORS[error] ? `<p class="sub-error" role="alert">${MAIL_ERRORS[error]}</p>` : ''
+  return `<section class="sub-block" id="mail">
+<h2>${iconSvg('mail')}メールで受け取る</h2>
+<p>新しい公演や抽選の受付情報があった日の昼12時ごろに、1通にまとめてお知らせします。届いた確認メールのボタンを押すと登録が完了します。</p>
+${msg}
+<form class="sub-form" method="post" action="/api/subscribe">
+<label for="sub-email">メールアドレス</label>
+<div class="sub-url">
+<input id="sub-email" name="email" type="email" required autocomplete="email" inputmode="email" placeholder="you@example.com">
+<button class="sub-copy" type="submit">登録する</button>
+</div>
+<div class="cf-turnstile" data-sitekey="${escapeHtml(siteKey)}" data-language="ja" data-size="flexible"></div>
+<p class="sub-note">登録すると、<a href="/about#privacy">プライバシーポリシー</a>(メールアドレスの扱い)に同意したものとします。配信はメールの末尾のリンクからいつでも停止でき、停止するとアドレスは削除されます。</p>
+</form>
+</section>`
+}
+
+/** 確認メールの送信後・登録完了・配信停止などの短いお知らせページ(検索には載せない) */
+export function renderMailNotice(canonical: string, n: { title: string; lead: string; body: string }): string {
+  return renderArticle({
+    head: buildHeadMeta({ title: `${n.title} | サンドーム福井ライブ情報`, description: n.lead, canonical, noindex: true }),
+    crumbs: [{ label: '公演一覧', href: '/' }, { label: '新着情報を受け取る', href: '/subscribe' }, { label: n.title }],
+    title: n.title,
+    lead: n.lead,
+    body: n.body,
+  })
+}
+
+export function renderSubscribePage(
+  canonical: string,
+  opts: { turnstileSiteKey?: string | null; mailError?: string | null } = {},
+): string {
   const feedUrl = new URL('/feed.xml', canonical).toString()
   const pageUrl = new URL('/subscribe', canonical).toString()
-  const body = `<section class="sub-block" id="install">
+  const body = `${opts.turnstileSiteKey ? mailSection(opts.turnstileSiteKey, opts.mailError ?? null) : ''}<section class="sub-block" id="install">
 <h2>${iconSvg('add_to_home_screen')}ホーム画面に追加</h2>
 <p>アプリのように、ホーム画面のアイコンからこのサイトを開けます。</p>
 <p class="sub-installed" hidden>このサイトはホーム画面から開いています。</p>
@@ -143,6 +181,9 @@ ${demo('android', ANDROID_FRAMES, [
     title: '新着情報を受け取る',
     lead: '新しい公演や抽選の受付情報を受け取る方法です。',
     body,
+    extraHead: opts.turnstileSiteKey
+      ? '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>'
+      : undefined,
     extraScripts: script,
   })
 }

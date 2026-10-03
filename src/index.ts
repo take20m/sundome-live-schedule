@@ -12,6 +12,8 @@ import { FAVICON_SVG } from './lib/icon'
 import { buildRobots, buildSitemap } from './lib/seo'
 import { renderAboutPage } from './pages/about'
 import { renderSubscribePage } from './pages/subscribe'
+import { handleConfirm, handleSent, handleStop, handleStopPage, handleSubscribe, mailEnabled } from './api/subscribe'
+import { runDigest } from './lib/digest'
 import { renderDetailPage } from './pages/detail'
 import { renderListPage } from './pages/list'
 import { renderPastPage } from './pages/past'
@@ -70,8 +72,20 @@ app.get('/guide/:slug', (c) => {
   return c.html(renderGuidePage(doc, siteUrl(c.req.url, `/guide/${slug}`)))
 })
 
-app.get('/about', (c) => c.html(renderAboutPage(siteUrl(c.req.url, '/about'))))
-app.get('/subscribe', (c) => c.html(renderSubscribePage(siteUrl(c.req.url, '/subscribe'))))
+app.get('/about', (c) => c.html(renderAboutPage(siteUrl(c.req.url, '/about'), { mail: mailEnabled(c.env) })))
+app.get('/subscribe', (c) =>
+  c.html(
+    renderSubscribePage(siteUrl(c.req.url, '/subscribe'), {
+      turnstileSiteKey: mailEnabled(c.env) ? c.env.TURNSTILE_SITE_KEY : null,
+      mailError: c.req.query('e') ?? null,
+    }),
+  ),
+)
+app.post('/api/subscribe', handleSubscribe)
+app.get('/subscribe/sent', handleSent)
+app.get('/subscribe/confirm', handleConfirm)
+app.get('/subscribe/stop', handleStopPage)
+app.post('/subscribe/stop', handleStop)
 
 app.get('/feed.xml', async (c) => {
   const changes = await listRecentChanges(c.env.DB)
@@ -123,4 +137,11 @@ app.post('/api/images', handleSetImages)
 app.get('/api/images/focus-pending', handlePendingFocus)
 app.post('/api/images/focus', handleSetFocus)
 
-export default app
+// 新着まとめメール(docs/email-digest.md)。wrangler.toml の Cron Trigger(12:00 JST)から呼ばれる
+async function scheduled(_controller: ScheduledController, env: Bindings, ctx: ExecutionContext): Promise<void> {
+  ctx.waitUntil(
+    runDigest(env, 'https://sundome.take20m.dev/', new Date()).then((r) => console.log('digest', JSON.stringify(r))),
+  )
+}
+
+export default { fetch: app.fetch, scheduled }

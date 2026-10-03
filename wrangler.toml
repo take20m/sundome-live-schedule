@@ -25,6 +25,11 @@ fallthrough = true
 [assets]
 directory = "./public"
 
+# 新着まとめメール(docs/email-digest.md)。毎日 12:00 JST(UTC 03:00)。
+# RESEND_API_KEY が無いあいだは何もしない
+[triggers]
+crons = ["0 3 * * *"]
+
 [[d1_databases]]
 binding = "DB"
 database_name = "sundome-reminder"
