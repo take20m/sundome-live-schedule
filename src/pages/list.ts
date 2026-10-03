@@ -146,14 +146,15 @@ function renderDeadlines(events: EventWithLotteries[], now: Date): string {
         ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" decoding="async"${zoom && zoom > 1 ? ` data-zoom="${zoom}"` : ''}${imgStyle ? ` style="${imgStyle}"` : ''} onerror="this.nextElementSibling.hidden=false;this.parentNode.style.background='';this.remove()">`
         : ''
     }<span class="sale-date"${imageUrl ? ' hidden' : ''}>${escapeHtml(bigDate)}</span></span>`
-    // 状態は 1 か所だけ。締切までの残り(3 日以内は赤)、締切が無ければ「締切未定」
-    let state: string
-    if (lottery.ends_at) {
-      const left = new Date(lottery.ends_at).getTime() - now.getTime()
-      state = `<span class="pill pill-left${left < SOON_MS ? ' cd-soon' : ''}">${iconSvg('schedule')}<span data-ends="${escapeHtml(lottery.ends_at)}">${escapeHtml(formatCountdown(left))}</span>${iconSvg('chevron_right')}</span>`
-    } else {
-      state = `<span class="pill">${iconSvg('calendar_today')}<span>締切未定</span>${iconSvg('chevron_right')}</span>`
-    }
+    // 状態は 1 か所だけ。締切まで 3 日以内なら目覚まし時計と「あと N 日」(赤)、それ以外は締切の有無に
+    // かかわらずチケットと「受付中」(青)。急ぐものだけ日数を出す。開いたまま 3 日以内に入ったら
+    // カウントダウンのスクリプトが文字とアイコンを切り替える(data-label が「受付中」のときの文字)
+    const left = lottery.ends_at ? new Date(lottery.ends_at).getTime() - now.getTime() : Infinity
+    const soon = left < SOON_MS
+    const label = soon ? formatCountdown(left) : '受付中'
+    const state = `<span class="pill${soon ? ' cd-soon' : ''}">${iconSvg('alarm', 'ic-soon')}${iconSvg('confirmation_number', 'ic-open')}<span${
+      lottery.ends_at ? ` data-ends="${escapeHtml(lottery.ends_at)}" data-label="受付中"` : ''
+    }>${escapeHtml(label)}</span>${iconSvg('chevron_right')}</span>`
     // 受付の名前は出さない(カードから詳細ページのその受付へ飛べる)。期間と名前は詳細ページにある
     return `<li><a class="sale-card" href="/e/${escapeHtml(event.id)}#${lotteryAnchor(lottery)}">
   ${media}
@@ -425,9 +426,11 @@ export const COUNTDOWN_SCRIPT = `<script>
   function tick(){
     document.querySelectorAll('[data-ends]').forEach(function(el){
       var ms = new Date(el.dataset.ends).getTime() - Date.now();
-      el.textContent = fmt(ms);
-      var pill = el.closest('.pill-left');
-      if (pill) pill.classList.toggle('cd-soon', ms < ${SOON_MS});
+      var soon = ms < ${SOON_MS};
+      // 販売中欄は 3 日以内だけ日数を出し、それより先は data-label(「受付中」)のまま
+      el.textContent = el.dataset.label && !soon ? el.dataset.label : fmt(ms);
+      var pill = el.closest('.pill');
+      if (pill) pill.classList.toggle('cd-soon', soon);
     });
   }
   tick(); setInterval(tick, 30000);

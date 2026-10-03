@@ -128,13 +128,15 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .sale-body { flex: 1; display: flex; flex-direction: column; padding: 9px 10px 10px; }
 .sale-h { font-size: 14px; line-height: 19px; min-height: 38px; letter-spacing: .25px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .sale-s { margin: 2px 0 10px; font-size: 11.5px; line-height: 16px; color: var(--on-surface-variant); font-variant-numeric: tabular-nums; }
-/* 状態は 1 か所だけ。締切までの残り(青、3 日以内は赤)、締切未定はグレー */
-.pill { margin-top: auto; display: flex; align-items: center; gap: 5px; height: 28px; padding: 0 6px 0 8px; border-radius: 14px; background: var(--surface-container-highest); color: var(--on-surface-variant); font-size: 12.5px; font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* 状態は 1 か所だけ。締切まで 3 日以内は赤で日数、それ以外は青で「受付中」 */
+.pill { margin-top: auto; display: flex; align-items: center; gap: 5px; height: 28px; padding: 0 6px 0 8px; border-radius: 14px; background: var(--secondary-container); color: var(--on-secondary-container); font-size: 12.5px; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .pill > span { flex: 1; }
-.pill .ic { width: 15px; height: 15px; }
+.pill .ic { width: 16px; height: 16px; }
 .pill .ic:last-child { width: 18px; height: 18px; }
-.pill-left { background: var(--secondary-container); color: var(--on-secondary-container); font-weight: 700; }
-.pill-left.cd-soon { background: var(--error-container); color: var(--error); }
+.pill.cd-soon { background: var(--error-container); color: var(--error); }
+/* 締切間近は目覚まし時計、受付中はチケット。両方を描いておき、cd-soon で出し分ける(開いたまま切り替わるため) */
+.pill .ic-soon, .pill.cd-soon .ic-open { display: none; }
+.pill.cd-soon .ic-soon { display: block; }
 /* 矢印は幅に収まらないとき(JS が hidden を外す)、マウスのある端末だけ */
 .sale-nav { position: absolute; top: 34px; z-index: 1; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: var(--surface-container-low); color: var(--on-surface); box-shadow: var(--shadow-2); cursor: pointer; }
 .sale-nav .ic { width: 22px; height: 22px; }

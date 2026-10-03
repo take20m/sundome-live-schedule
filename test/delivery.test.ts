@@ -72,9 +72,13 @@ describe('締切セクションとカウントダウン', () => {
     const onSale = await onSaleLotteryNames(SELF, html)
     expect(onSale).toContain('一般発売(先着)')
     expect(onSale).not.toContain('売切済の販売')
-    // 行はアーティスト名と公演日だけ。締切の日時・受付名は出さない(右端の残り日数と詳細ページにある)
+    // カードはアーティスト名と公演日だけ。締切の日時・受付名は出さない(詳細ページにある)。
+    // 締切が無い受付は「受付中」で、数えるものが無いのでカウントダウンも付けない
     expect(section).toContain('エンドレス')
-    expect(section).toContain('締切未定')
+    const card = section.slice(section.lastIndexOf('<li>', section.indexOf('エンドレス')), section.indexOf('</li>', section.indexOf('エンドレス')))
+    expect(card).toContain('<span class="pill">')
+    expect(card).toContain('>受付中</span>')
+    expect(card).not.toContain('data-ends')
     expect(section).not.toContain('〆')
     expect(section).not.toContain('一般発売(先着)')
   })
@@ -136,6 +140,37 @@ describe('締切セクションとカウントダウン', () => {
     const html = await (await SELF.fetch('https://example.com/')).text()
     expect(html).toMatch(/class="(?:tile-bar today|soon today)">本日</)
     expect(html).toContain('is-today')
+  })
+  it('締切まで3日以内だけ日数を赤で出し、それより先は「受付中」(開いたまま3日以内に入ったらスクリプトが切り替える)', async () => {
+    const day = 24 * 60 * 60 * 1000
+    const now = new Date()
+    const date = new Date(now.getTime() + 60 * day).toISOString().slice(0, 10)
+    await env.DB.prepare(
+      `INSERT INTO events (id, title, artist, date, confidence, updated_at) VALUES (?, 'LATER TOUR', 'まだ先', ?, 'official', ?)`,
+    )
+      .bind(`ev-${date}`, date, now.toISOString())
+      .run()
+    const ends = new Date(now.getTime() + 10 * day).toISOString()
+    await env.DB.prepare(
+      `INSERT INTO lotteries (id, event_id, name, starts_at, ends_at, confidence, sold_out, updated_at)
+       VALUES (?, ?, '一般先行', ?, ?, 'official', 0, ?)`,
+    )
+      .bind(`lot-ev-${date}-00000009`, `ev-${date}`, new Date(now.getTime() - day).toISOString(), ends, now.toISOString())
+      .run()
+    const html = await (await SELF.fetch('https://example.com/')).text()
+    const section = html.split('販売中のチケット')[1].split('今後の公演')[0]
+    const cardOf = (artist: string) =>
+      section.slice(section.lastIndexOf('<li>', section.indexOf(artist)), section.indexOf('</li>', section.indexOf(artist)))
+    const later = cardOf('まだ先')
+    expect(later).toContain('<span class="pill">')
+    expect(later).toContain(`data-ends="${ends}" data-label="受付中">受付中</span>`)
+    // seedSample の受付は 3 日後に締切なので急ぎ(赤・日数)
+    const soon = cardOf('SAMPLE ARTIST')
+    expect(soon).toContain('<span class="pill cd-soon">')
+    expect(soon).toMatch(/data-label="受付中">あと\d+(?:日|時間)/)
+    // 締切間近は目覚まし時計、受付中はチケット(両方を描いて CSS で出し分ける)
+    expect(soon).toContain('class="ic ic-soon"')
+    expect(soon).toContain('class="ic ic-open"')
   })
 })
 
