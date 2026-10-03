@@ -55,11 +55,9 @@ describe('過去の公演ページ', () => {
     expect(html).not.toContain(`<a class="btn-text" href="/past?y=`)
     expect(old).toContain(`<a class="btn-text" href="/past?y=${y2}">`)
     expect(old).not.toContain('class="year-next"')
-    // お試しの自動読み込みは ?auto=1 のときだけ
+    // 年の終わりで前の年を自動で足す(スクリプトが動かなければ上のボタンで移る)
     expect(html).toContain(`<section class="past-year" data-year="${y2}">`)
-    expect(html).not.toContain("document.querySelector('.year-pager')")
-    const auto = await (await SELF.fetch('https://example.com/past?auto=1')).text()
-    expect(auto).toContain("document.querySelector('.year-pager')")
+    expect(html).toContain("document.querySelector('.year-pager')")
     // 開催済みの公演の詳細では「未収集」と言わない(もう収集しない)
     const detail = await (await SELF.fetch(`https://example.com/e/ev-${p1}`)).text()
     expect(detail).not.toContain('未収集')

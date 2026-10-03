@@ -16,7 +16,6 @@ export function renderPastPage(
   now: Date,
   canonical: string,
   yearParam: string | null,
-  opts: { autoScroll?: boolean } = {},
 ): string {
   // groupConsecutive は日付昇順で返すので、年ごとに束ねてから新しい順に並べ直す
   const byYear = new Map<string, Groups>()
@@ -81,13 +80,13 @@ ${SITE_HEADER}
 ${body}
 </main>
 ${SITE_FOOTER}
-${opts.autoScroll && year ? AUTO_SCROLL_SCRIPT : ''}
+${year ? AUTO_SCROLL_SCRIPT : ''}
 </body>
 </html>`
 }
 
 /**
- * お試し: ?auto=1 のときだけ、年の終わりまで来たら前の年を下に足していく(無限スクロール)。
+ * 年の終わりまで来たら前の年を下に足していく(無限スクロール)。
  * 「読み込み中」とカードの形の仮表示を見せてから、前の年の欄(.past-year)を差し込み、カードを順に浮き上がらせる。
  * 各年の見出しは画面の上に貼りつけ、年タブの強調とアドレスバーの ?y= も今見ている年に合わせる。
  * スクリプトが動かなければ「2024年 ›」のボタンのまま
@@ -107,7 +106,7 @@ const AUTO_SCROLL_SCRIPT = `<script>
       t.classList.toggle('chip-open', on);
       if (on) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current');
     });
-    history.replaceState(null, '', '/past?y=' + y + '&auto=1');
+    history.replaceState(null, '', '/past?y=' + y);
   }
   var seen = new IntersectionObserver(function(es){
     es.forEach(function(e){ if (e.isIntersecting) setYear(e.target.dataset.year); });

@@ -166,7 +166,7 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .year-next .ic { width: 20px; height: 20px; }
 .year-next:hover { background: color-mix(in srgb, var(--on-secondary-container) 8%, var(--secondary-container)); }
 .year-next:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-/* 過去の公演の自動読み込み(お試し ?auto=1) */
+/* 過去の公演の自動読み込み(年の終わりで前の年を足す。見出しは上に貼りつく) */
 .past-auto .past-year > .section { position: sticky; top: 0; z-index: 5; margin: 0 -16px 8px; padding: 10px 16px 8px; background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(6px); }
 .past-auto .past-year + .past-year { margin-top: 28px; }
 .year-next.is-loading { gap: 8px; padding: 0 18px; color: var(--on-surface-variant); pointer-events: none; }
