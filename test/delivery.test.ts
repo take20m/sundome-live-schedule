@@ -497,6 +497,25 @@ describe('申込リンク', () => {
     expect(html).toContain('"name":"受付中だが会場検索ページ"')
     expect(html).toContain('"availability":"https://schema.org/InStock"')
   })
+
+  it('JSON-LD のオファーは受付開始日時が分かっている受付だけ(validFrom と availability を必ず持つ)', async () => {
+    const id = `ev-${eventDate}`
+    await env.DB.prepare(
+      `INSERT INTO lotteries (id, event_id, name, starts_at, ends_at, url, confidence, updated_at) VALUES (?, ?, '開始不明の先行', NULL, ?, NULL, 'official', ?)`,
+    )
+      .bind(`lot-${id}-nostart`, id, new Date(Date.now() + 5 * 864e5).toISOString(), new Date().toISOString())
+      .run()
+    const html = await (await SELF.fetch(`https://example.com/e/${id}`)).text()
+    const ld = JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/s)![1])
+    const offers = ld['@graph'].filter((n: { '@type': string }) => n['@type'] === 'MusicEvent').flatMap((e: { offers: object[] }) => e.offers)
+    expect(offers.map((o: { name: string }) => o.name)).not.toContain('開始不明の先行')
+    for (const o of offers) {
+      expect(o).toHaveProperty('validFrom')
+      expect(o).toHaveProperty('availability')
+    }
+    // 画面には今までどおり出す
+    expect(html).toContain('開始不明の先行')
+  })
 })
 
 describe('RSSフィード', () => {

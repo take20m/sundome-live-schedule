@@ -55,8 +55,10 @@ export function buildJsonLd(events: EventWithLotteries[], pageUrl: string): stri
     },
     ...(e.tour_url ?? e.source_url ? { url: e.tour_url ?? e.source_url } : {}),
     ...(e.image_url ? { image: [e.image_url] } : {}),
+    // 受付開始日時が分かっている受付だけを載せる。開始の分からない受付は、検索結果で「いつ申し込めるか」を
+    // 示せず、Search Console でも validFrom / availability の欠落として警告される(画面の表示は変えない)
     offers: e.lotteries
-      .filter((l) => l.url || l.starts_at || l.ends_at)
+      .filter((l) => l.starts_at)
       .map((l) => {
         const availability = offerAvailability(l, now)
         // Offer.url は「そのオファーを購入できるページ」を意味し、検索結果のチケット導線として
