@@ -89,7 +89,7 @@ ${msg}
 <input id="sub-email" name="email" type="email" required autocomplete="email" inputmode="email" placeholder="you@example.com">
 <button class="sub-copy" type="submit">登録する</button>
 </div>
-<div class="cf-turnstile" data-sitekey="${escapeHtml(siteKey)}" data-language="ja" data-size="flexible"></div>
+<div class="cf-turnstile" data-sitekey="${escapeHtml(siteKey)}" data-language="ja" data-size="flexible" data-appearance="interaction-only"></div>
 <p class="sub-note">登録すると、<a href="/about#privacy">プライバシーポリシー</a>(メールアドレスの扱い)に同意したものとします。配信はメールの末尾のリンクからいつでも停止でき、停止するとアドレスは削除されます。</p>
 </form>
 </section>`

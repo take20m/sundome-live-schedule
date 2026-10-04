@@ -56,6 +56,8 @@ describe('メール購読: 登録・確認・停止', () => {
     const page = await (await call('/subscribe')).text()
     expect(page).toContain('<form class="sub-form" method="post" action="/api/subscribe">')
     expect(page).toContain('data-sitekey="site_key"')
+    // ボット確認の枠は、確認が必要なときだけ出す
+    expect(page).toContain('data-appearance="interaction-only"')
     expect(page).toContain('https://challenges.cloudflare.com/turnstile/v0/api.js')
     expect(page).toContain('プライバシーポリシー</a>(メールアドレスの扱い)に同意したものとします')
     const about = await (await call('/about')).text()
