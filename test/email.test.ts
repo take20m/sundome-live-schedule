@@ -238,6 +238,12 @@ describe('新着情報への案内(トーストと詳細のカード)', () => {
     expect(await (await SELF.fetch('https://example.com/')).text()).not.toContain('id="sub-toast"')
   })
 
+  it('出ていないトーストは隠れていて、下のリンクの当たり判定を奪わない', async () => {
+    const top = await (await call('/')).text()
+    expect(top).toContain('[hidden] { display: none !important; }')
+    expect(top).toContain('.sub-toast:not(.is-shown) { pointer-events: none; }')
+  })
+
   it('開催前の公演詳細には、受付の下に案内カードを置く(開催済みには置かない)', async () => {
     expect(await (await call(`/e/ev-${future}`)).text()).toContain('<a class="sub-card" href="/subscribe#mail">')
     expect(await (await call(`/e/ev-${past}`)).text()).not.toContain('<a class="sub-card"')

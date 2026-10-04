@@ -273,8 +273,12 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 /* フッター */
 .site-f { background: var(--surface-container); padding: 24px 16px 28px; display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--on-surface-variant); font-size: 12px; line-height: 16px; letter-spacing: .4px; }
 .site-f a { color: var(--on-surface); text-decoration: none; font-weight: 500; font-size: 14px; }
+/* hidden を付けた要素は必ず隠す。display を指定した部品(トーストなど)ではブラウザ既定の [hidden] が負け、
+   透明なまま画面の下に残って下のリンクの当たり判定を奪っていた */
+[hidden] { display: none !important; }
 /* 新着情報への案内: トースト(画面下、PC は右下)と詳細ページのカード */
 .sub-toast { position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 20; display: flex; align-items: flex-start; border-radius: 16px; background: var(--secondary-container); color: var(--on-secondary-container); box-shadow: 0 6px 20px rgba(11,61,145,.22), 0 1px 3px rgba(0,0,0,.12); opacity: 0; transform: translateY(12px); }
+.sub-toast:not(.is-shown) { pointer-events: none; }
 .sub-toast.is-shown { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: no-preference) { .sub-toast { transition: opacity .25s, transform .25s; } }
 @media (min-width: 600px) { .sub-toast { left: auto; right: 20px; bottom: 20px; width: 340px; } }
