@@ -33,6 +33,9 @@ describe('新着情報を受け取る', () => {
     const html = await res.text()
     expect(html).toContain('<input id="feed-url" type="text" readonly value="https://example.com/feed.xml"')
     expect(html).toContain('id="copy-feed"')
+    // ファーストビューに中身を出すため、見出しは読み上げ用だけにし、リード文は置かない
+    expect(html).toContain('<h1 class="title visually-hidden">新着情報を受け取る</h1>')
+    expect(html).not.toContain('受け取る方法です')
     expect(html).not.toContain('feedly.com')
     expect(html).not.toContain('/feed subscribe')
     // iPhone / Android / PC の手順を用意し、スクリプトが端末に合うものだけを残す

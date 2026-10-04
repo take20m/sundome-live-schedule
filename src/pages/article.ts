@@ -20,6 +20,8 @@ export type ArticleShell = {
   /** 「会場ガイド」などのカテゴリ表示 */
   kicker?: string
   title: string
+  /** 見出しを画面には出さない(読み上げと検索には残す)。ファーストビューに中身を出したいページ用 */
+  hideTitle?: boolean
   lead?: string
   byline?: { updated?: string; checked?: string; editor?: string }
   /** 先頭の写真(HTML 断片) */
@@ -71,7 +73,7 @@ ${SITE_HEADER}
 <nav class="crumb" aria-label="パンくず">${crumbs}</nav>
 <article class="sheet">
 ${a.kicker ? `<span class="kicker">${escapeHtml(a.kicker)}</span>` : ''}
-<h1 class="title">${escapeHtml(a.title)}</h1>
+<h1 class="title${a.hideTitle ? ' visually-hidden' : ''}">${escapeHtml(a.title)}</h1>
 ${a.lead ? `<p class="lead">${escapeHtml(a.lead)}</p>` : ''}
 ${byline}
 ${a.hero ?? ''}

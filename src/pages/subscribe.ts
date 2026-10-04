@@ -198,7 +198,7 @@ ${demo('android', ANDROID_FRAMES, [
     }),
     crumbs: [{ label: '公演一覧', href: '/' }, { label: '新着情報を受け取る' }],
     title: '新着情報を受け取る',
-    lead: '新しい公演や抽選の受付情報を受け取る方法です。',
+    hideTitle: true,
     body,
     extraHead: opts.turnstileSiteKey
       ? '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>'

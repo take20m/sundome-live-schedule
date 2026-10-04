@@ -311,6 +311,10 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 /* hidden を付けた要素は必ず隠す。display を指定した部品(トーストなど)ではブラウザ既定の [hidden] が負け、
    透明なまま画面の下に残って下のリンクの当たり判定を奪っていた */
 [hidden] { display: none !important; }
+/* 見出しを隠した記事では、本文の最初の見出しの上の空きを詰める */
+.title.visually-hidden ~ .prose > :first-child, .title.visually-hidden ~ .prose > :first-child > h2:first-child { margin-top: 0; }
+/* 画面には出さず、読み上げには残す */
+.visually-hidden { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 /* 新着情報への案内: トースト(画面下、PC は右下)と詳細ページのカード */
 .sub-toast { position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 20; display: flex; align-items: flex-start; border-radius: 16px; background: var(--secondary-container); color: var(--on-secondary-container); box-shadow: 0 6px 20px rgba(11,61,145,.22), 0 1px 3px rgba(0,0,0,.12); opacity: 0; transform: translateY(12px); }
 .sub-toast:not(.is-shown) { pointer-events: none; }
