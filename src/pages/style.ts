@@ -23,7 +23,7 @@ export const SITE_HEADER = `<header class="appbar">
     if (d > 0) { up = 0; h.classList.add('is-hidden'); }
     else { up -= d; if (up >= SHOW_AFTER) h.classList.remove('is-hidden'); }
   }, { passive: true });
-  // 「新着情報を受け取る」のベル: 開いて 1.5 秒後に揺らし、揺れ終わったら右上に赤い点を出し、以後 10 秒おきに揺らす。
+  // 「新着情報を受け取る」のベル: 開いて 1.5 秒後に右上に赤い点を出し、揺れ続ける(動き自体は CSS)。
   // /subscribe を一度開くか登録したら(トーストと同じ localStorage の記録)、点も揺れもやめる
   var bell = h.querySelector('.sub-ic');
   if (!bell) return;
@@ -35,16 +35,9 @@ export const SITE_HEADER = `<header class="appbar">
     return;
   }
   if (st.subscribed || st.seen) return;
-  var dot = bell.querySelector('.sub-dot');
-  function ring(){
-    if (document.hidden) return;
-    bell.classList.remove('ring'); void bell.offsetWidth; bell.classList.add('ring');
-  }
-  bell.addEventListener('animationend', function(){ dot.hidden = false; });
   setTimeout(function(){
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { dot.hidden = false; return; }
-    ring();
-    setInterval(ring, 10000);
+    bell.querySelector('.sub-dot').hidden = false;
+    bell.classList.add('ringing');
   }, 1500);
 })();
 </script>`
@@ -120,15 +113,16 @@ a { color: var(--primary); }
 .iconbtn.sub-ic { position: relative; width: 40px; height: 40px; margin: 4px; border-radius: 20px; background: var(--brand-yellow); color: #0B3D91; }
 .iconbtn.sub-ic:hover { background: color-mix(in srgb, #0B3D91 10%, var(--brand-yellow)); }
 .sub-dot { position: absolute; top: -2px; right: -2px; width: 11px; height: 11px; border-radius: 50%; background: var(--tile-today); box-shadow: 0 0 0 2px var(--surface-container-low); }
-/* 開いて少ししたら一度だけ揺れる(頭を支点に左右へ)。動きを減らす設定では揺らさない */
+/* 開くまで揺れ続ける: ベルは頭を支点に小刻みに左右へ、黄色の丸は少し膨らんで戻り、赤い点からは波紋が広がる。
+   動きを減らす設定では動かさず、赤い点だけ出す */
 @media (prefers-reduced-motion: no-preference) {
-  .sub-ic.ring .ic { transform-origin: 50% 12%; animation: bell-ring 1.1s ease-in-out; }
+  .sub-ic.ringing { animation: bell-pulse 1s ease-in-out infinite; }
+  .sub-ic.ringing .ic { transform-origin: 50% 12%; animation: bell-ring .5s ease-in-out infinite; }
+  .sub-ic.ringing .sub-dot::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--tile-today); animation: dot-ripple 1s ease-out infinite; }
 }
-@keyframes bell-ring {
-  0%, 100% { transform: rotate(0); }
-  10% { transform: rotate(18deg); } 25% { transform: rotate(-16deg); } 40% { transform: rotate(12deg); }
-  55% { transform: rotate(-8deg); } 70% { transform: rotate(4deg); } 85% { transform: rotate(-2deg); }
-}
+@keyframes bell-ring { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(10deg); } 75% { transform: rotate(-10deg); } }
+@keyframes bell-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+@keyframes dot-ripple { from { transform: scale(1); opacity: .6; } to { transform: scale(2.8); opacity: 0; } }
 
 main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 /* 会場写真のバナー(PC 21:9 / スマホ 16:9)。写真は CC BY-SA、クレジットは about ページ(CC BY-SA 4.0 §3(a)(2) によりリンク先での表記で足りる) */
