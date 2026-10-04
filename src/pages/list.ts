@@ -565,7 +565,7 @@ export function renderListPage(
   events: EventWithLotteries[],
   now: Date,
   canonical: string,
-  opts: { promo?: boolean; vapid?: string | null } = {},
+  opts: { promo?: boolean; vapid?: string | null; artistDocs?: { artist: string; title: string }[] } = {},
 ): string {
   const body =
     events.length > 0
@@ -600,6 +600,12 @@ ${body}
 <div class="list">
   <a class="row" href="/guide/access"><span class="row-text"><span class="row-h">アクセス・会場ガイド</span><span class="row-s">鯖江駅・武生駅からの行き方、駐車場、開場前の過ごし方</span></span>${iconSvg('arrow_forward')}</a>
   <a class="row" href="/guide/tickets"><span class="row-text"><span class="row-h">チケットの取り方</span><span class="row-s">先行・抽選・一般発売の違いと、公式リセールの使い方</span></span>${iconSvg('arrow_forward')}</a>
+${(opts.artistDocs ?? [])
+  .map(
+    (d) =>
+      `  <a class="row" href="/a/${encodeURIComponent(d.artist)}"><span class="row-text"><span class="row-h">${escapeHtml(d.title)}</span><span class="row-s">アーティストの解説</span></span>${iconSvg('arrow_forward')}</a>`,
+  )
+  .join('\n')}
 </div>
 <p class="more"><a class="btn-text" href="/past">過去の公演を見る${iconSvg('arrow_forward')}</a></p>
 </main>

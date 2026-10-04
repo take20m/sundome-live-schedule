@@ -192,6 +192,25 @@ export async function listNewChangesSince(
   return { changes: dropRestricted(results.filter((r) => r.change_kind === 'added')), maxId }
 }
 
+/**
+ * 公演 ID → その公演(と受付)が最後に変わった日時。changes の記録から作る
+ * (events / lotteries の updated_at は毎晩の収集で中身が同じでも書き換わるので使わない)
+ */
+export async function lastChangeByEvent(db: D1Database): Promise<{ byEvent: Map<string, string>; latest: string | null }> {
+  const { results } = await db
+    .prepare('SELECT item_id, item_type, MAX(created_at) AS at FROM changes GROUP BY item_id, item_type')
+    .all<{ item_id: string; item_type: string; at: string }>()
+  const byEvent = new Map<string, string>()
+  let latest: string | null = null
+  for (const r of results) {
+    const id = r.item_type === 'event' ? r.item_id : r.item_id.replace(/^lot-/, '').replace(/-[0-9a-z]+$/, '')
+    if (!/^ev-\d{4}-\d{2}-\d{2}$/.test(id)) continue
+    if (!byEvent.has(id) || byEvent.get(id)! < r.at) byEvent.set(id, r.at)
+    if (!latest || latest < r.at) latest = r.at
+  }
+  return { byEvent, latest }
+}
+
 /** JSTでの今日の日付 (YYYY-MM-DD) */
 export function todayInJst(now: Date = new Date()): string {
   return new Date(now.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)

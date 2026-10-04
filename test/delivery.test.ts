@@ -39,6 +39,16 @@ describe('サイト名の構造化データ', () => {
   })
 })
 
+describe('トップからアーティストの解説へ', () => {
+  it('「ガイド」の欄に、解説を書いたアーティストのページへのリンクを並べる', async () => {
+    const html = await (await SELF.fetch('https://example.com/')).text()
+    const guide = html.slice(html.indexOf('<h2>ガイド</h2>'), html.indexOf('過去の公演を見る'))
+    expect(guide).toContain(`href="/a/${encodeURIComponent('あいみょん')}"`)
+    expect(guide).toContain(`href="/a/${encodeURIComponent('Fujii Kaze')}"`)
+    expect(guide).toContain('アーティストの解説')
+  })
+})
+
 describe('締切セクションとカウントダウン', () => {
   it('受付中の抽選が販売中セクションにカウントダウン付きで出る', async () => {
     const res = await SELF.fetch('https://example.com/')
@@ -239,6 +249,10 @@ describe('SEO', () => {
     expect(xml).toContain('<urlset')
     expect(xml).toContain('/about</loc>')
     expect(xml).toMatch(/\/e\/ev-\d{4}-\d{2}-\d{2}<\/loc>/)
+    // lastmod は各ページの中身が変わった日(毎回「今日」にしない)
+    expect(xml).toContain('<loc>https://example.com/guide/access</loc><lastmod>2026-10-03</lastmod>')
+    expect(xml).toContain('<loc>https://example.com/about</loc><lastmod>2026-10-04</lastmod>')
+    expect(xml).toMatch(/<loc>https:\/\/example\.com\/a\/[^<]+<\/loc><lastmod>2026-09-20<\/lastmod>/)
     const robots = await SELF.fetch('https://example.com/robots.txt')
     expect(robots.status).toBe(200)
     const txt = await robots.text()

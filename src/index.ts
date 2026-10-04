@@ -5,7 +5,7 @@ import { handlePendingFocus, handlePendingImages, handleSetFocus, handleSetImage
 import { handleMissing } from './api/missing'
 import { handleUnknownHosts } from './api/unknown-hosts'
 import { buildRss } from './feeds/rss'
-import { getEventRun, listAllEventIds, listEvents, listEventsByArtist, listPastEvents, listRecentChanges, todayInJst } from './lib/db'
+import { getEventRun, lastChangeByEvent, listAllEventIds, listEvents, listEventsByArtist, listPastEvents, listRecentChanges, todayInJst } from './lib/db'
 import { artistDocNames, findArtistDoc, findGuideDoc, guideSlugs } from './lib/content'
 import { groupRuns } from './lib/group'
 import { FAVICON_SVG } from './lib/icon'
@@ -41,7 +41,9 @@ const vapidOf = (env: Bindings) => (pushEnabled(env) ? env.VAPID_PUBLIC_KEY! : n
 app.get('/', async (c) => {
   const now = new Date()
   const events = await listEvents(c.env.DB, todayInJst(now))
-  return c.html(renderListPage(events, now, siteUrl(c.req.url), { promo: mailEnabled(c.env), vapid: vapidOf(c.env) }))
+  // 解説を書いたアーティストのページへ、トップから 1 回でたどれるようにする(検索エンジンの巡回の道を短く)
+  const artistDocs = artistDocNames().map((artist) => ({ artist, title: findArtistDoc(artist)?.meta.title ?? artist }))
+  return c.html(renderListPage(events, now, siteUrl(c.req.url), { promo: mailEnabled(c.env), vapid: vapidOf(c.env), artistDocs }))
 })
 
 app.get('/e/:id', async (c) => {
@@ -119,24 +121,29 @@ app.get('/feed.xml', async (c) => {
   })
 })
 
+// about と /subscribe の中身を最後に変えた日(変えたらここも直す)
+const PAGE_UPDATED = { about: '2026-10-04', subscribe: '2026-10-04' }
+
 app.get('/sitemap.xml', async (c) => {
   // 開催済みの公演ページは載せない(受付情報のない薄いページになるので noindex にしてある)。
   // 解説のあるアーティストページだけを載せるのも同じ理由。
   // 連日は初日だけ ─ 2 日目以降は canonical を初日に向けており、非正規 URL は sitemap に入れない
   const today = todayInJst(new Date())
-  const ids = groupRuns(await listAllEventIds(c.env.DB))
-    .filter((run) => run[run.length - 1].date >= today)
-    .map((run) => run[0])
+  const runs = groupRuns(await listAllEventIds(c.env.DB))
+  const { byEvent, latest } = await lastChangeByEvent(c.env.DB)
+  const day = (iso: string | null | undefined) => (iso ? todayInJst(new Date(iso)) : null)
+  const runLastmod = (run: { id: string }[]) => day(run.map(({ id }) => byEvent.get(id) ?? '').sort().pop() || null)
+  const lastPast = runs.filter((r) => r[r.length - 1].date < today).map((r) => r[r.length - 1].date).sort().pop() ?? null
   return c.body(
-    buildSitemap(
-      siteUrl(c.req.url),
-      new Date().toISOString().slice(0, 10),
-      [
-        ...guideSlugs().map((s) => `/guide/${s}`),
-        ...artistDocNames().map((a) => `/a/${encodeURIComponent(a)}`),
-        ...ids.map(({ id }) => `/e/${id}`),
-      ],
-    ),
+    buildSitemap(siteUrl(c.req.url), [
+      { path: '/', lastmod: day(latest) },
+      { path: '/past', lastmod: lastPast },
+      { path: '/about', lastmod: PAGE_UPDATED.about },
+      { path: '/subscribe', lastmod: PAGE_UPDATED.subscribe },
+      ...guideSlugs().map((s) => ({ path: `/guide/${s}`, lastmod: findGuideDoc(s)?.meta.updated ?? null })),
+      ...artistDocNames().map((a) => ({ path: `/a/${encodeURIComponent(a)}`, lastmod: findArtistDoc(a)?.meta.updated ?? null })),
+      ...runs.filter((run) => run[run.length - 1].date >= today).map((run) => ({ path: `/e/${run[0].id}`, lastmod: runLastmod(run) })),
+    ]),
     200,
     { 'Content-Type': 'application/xml; charset=utf-8' },
   )

@@ -105,11 +105,16 @@ export function buildMetaDescription(events: EventWithLotteries[]): string {
   return `サンドーム福井(福井県越前市)で開催されるライブの予定と、チケット先行・抽選の受付期間を毎日更新。${list}締切カウントダウン・RSS対応。`
 }
 
-export function buildSitemap(siteUrl: string, lastmod: string, extraPaths: string[] = []): string {
-  const url = (path: string) => `  <url><loc>${new URL(path, siteUrl).toString()}</loc><lastmod>${lastmod}</lastmod></url>`
+/**
+ * sitemap。lastmod は各ページの中身が実際に変わった日(YYYY-MM-DD)。分からなければ付けない
+ * (毎回「今日」を入れると、Google は lastmod を当てにしなくなる)
+ */
+export function buildSitemap(siteUrl: string, entries: { path: string; lastmod?: string | null }[]): string {
+  const url = ({ path, lastmod }: { path: string; lastmod?: string | null }) =>
+    `  <url><loc>${new URL(path, siteUrl).toString()}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}</url>`
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${['/', '/past', '/about', '/subscribe', ...extraPaths].map(url).join('\n')}
+${entries.map(url).join('\n')}
 </urlset>
 `
 }

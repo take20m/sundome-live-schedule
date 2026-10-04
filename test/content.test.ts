@@ -72,7 +72,7 @@ describe('アーティストページとガイド', () => {
     expect(res.status).toBe(200)
     const html = await res.text()
     expect(html).toContain('<h1 class="title">サンドーム福井へ初めて行く人へ。アクセスと帰り方のコツ</h1>')
-    expect(html).toContain('更新 <b>2026-09-22</b>')
+    expect(html).toContain('更新 <b>2026-10-03</b>')
     expect((await SELF.fetch('https://example.com/guide/nope')).status).toBe(404)
     const top = await (await SELF.fetch('https://example.com/')).text()
     expect(top).toContain('href="/guide/access"')
