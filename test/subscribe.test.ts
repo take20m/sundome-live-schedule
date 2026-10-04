@@ -36,10 +36,12 @@ describe('新着情報を受け取る', () => {
     expect(html).not.toContain('feedly.com')
     expect(html).not.toContain('/feed subscribe')
     // iPhone / Android / PC の手順を用意し、スクリプトが端末に合うものだけを残す
-    for (const os of ['ios', 'android', 'desktop']) expect(html).toContain(`<div class="os-guide" data-os="${os}">`)
+    // PC とホーム画面から開いているときは欄ごと出さない(スクリプトが判定)。手順は iPhone と Android だけ
+    for (const os of ['ios', 'android']) expect(html).toContain(`<div class="os-guide" data-os="${os}">`)
+    expect(html).not.toContain('data-os="desktop"')
+    expect(html).toContain("if (standalone || os === 'desktop') root.hidden = true;")
     expect(html).toContain('<div class="demo" data-demo="ios">')
     expect(html).toContain('<div class="demo" data-demo="android">')
-    expect(html).toContain('<img src="/img/subscribe-qr.svg"')
     expect(html).toContain('id="install-btn" hidden')
     expect(html).toContain("navigator.serviceWorker.register('/sw.js')")
     // 通知と SNS は仕組みができるまで出さない

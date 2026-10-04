@@ -339,6 +339,7 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .sub-block h2 .ic { width: 22px; height: 22px; color: var(--primary); }
 .sub-btn { display: inline-flex; align-items: center; gap: 8px; height: 44px; margin-top: 16px; padding: 0 20px; border: 0; border-radius: 22px; background: var(--primary); color: var(--on-primary); font: inherit; font-weight: 700; cursor: pointer; }
 .sub-btn .ic { width: 20px; height: 20px; }
+a.sub-btn { text-decoration: none; }
 .sub-url { display: flex; gap: 8px; margin: 12px 0 0; }
 .sub-url input { flex: 1; min-width: 0; height: 44px; padding: 0 12px; border: 1px solid var(--outline-variant); border-radius: 10px; background: var(--surface-container); color: var(--on-surface); font: 14px/1 ui-monospace, Menlo, monospace; }
 .sub-copy { display: inline-flex; align-items: center; gap: 6px; flex: none; height: 44px; padding: 0 14px; border: 0; border-radius: 10px; background: var(--secondary-container); color: var(--on-secondary-container); font: inherit; font-weight: 700; cursor: pointer; }
@@ -351,12 +352,8 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .sub-note { margin: 0; font-size: 13px; color: var(--on-surface-variant); }
 .sub-error { margin: 12px 0 0; padding: 8px 12px; border-radius: 8px; background: var(--error-container); color: var(--on-error-container); font-weight: 500; }
 /* 端末ごとの手順。スクリプトが端末を見分けたら、その端末の分だけ出す */
-#install.os-ios .os-guide:not([data-os="ios"]), #install.os-android .os-guide:not([data-os="android"]), #install.os-desktop .os-guide:not([data-os="desktop"]), #install.is-standalone .os-guide { display: none; }
+#install.os-ios .os-guide:not([data-os="ios"]), #install.os-android .os-guide:not([data-os="android"]) { display: none; }
 .os-label { margin: 16px 0 0; font-weight: 700; color: var(--primary); }
-.sub-qr { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 12px; }
-.sub-qr img { flex: none; width: 132px; height: 132px; padding: 6px; border-radius: 10px; background: #FFFFFF; box-shadow: 0 0 0 1px var(--outline-variant); }
-.sub-qr p { flex: 1 1 220px; margin: 0; }
-.sub-qr-url { word-break: break-all; }
 /* 追加手順の図。4 コマを 2.5 秒ずつ順に見せ、下の手順の該当行を同じ間隔で強調する */
 .demo { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px; margin-top: 12px; }
 .demo-steps { flex: 1 1 220px; margin: 0; padding-left: 1.4em; display: grid; gap: 6px; }

@@ -112,10 +112,11 @@ export function renderMailNotice(
 
 function pushSection(): string {
   return `<section class="sub-block" id="push" hidden>
-<h2>${iconSvg('notification_add')}通知で受け取る</h2>
+<h2>${iconSvg('notification_add')}PUSH通知を受け取る</h2>
 <p>新しい公演や抽選の受付情報を、この端末に通知します。</p>
 <p class="push-msg" id="push-msg" hidden></p>
 <button class="sub-btn" type="button" id="push-on" hidden>${iconSvg('notification_add')}通知を受け取る</button>
+<a class="sub-btn" href="#install" id="push-install" hidden>${iconSvg('add_to_home_screen')}ホーム画面に追加する</a>
 <button class="sub-copy push-off" type="button" id="push-off" hidden>通知を止める</button>
 </section>`
 }
@@ -125,11 +126,9 @@ export function renderSubscribePage(
   opts: { turnstileSiteKey?: string | null; mailError?: string | null; vapidPublicKey?: string | null } = {},
 ): string {
   const feedUrl = new URL('/feed.xml', canonical).toString()
-  const pageUrl = new URL('/subscribe', canonical).toString()
   const body = `${opts.vapidPublicKey ? pushSection() : ''}${opts.turnstileSiteKey ? mailSection(opts.turnstileSiteKey, opts.mailError ?? null) : ''}<section class="sub-block" id="install">
 <h2>${iconSvg('add_to_home_screen')}ホーム画面に追加</h2>
 <p>アプリのように、ホーム画面のアイコンからこのサイトを開けます。</p>
-<p class="sub-installed" hidden>このサイトはホーム画面から開いています。</p>
 <div class="os-guide" data-os="ios">
 <p class="os-label">iPhone(Safari)</p>
 ${demo('ios', IOS_FRAMES, [
@@ -150,10 +149,6 @@ ${demo('android', ANDROID_FRAMES, [
   'ホーム画面にアイコンができます。',
 ])}
 </div>
-<div class="os-guide" data-os="desktop">
-<div class="sub-qr"><img src="/img/subscribe-qr.svg" width="132" height="132" alt="このページの QR コード">
-<p>ホーム画面への追加は、スマートフォンでこのページを開くとできます。カメラでこの QR コードを読み取るか、<span class="sub-qr-url">${escapeHtml(pageUrl)}</span> を開いてください。</p></div>
-</div>
 </section>
 
 <section class="sub-block" id="rss">
@@ -166,17 +161,15 @@ ${demo('android', ANDROID_FRAMES, [
 </section>`
   const script = `<script>
 (function(){
-  // 端末を見分けて、その手順だけを出す(見分けられなければ PC 向けの案内)。スクリプトが動かなければ全部出る
+  // 端末を見分けて、その手順だけを出す。PC と、すでにホーム画面から開いているときは欄ごと出さない。
+  // スクリプトが動かなければ iPhone と Android の両方の手順が出る
   var ua = navigator.userAgent;
   var os = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ? 'ios'
     : /Android/.test(ua) ? 'android' : 'desktop';
   var root = document.getElementById('install');
   root.classList.add('os-' + os);
   var standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-  if (standalone) {
-    root.classList.add('is-standalone');
-    root.querySelector('.sub-installed').hidden = false;
-  }
+  if (standalone || os === 'desktop') root.hidden = true;
   // Android の Chrome などがインストールを申し出たときは、手順の前にボタンも出す
   var btn = document.getElementById('install-btn'), deferred = null;
   addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); deferred = e; btn.hidden = false; });

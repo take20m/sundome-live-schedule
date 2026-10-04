@@ -56,6 +56,10 @@ describe('プッシュ通知: 登録と解除', () => {
     expect(page.indexOf('<section class="sub-block" id="push" hidden>')).toBeLessThan(page.indexOf('id="install"'))
     expect(page).toContain(JSON.stringify(vapid.publicKey))
     expect(page).toContain('window.sundomePush')
+    expect(page).toContain('PUSH通知を受け取る</h2>')
+    // スマホでホーム画面から開いていなければ、先にホーム画面に追加してもらう
+    expect(page).toContain('<a class="sub-btn" href="#install" id="push-install" hidden>')
+    expect(page).toContain("if (mobile && !standalone()) return Promise.resolve('install-first');")
     const about = await (await call('/about')).text()
     expect(about).toContain('プッシュ通知で預かる情報')
   })
