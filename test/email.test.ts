@@ -245,7 +245,7 @@ describe('新着情報への案内(トーストと詳細のカード)', () => {
   })
 
   it('開催前の公演詳細には、受付の下に案内カードを置く(開催済みには置かない)', async () => {
-    expect(await (await call(`/e/ev-${future}`)).text()).toContain('<a class="sub-card" href="/subscribe#mail">')
+    expect(await (await call(`/e/ev-${future}`)).text()).toContain('<a class="sub-card" href="/subscribe">')
     expect(await (await call(`/e/ev-${past}`)).text()).not.toContain('<a class="sub-card"')
     expect(await (await SELF.fetch(`https://example.com/e/ev-${future}`)).text()).not.toContain('<a class="sub-card"')
   })
