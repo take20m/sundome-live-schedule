@@ -187,6 +187,18 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
   .sale-track li { flex-basis: 170px; }
 }
 
+/* トップのガイド: アイコン・題・ひとことのタイルを 2 列。アーティストの解説は下に 1 行の文字リンク */
+.guide-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.guide-tile { display: flex; flex-direction: column; gap: 4px; padding: 12px; border-radius: 14px; background: var(--surface-container-low); box-shadow: var(--shadow-1); color: inherit; text-decoration: none; }
+.guide-tile:hover { background: color-mix(in srgb, var(--on-surface) 6%, var(--surface-container-low)); }
+.guide-tile:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.guide-ic { display: grid; place-items: center; width: 32px; height: 32px; margin-bottom: 4px; border-radius: 50%; background: var(--secondary-container); color: var(--primary); }
+.guide-ic .ic { width: 18px; height: 18px; }
+.guide-tile b { font-size: 14px; line-height: 20px; font-weight: 700; }
+.guide-tile span:last-child { font-size: 12px; line-height: 17px; color: var(--on-surface-variant); }
+.guide-artists { margin: 12px 2px 0; font-size: 13px; color: var(--on-surface-variant); }
+.guide-artists a { color: var(--primary); }
+
 /* チップ(受付状態) */
 .chip { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 8px; font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: .5px; white-space: nowrap; border: 1px solid var(--outline); color: var(--on-surface-variant); }
 .chip-open { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }

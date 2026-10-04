@@ -42,7 +42,8 @@ app.get('/', async (c) => {
   const now = new Date()
   const events = await listEvents(c.env.DB, todayInJst(now))
   // 解説を書いたアーティストのページへ、トップから 1 回でたどれるようにする(検索エンジンの巡回の道を短く)
-  const artistDocs = artistDocNames().map((artist) => ({ artist, title: findArtistDoc(artist)?.meta.title ?? artist }))
+  // 表示名は解説の題の先頭(「藤井風 サンドーム福井公演…」→「藤井風」)。URL はデータ上の名前(Fujii Kaze)
+  const artistDocs = artistDocNames().map((artist) => ({ artist, name: (findArtistDoc(artist)?.meta.title ?? artist).split(' ')[0] }))
   return c.html(renderListPage(events, now, siteUrl(c.req.url), { promo: mailEnabled(c.env), vapid: vapidOf(c.env), artistDocs }))
 })
 

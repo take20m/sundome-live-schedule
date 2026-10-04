@@ -40,12 +40,12 @@ describe('サイト名の構造化データ', () => {
 })
 
 describe('トップからアーティストの解説へ', () => {
-  it('「ガイド」の欄に、解説を書いたアーティストのページへのリンクを並べる', async () => {
+  it('「ガイド」はアクセスとチケットの 2 枚のタイル、アーティストの解説は下に 1 行の文字リンク', async () => {
     const html = await (await SELF.fetch('https://example.com/')).text()
     const guide = html.slice(html.indexOf('<h2>ガイド</h2>'), html.indexOf('過去の公演を見る'))
-    expect(guide).toContain(`href="/a/${encodeURIComponent('あいみょん')}"`)
-    expect(guide).toContain(`href="/a/${encodeURIComponent('Fujii Kaze')}"`)
-    expect(guide).toContain('アーティストの解説')
+    expect(guide.match(/<a class="guide-tile"/g)?.length).toBe(2)
+    expect(guide).toContain(`<a href="/a/${encodeURIComponent('あいみょん')}">あいみょん</a>`)
+    expect(guide).toContain(`<a href="/a/${encodeURIComponent('Fujii Kaze')}">藤井風</a>`)
   })
 })
 
