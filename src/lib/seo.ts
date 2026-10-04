@@ -112,8 +112,24 @@ ${['/', '/past', '/about', '/subscribe', ...extraPaths].map(url).join('\n')}
 `
 }
 
+/**
+ * AI の学習データ集めのクローラーだけを断る(2026-10-04 決定)。検索・AI 検索の巡回と、人が頼んだ 1 回きりの取得
+ * (OAI-SearchBot・ChatGPT-User・Claude-SearchBot・Claude-User・PerplexityBot・Googlebot・Applebot など)は
+ * 名前を挙げずに * の規則で通す。Google-Extended と Applebot-Extended は学習への利用だけを断る名前で、検索には影響しない
+ */
+export const AI_TRAINING_BOTS = [
+  'GPTBot',
+  'ClaudeBot',
+  'Google-Extended',
+  'Applebot-Extended',
+  'CCBot',
+  'meta-externalagent',
+  'Bytespider',
+]
+
 export function buildRobots(siteUrl: string): string {
-  return `User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${new URL('/sitemap.xml', siteUrl).toString()}\n`
+  const training = AI_TRAINING_BOTS.map((ua) => `User-agent: ${ua}`).join('\n')
+  return `User-agent: *\nAllow: /\nDisallow: /api/\n\n# No AI training crawls. Search and user-requested fetches are welcome.\n${training}\nDisallow: /\n\nSitemap: ${new URL('/sitemap.xml', siteUrl).toString()}\n`
 }
 
 /** 既定の OG 画像(会場写真 1200×628)。ページ固有の画像が無いときに使う */

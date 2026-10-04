@@ -241,7 +241,14 @@ describe('SEO', () => {
     expect(xml).toMatch(/\/e\/ev-\d{4}-\d{2}-\d{2}<\/loc>/)
     const robots = await SELF.fetch('https://example.com/robots.txt')
     expect(robots.status).toBe(200)
-    expect(await robots.text()).toContain('Sitemap: https://example.com/sitemap.xml')
+    const txt = await robots.text()
+    expect(txt).toContain('Sitemap: https://example.com/sitemap.xml')
+    expect(txt).toContain('User-agent: *\nAllow: /\nDisallow: /api/')
+    // AI の学習用クローラーだけ断る。検索・AI 検索・利用者の依頼による取得は名前を挙げない(* で通る)
+    expect(txt).toMatch(/User-agent: GPTBot\nUser-agent: ClaudeBot\n[\s\S]*User-agent: Bytespider\nDisallow: \//)
+    for (const allowed of ['Googlebot', 'OAI-SearchBot', 'ChatGPT-User', 'Claude-User', 'Claude-SearchBot', 'PerplexityBot']) {
+      expect(txt, allowed).not.toContain(`User-agent: ${allowed}\n`)
+    }
   })
 
   it('HTML は Cache-Control: no-cache で、アイコンは従来どおり長めにキャッシュ', async () => {
