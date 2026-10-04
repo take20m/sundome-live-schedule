@@ -113,16 +113,18 @@ a { color: var(--primary); }
 .iconbtn.sub-ic { position: relative; width: 40px; height: 40px; margin: 4px; border-radius: 20px; background: var(--brand-yellow); color: #0B3D91; }
 .iconbtn.sub-ic:hover { background: color-mix(in srgb, #0B3D91 10%, var(--brand-yellow)); }
 .sub-dot { position: absolute; top: -2px; right: -2px; width: 11px; height: 11px; border-radius: 50%; background: var(--tile-today); box-shadow: 0 0 0 2px var(--surface-container-low); }
-/* 開くまで揺れ続ける: ベルは頭を支点に小刻みに左右へ、黄色の丸は少し膨らんで戻り、赤い点からは波紋が広がる。
+/* 開くまで 3 秒ごとに揺れる: 最初の 1 秒でベルが頭を支点に大きく揺れてだんだん収まり、赤い点から波紋が一つ広がる。残り 2 秒は止まる。
    動きを減らす設定では動かさず、赤い点だけ出す */
 @media (prefers-reduced-motion: no-preference) {
-  .sub-ic.ringing { animation: bell-pulse 1s ease-in-out infinite; }
-  .sub-ic.ringing .ic { transform-origin: 50% 12%; animation: bell-ring .5s ease-in-out infinite; }
-  .sub-ic.ringing .sub-dot::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--tile-today); animation: dot-ripple 1s ease-out infinite; }
+  .sub-ic.ringing .ic { transform-origin: 50% 12%; animation: bell-ring 3s ease-in-out infinite; }
+  .sub-ic.ringing .sub-dot::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--tile-today); opacity: 0; animation: dot-ripple 3s ease-out infinite; }
 }
-@keyframes bell-ring { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(10deg); } 75% { transform: rotate(-10deg); } }
-@keyframes bell-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
-@keyframes dot-ripple { from { transform: scale(1); opacity: .6; } to { transform: scale(2.8); opacity: 0; } }
+@keyframes bell-ring {
+  0%, 33%, 100% { transform: rotate(0); }
+  3% { transform: rotate(18deg); } 8% { transform: rotate(-16deg); } 13% { transform: rotate(12deg); }
+  18% { transform: rotate(-8deg); } 23% { transform: rotate(4deg); } 28% { transform: rotate(-2deg); }
+}
+@keyframes dot-ripple { 0% { transform: scale(1); opacity: .6; } 33%, 100% { transform: scale(2.8); opacity: 0; } }
 
 main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 /* 会場写真のバナー(PC 21:9 / スマホ 16:9)。写真は CC BY-SA、クレジットは about ページ(CC BY-SA 4.0 §3(a)(2) によりリンク先での表記で足りる) */
