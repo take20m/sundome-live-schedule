@@ -17,6 +17,10 @@ describe('新着情報を受け取る', () => {
       // フッターには置かない(入口はヘッダーのベルとトースト)
       expect(html, path).toContain('<footer class="site-f">\n<a href="/about">このサイトについて</a>')
     }
+    // ベルは開いて少ししたら一度だけ揺れる(登録済みと /subscribe では揺らさない)
+    const top0 = await (await SELF.fetch('https://example.com/')).text()
+    expect(top0).toContain("setTimeout(function(){ bell.classList.add('ring'); }, 1500);")
+    expect(top0).toContain('@keyframes bell-ring')
     // RSS リーダー向けの自動検出は残す
     const top = await (await SELF.fetch('https://example.com/')).text()
     expect(top).toContain('<link rel="alternate" type="application/rss+xml" title="更新情報" href="/feed.xml">')

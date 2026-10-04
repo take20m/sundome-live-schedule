@@ -23,6 +23,11 @@ export const SITE_HEADER = `<header class="appbar">
     if (d > 0) { up = 0; h.classList.add('is-hidden'); }
     else { up -= d; if (up >= SHOW_AFTER) h.classList.remove('is-hidden'); }
   }, { passive: true });
+  // 「新着情報を受け取る」のベルを、開いて 1.5 秒後に一度だけ揺らす。登録済み(トーストと同じ記録)と /subscribe では揺らさない
+  var bell = h.querySelector('.sub-ic');
+  if (!bell || location.pathname.indexOf('/subscribe') === 0) return;
+  try { if (JSON.parse(localStorage.getItem('sundome.promo') || '{}').subscribed) return; } catch (e) {}
+  setTimeout(function(){ bell.classList.add('ring'); }, 1500);
 })();
 </script>`
 
@@ -94,6 +99,15 @@ a { color: var(--primary); }
 .iconbtn:hover { background: color-mix(in srgb, var(--on-surface-variant) 8%, transparent); }
 /* 「新着情報を受け取る」の入口はベル＋プラスを紺で(押せるものだと分かるように、飾りのグレーにしない) */
 .iconbtn.sub-ic { color: var(--primary); }
+/* 開いて少ししたら一度だけ揺れる(頭を支点に左右へ)。動きを減らす設定では揺らさない */
+@media (prefers-reduced-motion: no-preference) {
+  .sub-ic.ring .ic { transform-origin: 50% 12%; animation: bell-ring 1.1s ease-in-out; }
+}
+@keyframes bell-ring {
+  0%, 100% { transform: rotate(0); }
+  10% { transform: rotate(18deg); } 25% { transform: rotate(-16deg); } 40% { transform: rotate(12deg); }
+  55% { transform: rotate(-8deg); } 70% { transform: rotate(4deg); } 85% { transform: rotate(-2deg); }
+}
 
 main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 /* 会場写真のバナー(PC 21:9 / スマホ 16:9)。写真は CC BY-SA、クレジットは about ページ(CC BY-SA 4.0 §3(a)(2) によりリンク先での表記で足りる) */
