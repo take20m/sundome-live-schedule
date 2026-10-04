@@ -23,7 +23,7 @@ export const SITE_HEADER = `<header class="appbar">
     if (d > 0) { up = 0; h.classList.add('is-hidden'); }
     else { up -= d; if (up >= SHOW_AFTER) h.classList.remove('is-hidden'); }
   }, { passive: true });
-  // 「新着情報を受け取る」のベル: 開いて 1.5 秒後に揺らし、揺れ終わったら右上に赤い点を出し、以後 20 秒おきに揺らす。
+  // 「新着情報を受け取る」のベル: 開いて 1.5 秒後に揺らし、揺れ終わったら右上に赤い点を出し、以後 10 秒おきに揺らす。
   // /subscribe を一度開くか登録したら(トーストと同じ localStorage の記録)、点も揺れもやめる
   var bell = h.querySelector('.sub-ic');
   if (!bell) return;
@@ -44,7 +44,7 @@ export const SITE_HEADER = `<header class="appbar">
   setTimeout(function(){
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) { dot.hidden = false; return; }
     ring();
-    setInterval(ring, 20000);
+    setInterval(ring, 10000);
   }, 1500);
 })();
 </script>`
