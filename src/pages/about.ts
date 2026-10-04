@@ -16,7 +16,16 @@ const MAIL_PRIVACY = `<h3>メール購読で預かる情報</h3>
 <li>開示・訂正・削除のご依頼は、下の連絡先までお知らせください</li>
 </ul>`
 
-export function renderAboutPage(canonical: string, opts: { mail?: boolean } = {}): string {
+/** プッシュ通知(docs/web-push.md)を受け付けているときだけ出す、端末の宛先の扱い */
+const PUSH_PRIVACY = `<h3>プッシュ通知で預かる情報</h3>
+<ul>
+<li>預かるもの: 通知を受け取ると決めた端末の宛先(ブラウザのプッシュサービスが発行する URL と暗号鍵)だけです。名前やメールアドレスは含みません</li>
+<li>使う目的: 新しい公演や抽選の受付情報の通知を送るためだけに使います</li>
+<li>送る経路: 通知は、端末のブラウザを提供する事業者のプッシュサービス(Apple、Google、Mozilla など。米国の事業者を含みます)を経由して届きます。通知の中身は暗号化して送るため、プッシュサービスは中身を読めません</li>
+<li>保管と削除: 「通知を止める」を押したとき、または端末側で通知を止めて届かなくなったときに削除します</li>
+</ul>`
+
+export function renderAboutPage(canonical: string, opts: { mail?: boolean; push?: boolean } = {}): string {
   const body = `<h2>このサイトについて</h2>
 <p>「サンドーム福井ライブ情報」は、<a href="https://sundome.sankan.jp/" rel="noopener" target="_blank">サンドーム福井</a>(福井県越前市)で開催されるライブ・コンサートの開催予定と、チケットの先行・抽選・一般発売の受付期間をまとめている非公式の個人運営サイトです。会場・アーティスト・チケット販売各社とは関係ありません。</p>
 <p>サンドーム福井ではよくライブが開かれますが、今日は誰のライブなのか分からなかったり、抽選の受付期間に気づけていたら行きたかったのにと思ったりしたことが何度かありました。それがこのサイトを作ったきっかけです。会場公式・アーティスト公式・ファンクラブ・プレイガイドに散らばる情報を毎日集めて1ページにまとめ、そこに運営者が調べたガイドを足しています。</p>
@@ -24,13 +33,18 @@ export function renderAboutPage(canonical: string, opts: { mail?: boolean } = {}
 
 <h2 id="privacy">プライバシーポリシー</h2>
 <ul>
-<li>${opts.mail ? '本サイトの閲覧に会員登録は要りません。Cookieも使用していません。個人情報を預かるのは、メール購読に登録したときのメールアドレスだけです(下記)' : '本サイトは会員登録を必要とせず、個人情報を収集しません。Cookieも使用していません'}</li>
+<li>${
+  opts.mail || opts.push
+    ? `本サイトの閲覧に会員登録は要りません。Cookieも使用していません。お預かりするのは、${[opts.mail ? 'メール購読に登録したときのメールアドレス' : '', opts.push ? 'プッシュ通知を受け取ると決めた端末の宛先' : ''].filter(Boolean).join('と、')}だけです(下記)`
+    : '本サイトは会員登録を必要とせず、個人情報を収集しません。Cookieも使用していません'
+}</li>
 <li>配信インフラ(Cloudflare)がサービス提供・セキュリティのためにアクセスログを処理することがあります</li>
 <li>会場ガイドの地図は、OpenStreetMapの地図タイルを読み込んで表示しています。地図ライブラリのLeafletはcdnjsから読み込んでいます。Cookieは使用しません</li>
 <li>表示用フォント(Roboto、Noto Sans JP、Noto Serif JP)はGoogle Fontsから読み込んでいます。このとき、ブラウザからGoogleのサーバーへ、IPアドレスなどを含むリクエストが送られます。Google Fontsはこの配信でCookieを使用しません</li>
 <li>今後、アクセス解析や第三者配信の広告を導入する場合は、本ページで利用サービスとCookieの取り扱いを告知します</li>
 </ul>
 ${opts.mail ? MAIL_PRIVACY : ''}
+${opts.push ? PUSH_PRIVACY : ''}
 
 <h2>掲載画像について</h2>
 <ul>

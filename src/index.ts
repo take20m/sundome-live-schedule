@@ -14,6 +14,8 @@ import { renderAboutPage } from './pages/about'
 import { renderSubscribePage } from './pages/subscribe'
 import { handleConfirm, handleSent, handleStop, handleStopPage, handleSubscribe, mailEnabled } from './api/subscribe'
 import { runDigest } from './lib/digest'
+import { pushEnabled, sendPushToAll } from './lib/push'
+import { handlePushSubscribe, handlePushUnsubscribe } from './api/push'
 import { renderDetailPage } from './pages/detail'
 import { renderListPage } from './pages/list'
 import { renderPastPage } from './pages/past'
@@ -33,11 +35,13 @@ app.use('*', async (c, next) => {
 })
 
 const siteUrl = (reqUrl: string, path = '/') => new URL(path, reqUrl).toString()
+/** プッシュ通知の公開鍵(鍵がそろっているときだけ。docs/web-push.md) */
+const vapidOf = (env: Bindings) => (pushEnabled(env) ? env.VAPID_PUBLIC_KEY! : null)
 
 app.get('/', async (c) => {
   const now = new Date()
   const events = await listEvents(c.env.DB, todayInJst(now))
-  return c.html(renderListPage(events, now, siteUrl(c.req.url), { promo: mailEnabled(c.env) }))
+  return c.html(renderListPage(events, now, siteUrl(c.req.url), { promo: mailEnabled(c.env), vapid: vapidOf(c.env) }))
 })
 
 app.get('/e/:id', async (c) => {
@@ -46,7 +50,9 @@ app.get('/e/:id', async (c) => {
   const run = await getEventRun(c.env.DB, id)
   if (!run) return c.notFound()
   // 連日は 2 日目以降も 200 で残しつつ、canonical は初日に寄せる(内容が同じ URL が並ぶため)
-  return c.html(renderDetailPage(run, new Date(), siteUrl(c.req.url, `/e/${run.group.first.id}`), { promo: mailEnabled(c.env) }))
+  return c.html(
+    renderDetailPage(run, new Date(), siteUrl(c.req.url, `/e/${run.group.first.id}`), { promo: mailEnabled(c.env), vapid: vapidOf(c.env) }),
+  )
 })
 
 app.get('/past', async (c) => {
@@ -72,16 +78,28 @@ app.get('/guide/:slug', (c) => {
   return c.html(renderGuidePage(doc, siteUrl(c.req.url, `/guide/${slug}`)))
 })
 
-app.get('/about', (c) => c.html(renderAboutPage(siteUrl(c.req.url, '/about'), { mail: mailEnabled(c.env) })))
+app.get('/about', (c) => c.html(renderAboutPage(siteUrl(c.req.url, '/about'), { mail: mailEnabled(c.env), push: pushEnabled(c.env) })))
 app.get('/subscribe', (c) =>
   c.html(
     renderSubscribePage(siteUrl(c.req.url, '/subscribe'), {
       turnstileSiteKey: mailEnabled(c.env) ? c.env.TURNSTILE_SITE_KEY : null,
       mailError: c.req.query('e') ?? null,
+      vapidPublicKey: vapidOf(c.env),
     }),
   ),
 )
 app.post('/api/subscribe', handleSubscribe)
+app.post('/api/push/subscribe', handlePushSubscribe)
+app.post('/api/push/unsubscribe', handlePushUnsubscribe)
+// 登録済みの端末にテスト通知を送る(運用用: 通知が届くかの確認)。収集と同じトークンが要る
+app.post('/api/push/test', async (c) => {
+  if (!c.env.INGEST_TOKEN || c.req.header('authorization') !== `Bearer ${c.env.INGEST_TOKEN}`) {
+    return c.json({ error: 'unauthorized' }, 401)
+  }
+  return c.json(
+    await sendPushToAll(c.env, { title: 'サンドーム福井ライブ情報', body: 'テスト通知です。届いていれば設定は完了しています。', url: siteUrl(c.req.url, '/subscribe') }),
+  )
+})
 // まとめメールを今すぐ送る(運用用: 送り損ねた日のやり直しや、公開時の確認)。収集と同じトークンが要る
 app.post('/api/digest', async (c) => {
   if (!c.env.INGEST_TOKEN || c.req.header('authorization') !== `Bearer ${c.env.INGEST_TOKEN}`) {

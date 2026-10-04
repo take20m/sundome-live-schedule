@@ -2,6 +2,8 @@
 name = "sundome-reminder"
 main = "src/index.ts"
 compatibility_date = "2026-07-01"
+# プッシュ通知(docs/web-push.md)で web-push が node:crypto を使う
+compatibility_flags = ["nodejs_compat"]
 
 routes = [
   { pattern = "sundome.take20m.dev", custom_domain = true }
@@ -28,6 +30,8 @@ directory = "./public"
 # メール購読のフォームの Turnstile サイトキー(公開値)。RESEND_API_KEY と TURNSTILE_SECRET は secret
 [vars]
 TURNSTILE_SITE_KEY = "0x4AAAAAAFM10veDlSgFw8cS"
+# プッシュ通知(docs/web-push.md)の VAPID 公開鍵。秘密鍵 VAPID_PRIVATE_KEY は secret
+VAPID_PUBLIC_KEY = "BN_5qvc2ARYVNkKX87sMuDfO30dYVt8M6ADcx1w4v1wNMxt-b1CvPQiG3xr68-5afe3PhdRDWIJTGDeMp27dfCw"
 
 # 新着まとめメール(docs/email-digest.md)。毎日 12:00 JST(UTC 03:00)。
 # RESEND_API_KEY が無いあいだは何もしない

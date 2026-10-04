@@ -13,6 +13,7 @@ import { safeBg, safeFit, safeFocus, safeZoom } from '../lib/focus'
 import { isPurchasePage } from '../lib/ticket-url'
 import type { LotteryRow } from '../types'
 import { promoCard, promoToast } from './promo'
+import { pushClientScript } from './pushClient'
 import { SITE_CSS, SITE_FOOTER, SITE_HEADER } from './style'
 
 const WEEKDAYS_JA = ['日', '月', '火', '水', '木', '金', '土']
@@ -564,7 +565,7 @@ export function renderListPage(
   events: EventWithLotteries[],
   now: Date,
   canonical: string,
-  opts: { promo?: boolean } = {},
+  opts: { promo?: boolean; vapid?: string | null } = {},
 ): string {
   const body =
     events.length > 0
@@ -605,7 +606,8 @@ ${body}
 ${SITE_FOOTER}
 ${COUNTDOWN_SCRIPT}
 ${SALE_SCRIPT}
-${opts.promo ? promoToast() : ''}
+${opts.promo && opts.vapid ? pushClientScript(opts.vapid) : ''}
+${opts.promo ? promoToast(opts.vapid ?? null) : ''}
 </body>
 </html>`
 }

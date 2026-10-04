@@ -6,6 +6,9 @@ export type Bindings = {
   TURNSTILE_SECRET?: string
   /** Turnstile のサイトキー(公開値なので wrangler.toml の vars) */
   TURNSTILE_SITE_KEY?: string
+  /** プッシュ通知(docs/web-push.md)の VAPID 鍵。公開鍵は vars、秘密鍵は secret。どちらか無ければ通知は出さない */
+  VAPID_PUBLIC_KEY?: string
+  VAPID_PRIVATE_KEY?: string
 }
 
 export type Confidence = 'official' | 'inferred'

@@ -2,6 +2,7 @@ import { escapeHtml } from '../lib/html'
 import { iconSvg, LOGO_SVG } from '../lib/icon'
 import { buildHeadMeta } from '../lib/seo'
 import { renderArticle } from './article'
+import { PUSH_SECTION_SCRIPT, pushClientScript } from './pushClient'
 
 /**
  * 「新着情報を受け取る」ページ。ヘッダーのベルから来る。RSS の XML を直接開くとファイルが保存されて
@@ -109,13 +110,23 @@ export function renderMailNotice(
   })
 }
 
+function pushSection(): string {
+  return `<section class="sub-block" id="push" hidden>
+<h2>${iconSvg('notification_add')}通知で受け取る</h2>
+<p>新しい公演や抽選の受付情報を、この端末に通知します。</p>
+<p class="push-msg" id="push-msg" hidden></p>
+<button class="sub-btn" type="button" id="push-on" hidden>${iconSvg('notification_add')}通知を受け取る</button>
+<button class="sub-copy push-off" type="button" id="push-off" hidden>通知を止める</button>
+</section>`
+}
+
 export function renderSubscribePage(
   canonical: string,
-  opts: { turnstileSiteKey?: string | null; mailError?: string | null } = {},
+  opts: { turnstileSiteKey?: string | null; mailError?: string | null; vapidPublicKey?: string | null } = {},
 ): string {
   const feedUrl = new URL('/feed.xml', canonical).toString()
   const pageUrl = new URL('/subscribe', canonical).toString()
-  const body = `${opts.turnstileSiteKey ? mailSection(opts.turnstileSiteKey, opts.mailError ?? null) : ''}<section class="sub-block" id="install">
+  const body = `${opts.vapidPublicKey ? pushSection() : ''}${opts.turnstileSiteKey ? mailSection(opts.turnstileSiteKey, opts.mailError ?? null) : ''}<section class="sub-block" id="install">
 <h2>${iconSvg('add_to_home_screen')}ホーム画面に追加</h2>
 <p>アプリのように、ホーム画面のアイコンからこのサイトを開けます。</p>
 <p class="sub-installed" hidden>このサイトはホーム画面から開いています。</p>
@@ -199,6 +210,6 @@ ${demo('android', ANDROID_FRAMES, [
     extraHead: opts.turnstileSiteKey
       ? '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>'
       : undefined,
-    extraScripts: script,
+    extraScripts: opts.vapidPublicKey ? `${script}${pushClientScript(opts.vapidPublicKey)}${PUSH_SECTION_SCRIPT}` : script,
   })
 }

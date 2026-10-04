@@ -4,6 +4,8 @@ import { listNewChangesSince } from './db'
 import { escapeHtml } from './html'
 import type { Mail } from './mail'
 import { MAIL_REPLY_TO, sendBatch } from './mail'
+import type { PushPayload, PushResult } from './push'
+import { countPushSubscriptions, pushEnabled, sendPushToAll } from './push'
 import { listActive, purgeStalePending } from './subscribers'
 
 /**
@@ -32,10 +34,20 @@ export function toItem(c: ChangeRow, siteUrl: string): DigestItem | null {
   return null
 }
 
-export function buildDigestMail(items: DigestItem[], to: string, unsubscribeUrl: string, siteUrl: string): Mail {
+/** 「新着: Vaundy の抽選受付の情報が出ました ほか1件」(メールの件名と通知の本文) */
+export function digestHeadline(items: DigestItem[]): string {
   const first = items[0]
   const headline = `${first.artist} の${first.kind === 'event' ? '公演が決まりました' : '抽選受付の情報が出ました'}`
-  const subject = `新着: ${headline}${items.length > 1 ? ` ほか${items.length - 1}件` : ''}`
+  return `新着: ${headline}${items.length > 1 ? ` ほか${items.length - 1}件` : ''}`
+}
+
+/** 通知を押したら、新着が 1 件ならその公演ページ、複数ならトップを開く */
+export function digestPush(items: DigestItem[], siteUrl: string): PushPayload {
+  return { title: 'サンドーム福井ライブ情報', body: digestHeadline(items), url: items.length === 1 ? items[0].url : siteUrl }
+}
+
+export function buildDigestMail(items: DigestItem[], to: string, unsubscribeUrl: string, siteUrl: string): Mail {
+  const subject = digestHeadline(items)
   const events = items.filter((i) => i.kind === 'event')
   const lotteries = items.filter((i) => i.kind === 'lottery')
   const sections = [
@@ -88,16 +100,20 @@ export type DigestResult =
   | { status: 'no-news' }
   | { status: 'no-subscribers' }
   | { status: 'over-limit'; subscribers: number }
-  | { status: 'sent'; subscribers: number; items: number; lastChangeId: number }
+  | { status: 'sent'; subscribers: number; items: number; lastChangeId: number; push: PushResult | null }
 
-export async function runDigest(
-  env: { DB: D1Database; RESEND_API_KEY?: string },
-  siteUrl: string,
-  now: Date,
-): Promise<DigestResult | { status: 'disabled' }> {
-  if (!env.RESEND_API_KEY) return { status: 'disabled' }
+type DigestEnv = { DB: D1Database; RESEND_API_KEY?: string; VAPID_PUBLIC_KEY?: string; VAPID_PRIVATE_KEY?: string }
+
+/**
+ * 前回より後の新着を 1 回だけ集め、メール(購読者ごとに 1 通)と通知(登録端末ごとに 1 通)の両方に送ってから位置を進める。
+ * メールと通知はどちらか片方だけ動いていてもよい
+ */
+export async function runDigest(env: DigestEnv, siteUrl: string, now: Date): Promise<DigestResult | { status: 'disabled' }> {
+  const mailOn = Boolean(env.RESEND_API_KEY)
+  const pushOn = pushEnabled(env)
+  if (!mailOn && !pushOn) return { status: 'disabled' }
   const db = env.DB
-  await purgeStalePending(db, now)
+  if (mailOn) await purgeStalePending(db, now)
   const state = await db.prepare('SELECT last_change_id FROM digest_state WHERE id = 1').first<{ last_change_id: number }>()
   if (!state) {
     // 初回は今までの変更を全部送らないよう、今の最後の id から始める
@@ -120,22 +136,26 @@ export async function runDigest(
     await advance()
     return { status: 'no-news' }
   }
-  const subscribers = await listActive(db)
-  if (subscribers.length === 0) {
-    await advance()
-    return { status: 'no-subscribers' }
-  }
+  const subscribers = mailOn ? await listActive(db) : []
   if (subscribers.length > DAILY_SEND_LIMIT) {
     console.error(`digest: ${subscribers.length} subscribers exceeds the daily limit ${DAILY_SEND_LIMIT}; not sent`)
     return { status: 'over-limit', subscribers: subscribers.length }
   }
-  const day = new Date(now.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
-  const mails = subscribers.map((s) =>
-    buildDigestMail(items, s.email, new URL(`/subscribe/stop?t=${s.unsubscribe_token}`, siteUrl).toString(), siteUrl),
-  )
-  for (let i = 0; i < mails.length; i += 100) {
-    await sendBatch(env.RESEND_API_KEY, mails.slice(i, i + 100), `digest-${day}-${maxId}-${i / 100}`)
+  const devices = pushOn ? await countPushSubscriptions(db) : 0
+  if (subscribers.length === 0 && devices === 0) {
+    await advance()
+    return { status: 'no-subscribers' }
   }
+  if (subscribers.length > 0) {
+    const day = new Date(now.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
+    const mails = subscribers.map((s) =>
+      buildDigestMail(items, s.email, new URL(`/subscribe/stop?t=${s.unsubscribe_token}`, siteUrl).toString(), siteUrl),
+    )
+    for (let i = 0; i < mails.length; i += 100) {
+      await sendBatch(env.RESEND_API_KEY!, mails.slice(i, i + 100), `digest-${day}-${maxId}-${i / 100}`)
+    }
+  }
+  const push = devices > 0 ? await sendPushToAll(env, digestPush(items, siteUrl)) : null
   await advance()
-  return { status: 'sent', subscribers: subscribers.length, items: items.length, lastChangeId: maxId }
+  return { status: 'sent', subscribers: subscribers.length, items: items.length, lastChangeId: maxId, push }
 }
