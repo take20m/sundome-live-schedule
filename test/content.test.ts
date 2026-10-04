@@ -55,6 +55,15 @@ describe('アーティストページとガイド', () => {
     expect(html).toContain(`<link rel="canonical" href="https://example.com/a/${encodeURIComponent('あいみょん')}">`)
   })
 
+  it('今後の公演がないアーティストは、過去でいちばん新しい公演の画像を上に出す', async () => {
+    const ins = env.DB.prepare(`INSERT INTO events (id, title, artist, date, image_url, confidence, updated_at) VALUES (?, ?, 'Fujii Kaze', ?, ?, 'official', ?)`)
+    await ins.bind('ev-2023-01-28', 'OLD TOUR', '2023-01-28', 'https://cdn.example.com/old.jpg', now.toISOString()).run()
+    await ins.bind('ev-2025-08-04', 'NEW TOUR', '2025-08-04', 'https://cdn.example.com/new.jpg', now.toISOString()).run()
+    const html = await (await SELF.fetch(`https://example.com/a/${encodeURIComponent('Fujii Kaze')}`)).text()
+    expect(html).toContain('<figure class="hero"><img src="https://cdn.example.com/new.jpg"')
+    expect(html).toContain('<meta property="og:image" content="https://cdn.example.com/new.jpg">')
+  })
+
   it('解説なしでも公演があればページになるが、検索には載せない(noindex)', async () => {
     const ok = await SELF.fetch(`https://example.com/a/${encodeURIComponent('解説なし')}`)
     expect(ok.status).toBe(200)

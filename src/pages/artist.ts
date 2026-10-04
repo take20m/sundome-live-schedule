@@ -26,7 +26,9 @@ export function renderArtistPage(
   const description =
     doc?.meta.description ??
     `${displayName}のサンドーム福井(福井県越前市)公演の予定と、チケット先行・抽選の受付期間。過去の公演記録も掲載。`
-  const image = upcoming.find((e) => e.image_url)?.image_url ?? events.find((e) => e.image_url)?.image_url ?? null
+  // いちばん上の画像(と共有用の og:image): これからの公演の画像。無ければ過去の公演のうちいちばん新しい公演の画像
+  // (古い順で探すと、解説が直近のツアーの話なのに数年前のツアーの画像が出ていた)
+  const image = upcoming.find((e) => e.image_url)?.image_url ?? past.find((e) => e.image_url)?.image_url ?? null
   const hero = image
     ? `<figure class="hero"><img src="${escapeHtml(image)}" alt="${escapeHtml(displayName)}" loading="eager" decoding="async" onerror="this.closest('.hero').remove()"><figcaption>ツアービジュアル(アーティスト公式サイトより)</figcaption></figure>`
     : ''
