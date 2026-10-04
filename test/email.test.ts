@@ -83,7 +83,7 @@ describe('メール購読: 登録・確認・停止', () => {
     const okHtml = await ok.text()
     expect(okHtml).toContain('登録が完了しました')
     // このブラウザでは以後、新着情報のトーストを出さない
-    expect(okHtml).toContain("localStorage.setItem('sundome.promo', JSON.stringify({ subscribed: true }))")
+    expect(okHtml).toContain("s.subscribed = true; localStorage.setItem('sundome.promo', JSON.stringify(s));")
     expect(await statusOf('fan@example.com')).toEqual({ status: 'active' })
     // 同じリンクは二度使えない
     expect((await call('/subscribe/confirm?t=' + token)).status).toBe(400)

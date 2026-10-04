@@ -8,7 +8,7 @@ import { LOGO_SVG, iconSvg } from '../lib/icon'
 export const SITE_HEADER = `<header class="appbar">
 <a class="brand" href="/">${LOGO_SVG}<h1><span>サンドーム福井</span> <span>ライブ情報</span></h1></a>
 <span class="spacer"></span>
-<a class="iconbtn sub-ic" href="/subscribe" aria-label="新着情報を受け取る" title="新着情報を受け取る">${iconSvg('notification_add')}</a>
+<a class="iconbtn sub-ic" href="/subscribe" aria-label="新着情報を受け取る" title="新着情報を受け取る">${iconSvg('notification_add')}<span class="sub-dot" hidden></span></a>
 </header>
 <script>
 // 下へスクロールしたらヘッダーを隠し、上へ一定量(48px)戻したら出す。ページ先頭付近では常に出す
@@ -23,11 +23,29 @@ export const SITE_HEADER = `<header class="appbar">
     if (d > 0) { up = 0; h.classList.add('is-hidden'); }
     else { up -= d; if (up >= SHOW_AFTER) h.classList.remove('is-hidden'); }
   }, { passive: true });
-  // 「新着情報を受け取る」のベルを、開いて 1.5 秒後に一度だけ揺らす。登録済み(トーストと同じ記録)と /subscribe では揺らさない
+  // 「新着情報を受け取る」のベル: 開いて 1.5 秒後に揺らし、揺れ終わったら右上に赤い点を出し、以後 20 秒おきに揺らす。
+  // /subscribe を一度開くか登録したら(トーストと同じ localStorage の記録)、点も揺れもやめる
   var bell = h.querySelector('.sub-ic');
-  if (!bell || location.pathname.indexOf('/subscribe') === 0) return;
-  try { if (JSON.parse(localStorage.getItem('sundome.promo') || '{}').subscribed) return; } catch (e) {}
-  setTimeout(function(){ bell.classList.add('ring'); }, 1500);
+  if (!bell) return;
+  var KEY = 'sundome.promo', st = {};
+  try { st = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
+  if (location.pathname.indexOf('/subscribe') === 0) {
+    st.seen = true;
+    try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {}
+    return;
+  }
+  if (st.subscribed || st.seen) return;
+  var dot = bell.querySelector('.sub-dot');
+  function ring(){
+    if (document.hidden) return;
+    bell.classList.remove('ring'); void bell.offsetWidth; bell.classList.add('ring');
+  }
+  bell.addEventListener('animationend', function(){ dot.hidden = false; });
+  setTimeout(function(){
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { dot.hidden = false; return; }
+    ring();
+    setInterval(ring, 20000);
+  }, 1500);
 })();
 </script>`
 
@@ -97,8 +115,11 @@ a { color: var(--primary); }
 .iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 24px; color: var(--on-surface-variant); text-decoration: none; }
 .iconbtn .ic { width: 24px; height: 24px; }
 .iconbtn:hover { background: color-mix(in srgb, var(--on-surface-variant) 8%, transparent); }
-/* 「新着情報を受け取る」の入口はベル＋プラスを紺で(押せるものだと分かるように、飾りのグレーにしない) */
-.iconbtn.sub-ic { color: var(--primary); }
+/* 「新着情報を受け取る」の入口: 黄色の丸に紺のベル(ロゴの太陽とヘッダー下の黄色い線にそろえる)。
+   黄色の上なのでダークでも紺のまま。登録するまで右上に赤い点 */
+.iconbtn.sub-ic { position: relative; width: 40px; height: 40px; margin: 4px; border-radius: 20px; background: var(--brand-yellow); color: #0B3D91; }
+.iconbtn.sub-ic:hover { background: color-mix(in srgb, #0B3D91 10%, var(--brand-yellow)); }
+.sub-dot { position: absolute; top: -2px; right: -2px; width: 11px; height: 11px; border-radius: 50%; background: var(--tile-today); box-shadow: 0 0 0 2px var(--surface-container-low); }
 /* 開いて少ししたら一度だけ揺れる(頭を支点に左右へ)。動きを減らす設定では揺らさない */
 @media (prefers-reduced-motion: no-preference) {
   .sub-ic.ring .ic { transform-origin: 50% 12%; animation: bell-ring 1.1s ease-in-out; }

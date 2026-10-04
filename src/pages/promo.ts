@@ -32,7 +32,7 @@ export function promoToast(vapidPublicKey: string | null = null): string {
 (function(){
   var KEY = '${STORE}', HIDE = ${PROMO_HIDE_DAYS} * 864e5;
   function read(){ try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
-  function write(v){ try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (e) {} }
+  function write(v){ try { var cur = read(); for (var k in v) cur[k] = v[k]; localStorage.setItem(KEY, JSON.stringify(cur)); } catch (e) {} }
   var s = read();
   if (s.subscribed || (s.hiddenAt && Date.now() - s.hiddenAt < HIDE)) return;
   var el = document.getElementById('sub-toast');
@@ -67,7 +67,7 @@ export function promoToast(vapidPublicKey: string | null = null): string {
 }
 
 /** 登録完了のページに置く。このブラウザでは以後トーストを出さない */
-export const PROMO_MARK_SUBSCRIBED = `<script>try { localStorage.setItem('${STORE}', JSON.stringify({ subscribed: true })); } catch (e) {}</script>`
+export const PROMO_MARK_SUBSCRIBED = `<script>try { var s = JSON.parse(localStorage.getItem('${STORE}') || '{}'); s.subscribed = true; localStorage.setItem('${STORE}', JSON.stringify(s)); } catch (e) {}</script>`
 
 export function promoCard(): string {
   return `<a class="sub-card" href="/subscribe#mail">${iconSvg('notification_add')}<span>${PROMO_COPY.cardTitle}</span>${iconSvg('chevron_right')}</a>`
