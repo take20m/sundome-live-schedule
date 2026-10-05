@@ -78,7 +78,8 @@ export const SITE_HEADER = `<header class="appbar">
     if (raf && Math.abs(window.scrollY - pos) > 2) { cancelAnimationFrame(raf); raf = 0; }
   }, { passive: true });
 })();
-// ページ間のアニメーション(View Transition): 一覧の公演カードのサムネと、詳細ページの画像の帯をつなぐ(ほかはフェード)。
+// ページ間のアニメーション(View Transition): 一覧から詳細へ行くとき、公演カードのサムネと詳細ページの画像の帯をつなぐ(ほかはフェード)。
+// 詳細から一覧へ戻るときはフェードだけ(戻った一覧のどこかへ画像が飛んでいくと驚くため)。
 // 名前は遷移の直前だけ付ける(全カードに付けると名前が重なって遷移が中止される)。
 // 受付(#…)へ飛ぶ販売中のカードは、つなぐ相手が画面の外なのでフェードだけ
 (function () {
@@ -108,7 +109,6 @@ export const SITE_HEADER = `<header class="appbar">
     var here = eventUrl(location.href), to = e.activation && e.activation.entry ? eventUrl(e.activation.entry.url) : null;
     try { sessionStorage.setItem(KEY, JSON.stringify({ from: location.pathname + location.hash, t: Date.now() })); } catch (err) {}
     if (to && !here) mark(listImage(to), e.viewTransition);
-    else if (here && e.activation && !to) mark(detailImage(location.hash), e.viewTransition);
   });
   window.addEventListener('pagereveal', function (e) {
     if (!e.viewTransition) return;
@@ -117,7 +117,6 @@ export const SITE_HEADER = `<header class="appbar">
     if (!rec || Date.now() - rec.t > 10000) return;
     var from = eventUrl(rec.from), here = eventUrl(location.href);
     if (here && !from) mark(detailImage(location.hash), e.viewTransition);
-    else if (from && !here) mark(listImage(from), e.viewTransition);
   });
 })();
 </script>`
