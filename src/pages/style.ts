@@ -78,47 +78,37 @@ export const SITE_HEADER = `<header class="appbar">
     if (raf && Math.abs(window.scrollY - pos) > 2) { cancelAnimationFrame(raf); raf = 0; }
   }, { passive: true });
 })();
-// ページ間のアニメーション(View Transition): 一覧の公演カードと詳細ページの同じ部品(カード・画像・公演名)をつなぐ。
-// 名前は遷移の直前だけ付ける(全カードに付けると、カルーセルの複製と名前が重なって遷移が中止される)。
-// 販売中のカードは詳細ページのその受付(#…)へ飛ぶので、カードとその受付をつなぐ
+// ページ間のアニメーション(View Transition): 一覧の公演カードのサムネと、詳細ページの画像の帯をつなぐ(ほかはフェード)。
+// 名前は遷移の直前だけ付ける(全カードに付けると名前が重なって遷移が中止される)。
+// 受付(#…)へ飛ぶ販売中のカードは、つなぐ相手が画面の外なのでフェードだけ
 (function () {
   if (!('onpagereveal' in window)) return;
-  var KEY = 'sundome.vt', NAMES = ['vt-card', 'vt-media', 'vt-title'];
+  var KEY = 'sundome.vt';
   function eventUrl(url) {
     var u = new URL(url, location.href);
     var seg = u.pathname.split('/');
     return seg.length === 3 && seg[1] === 'e' && seg[2] ? { path: u.pathname, hash: u.hash } : null;
   }
-  function cardParts(card, detail) {
-    return [card, card.querySelector(detail ? '.card-media img' : '.thumb img'), card.querySelector('.card-title')];
+  function detailImage(hash) {
+    return hash ? null : document.querySelector('main .card .card-media img');
   }
-  // 詳細ページ側: 受付へ飛んだならその受付、それ以外は公演カード
-  function detailParts(hash) {
-    if (hash) { var lot = document.getElementById(decodeURIComponent(hash.slice(1))); return lot ? [lot] : []; }
-    var card = document.querySelector('main .card');
-    return card ? cardParts(card, true) : [];
-  }
-  // 一覧側: 販売中のカード(リンクが #… まで同じもの)、それ以外は公演カード
-  function listParts(ev) {
-    if (ev.hash) {
-      var links = document.querySelectorAll('a.sale-card');
-      for (var i = 0; i < links.length; i++) if (links[i].getAttribute('href') === ev.path + ev.hash) return [links[i]];
-      return [];
-    }
+  function listImage(ev) {
+    if (ev.hash) return null;
     var el = document.getElementById(decodeURIComponent(ev.path.slice(3)));
     var card = el && el.closest('.card');
-    return card ? cardParts(card, false) : [];
+    return card && card.querySelector('.thumb img');
   }
-  function mark(parts, vt) {
-    parts.forEach(function (el, i) { if (el) el.style.viewTransitionName = NAMES[i]; });
-    vt.finished.finally(function () { parts.forEach(function (el) { if (el) el.style.viewTransitionName = ''; }); });
+  function mark(img, vt) {
+    if (!img) return;
+    img.style.viewTransitionName = 'vt-media';
+    vt.finished.finally(function () { img.style.viewTransitionName = ''; });
   }
   window.addEventListener('pageswap', function (e) {
     if (!e.viewTransition) return;
     var here = eventUrl(location.href), to = e.activation && e.activation.entry ? eventUrl(e.activation.entry.url) : null;
     try { sessionStorage.setItem(KEY, JSON.stringify({ from: location.pathname + location.hash, t: Date.now() })); } catch (err) {}
-    if (to && !here) mark(listParts(to), e.viewTransition);
-    else if (here && e.activation && !to) mark(detailParts(location.hash), e.viewTransition);
+    if (to && !here) mark(listImage(to), e.viewTransition);
+    else if (here && e.activation && !to) mark(detailImage(location.hash), e.viewTransition);
   });
   window.addEventListener('pagereveal', function (e) {
     if (!e.viewTransition) return;
@@ -126,8 +116,8 @@ export const SITE_HEADER = `<header class="appbar">
     try { rec = JSON.parse(sessionStorage.getItem(KEY) || 'null'); sessionStorage.removeItem(KEY); } catch (err) {}
     if (!rec || Date.now() - rec.t > 10000) return;
     var from = eventUrl(rec.from), here = eventUrl(location.href);
-    if (here && !from) mark(detailParts(location.hash), e.viewTransition);
-    else if (from && !here) mark(listParts(from), e.viewTransition);
+    if (here && !from) mark(detailImage(location.hash), e.viewTransition);
+    else if (from && !here) mark(listImage(from), e.viewTransition);
   });
 })();
 </script>`
@@ -579,11 +569,11 @@ a.sub-btn { text-decoration: none; }
   .card, .row, .sale-card, .btn-text, .iconbtn { transition: background-color .15s, box-shadow .15s; }
   .appbar { transition: transform .2s ease; }
   /* ページ間のアニメーション(対応ブラウザのみ)。ヘッダーは動かさず、ほかはクロスフェード。
-     公演カードと詳細ページの部品をつなぐ名前(vt-card など)はヘッダーのスクリプトが付ける */
+     公演のサムネと詳細ページの画像をつなぐ名前(vt-media)はヘッダーのスクリプトが付ける */
   @view-transition { navigation: auto; }
 }
 .appbar { view-transition-name: appbar; }
-::view-transition-group(*) { animation-duration: .3s; animation-timing-function: cubic-bezier(.2, 0, 0, 1); }
+::view-transition-group(*) { animation-duration: .2s; animation-timing-function: cubic-bezier(.2, 0, 0, 1); }
 /* 正方形のサムネ ↔ 16:9 の帯: 伸ばさずに切り抜いたまま形を変える */
 ::view-transition-old(vt-media), ::view-transition-new(vt-media) { height: 100%; object-fit: cover; overflow: clip; }
 @media (prefers-reduced-motion: reduce) {
