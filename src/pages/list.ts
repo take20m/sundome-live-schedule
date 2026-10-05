@@ -6,7 +6,7 @@ import { groupConsecutive, lotteryAnchor, mergeLotteries } from '../lib/group'
 import type { EventGroup, MergedLottery } from '../lib/group'
 import { escapeHtml, safeHttpUrl } from '../lib/html'
 import { iconSvg } from '../lib/icon'
-import { buildHeadMeta, buildJsonLd, buildMetaDescription } from '../lib/seo'
+import { buildHeadMeta, buildJsonLd, buildMetaDescription, VENUE_PRELOAD } from '../lib/seo'
 import type { LotteryStatus } from '../lib/status'
 import { lotteryStatus } from '../lib/status'
 import { safeBg, safeFit, safeFocus, safeZoom } from '../lib/focus'
@@ -145,7 +145,7 @@ function renderDeadlines(events: EventWithLotteries[], now: Date): string {
       .join('; ')
     const media = `<span class="sale-media"${bg ? ` style="background: ${bg}"` : ''}>${
       imageUrl
-        ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" decoding="async"${zoom && zoom > 1 ? ` data-zoom="${zoom}"` : ''}${imgStyle ? ` style="${imgStyle}"` : ''} onerror="this.nextElementSibling.hidden=false;this.parentNode.style.background='';this.remove()">`
+        ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" fetchpriority="low" decoding="async"${zoom && zoom > 1 ? ` data-zoom="${zoom}"` : ''}${imgStyle ? ` style="${imgStyle}"` : ''} onerror="this.nextElementSibling.hidden=false;this.parentNode.style.background='';this.remove()">`
         : ''
     }<span class="sale-date"${imageUrl ? ' hidden' : ''}>${escapeHtml(bigDate)}</span></span>`
     // 状態は 1 か所だけ。締切まで 3 日以内なら目覚まし時計と「あと N 日」(赤)、それ以外は締切の有無に
@@ -372,7 +372,7 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
   ].filter(Boolean).join('; ')
   // サムネが読み込めなければ日付タイルに戻す(壊れた画像アイコンを見せない)
   const thumb = thumbMode
-    ? `<div class="thumb"${bg ? ` style="background: ${bg}"` : ''}><img src="${escapeHtml(imageUrl!)}" alt="${escapeHtml(first.title)}" loading="lazy" decoding="async"${imgStyle ? ` style="${imgStyle}"` : ''} onerror="var t=this.closest('.thumb');t.nextElementSibling.hidden=false;t.remove()"></div>`
+    ? `<div class="thumb"${bg ? ` style="background: ${bg}"` : ''}><img src="${escapeHtml(imageUrl!)}" alt="${escapeHtml(first.title)}" loading="lazy" fetchpriority="low" decoding="async"${imgStyle ? ` style="${imgStyle}"` : ''} onerror="var t=this.closest('.thumb');t.nextElementSibling.hidden=false;t.remove()"></div>`
     : ''
   // サムネのときは日付を文字で出す。年は今年でなければ付ける
   const dayShort = (date: string) => {
@@ -582,6 +582,7 @@ export function renderListPage(
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 ${head}
+${VENUE_PRELOAD}
 <link rel="alternate" type="application/rss+xml" title="更新情報" href="/feed.xml">
 <style>${SITE_CSS}</style>
 <script type="application/ld+json">${buildJsonLd(events, canonical)}</script>

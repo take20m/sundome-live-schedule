@@ -1,6 +1,6 @@
 import type { Doc } from '../lib/content'
 import { escapeHtml } from '../lib/html'
-import { buildHeadMeta, DEFAULT_OG_IMAGE } from '../lib/seo'
+import { buildHeadMeta, DEFAULT_OG_IMAGE, VENUE_PRELOAD } from '../lib/seo'
 import { docToShellParts, renderArticle } from './article'
 
 /** Markdown 1 本のガイドページ。frontmatter の hero: venue で会場写真を先頭に敷く */
@@ -21,6 +21,7 @@ export function renderGuidePage(doc: Doc, canonical: string): string {
     kicker: doc.meta.kicker ?? 'ガイド',
     title,
     hero,
+    extraHead: hero ? VENUE_PRELOAD : undefined,
     ...parts,
   })
 }

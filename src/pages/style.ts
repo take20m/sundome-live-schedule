@@ -1,9 +1,12 @@
 /**
  * サイト共通のスタイル。Material 3 のトークン(会場公式サイト寄せ: 黄地・白カード・濃紺。モック G 案)を持ち、
  * コンポーネントは必ずトークン経由で色を取る(ライト/ダーク/端末追従の3状態で崩れないため)。
- * 外部ライブラリは使わない。フォントだけ Google Fonts(Roboto + Noto Sans JP)を読む。
+ * 外部ライブラリは使わない。本文は端末のフォント(読み込み待ちで描画が止まらないように)。記事の見出しの明朝体だけ Google Fonts を読む(article.ts)。
  */
 import { LOGO_SVG, iconSvg } from '../lib/icon'
+
+/** 端末のフォント: iPhone/Mac はヒラギノ、Android は Roboto + Noto、Windows は游ゴシック */
+const FONT_SANS = '-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", Roboto, "Noto Sans JP", "Yu Gothic UI", Meiryo, sans-serif'
 
 export const SITE_HEADER = `<header class="appbar">
 <a class="brand" href="/">${LOGO_SVG}<h1><span>サンドーム福井</span> <span>ライブ情報</span></h1></a>
@@ -89,7 +92,7 @@ export const SITE_CSS = `
   ${DARK_TOKENS}
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--surface); color: var(--on-surface); font-family: Roboto, "Noto Sans JP", "Hiragino Sans", sans-serif; font-size: 14px; line-height: 20px; letter-spacing: .25px; -webkit-font-smoothing: antialiased; }
+body { margin: 0; background: var(--surface); color: var(--on-surface); font-family: ${FONT_SANS}; font-size: 14px; line-height: 20px; letter-spacing: .25px; -webkit-font-smoothing: antialiased; }
 a { color: var(--primary); }
 .ic { width: 18px; height: 18px; flex: none; }
 
@@ -554,7 +557,7 @@ export const ARTICLE_CSS = `
 /* 数字 */
 .article .numbers { display: flex; flex-wrap: wrap; gap: 8px 32px; margin: 8px 0 16px; }
 .article .numbers div { display: flex; flex-direction: column; }
-.article .numbers .n { font-family: Roboto, sans-serif; font-size: 28px; line-height: 1.1; font-weight: 500; color: var(--primary); font-variant-numeric: tabular-nums; }
+.article .numbers .n { font-size: 28px; line-height: 1.1; font-weight: 500; color: var(--primary); font-variant-numeric: tabular-nums; }
 .article .numbers .l { font-size: 12px; color: var(--muted); }
 /* 一覧 */
 .article dl.facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 20px; margin: 8px 0 16px; font-size: 15px; }
@@ -568,7 +571,7 @@ export const ARTICLE_CSS = `
 .article .map { height: 300px; border-radius: 4px; overflow: hidden; background: var(--surface-container-highest); }
 .article .map-figure figcaption { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin: 4px 0 0 -12px; font-size: 12px; color: var(--muted); }
 .article .map-credit a { color: inherit; }
-.leaflet-tooltip.map-label { font: 500 12px/16px Roboto, "Noto Sans JP", sans-serif; border-radius: 6px; }
+.leaflet-tooltip.map-label { font: 500 12px/16px ${FONT_SANS}; border-radius: 6px; }
 .leaflet-tooltip.map-label-venue { background: #0B3D91; color: #fff; border-color: #0B3D91; }
 .leaflet-tooltip.map-label-venue::before { border-top-color: #0B3D91; }
 .leaflet-container { font: inherit; }

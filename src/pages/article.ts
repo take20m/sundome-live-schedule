@@ -10,8 +10,29 @@ import { iconSvg } from '../lib/icon'
 import { buildHeadMeta } from '../lib/seo'
 import { ARTICLE_CSS, SITE_CSS, SITE_FOOTER, SITE_HEADER } from './style'
 
-export const SERIF_FONT_LINK =
-  '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@600;700&amp;display=swap">'
+/**
+ * 見出しの明朝体(Noto Serif JP)。そのページで明朝体になる文字(タイトル・リード・見出し)だけを読む
+ * (日本語フォントを丸ごと読むと数百 KB になり、描画が止まる)
+ */
+export function serifFontLinks(texts: string[]): string {
+  const chars = [...new Set([...texts.join('')].filter((c) => !/\s/.test(c)))].join('')
+  return `<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@600;700&amp;text=${encodeURIComponent(chars)}&amp;display=swap">`
+}
+
+/** HTML の h2・h3 の文字(タグを除き、escapeHtml の実体参照を戻す) */
+function headingTexts(html: string): string[] {
+  return [...html.matchAll(/<h[23][^>]*>([\s\S]*?)<\/h[23]>/g)].map((m) =>
+    m[1]
+      .replace(/<[^>]+>/g, '')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&amp;/g, '&'),
+  )
+}
 
 export type ArticleShell = {
   head: ReturnType<typeof buildHeadMeta>
@@ -62,10 +83,10 @@ export function renderArticle(a: ArticleShell): string {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 ${a.head}
-${SERIF_FONT_LINK}
+${serifFontLinks([a.title, a.lead ?? '', verdict ? '要点' : '', ...headingTexts(a.body), ...headingTexts(a.after ?? '')])}
+${a.extraHead ?? ''}
 <style>${SITE_CSS}${ARTICLE_CSS}</style>
 ${a.hasMap ? MAP_HEAD : ''}
-${a.extraHead ?? ''}
 </head>
 <body class="article">
 ${SITE_HEADER}

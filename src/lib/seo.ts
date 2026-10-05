@@ -142,6 +142,13 @@ export function buildRobots(siteUrl: string): string {
 /** 既定の OG 画像(会場写真 1200×628)。ページ固有の画像が無いときに使う */
 export const DEFAULT_OG_IMAGE = { path: '/img/og-default.jpg', width: 1200, height: 628, alt: 'サンドーム福井の外観' }
 
+/**
+ * 会場写真(トップのバナーとガイドの先頭。LCP になる)を <head> で先に読ませる。
+ * <picture> の出し分け(480px)とそろえ、使わない方は読まない
+ */
+export const VENUE_PRELOAD = `<link rel="preload" as="image" href="/img/sundome-fukui-16x9.webp" media="(max-width: 480px)" fetchpriority="high">
+<link rel="preload" as="image" href="/img/sundome-fukui-21x9.webp" media="(min-width: 481px)" fetchpriority="high">`
+
 /** 共通の <head> メタタグ(title, description, OGP, canonical) */
 export function buildHeadMeta(opts: {
   title: string
@@ -175,8 +182,6 @@ ${opts.noindex ? '<meta name="robots" content="noindex,follow">\n' : ''}
 <link rel="icon" type="image/svg+xml" href="/icon.svg">
 <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&amp;family=Noto+Sans+JP:wght@400;500;700&amp;display=swap">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="apple-mobile-web-app-title" content="サンドーム福井">

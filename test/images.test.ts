@@ -122,7 +122,7 @@ describe('images API と表示', () => {
     expect(body.updated).toBe(1)
     expect(body.skipped.length).toBe(2)
     const html = await (await SELF.fetch('https://example.com/')).text()
-    expect(html).toContain('<img src="https://cdn.example.com/kv.jpg" alt="IMAGE TOUR" loading="lazy" decoding="async" style="object-position: 30% 20%"')
+    expect(html).toContain('<img src="https://cdn.example.com/kv.jpg" alt="IMAGE TOUR" loading="lazy" fetchpriority="low" decoding="async" style="object-position: 30% 20%"')
     // 位置が入った画像は未設定一覧から消える(人が決めた位置を夜間処理が上書きしない)
     const after = (await (await SELF.fetch('https://example.com/api/images/focus-pending', { headers })).json()) as {
       images: { image_url: string }[]

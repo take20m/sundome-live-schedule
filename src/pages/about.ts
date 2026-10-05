@@ -40,7 +40,7 @@ export function renderAboutPage(canonical: string, opts: { mail?: boolean; push?
 }</li>
 <li>配信インフラ(Cloudflare)がサービス提供・セキュリティのためにアクセスログを処理することがあります</li>
 <li>会場ガイドの地図は、OpenStreetMapの地図タイルを読み込んで表示しています。地図ライブラリのLeafletはcdnjsから読み込んでいます。Cookieは使用しません</li>
-<li>表示用フォント(Roboto、Noto Sans JP、Noto Serif JP)はGoogle Fontsから読み込んでいます。このとき、ブラウザからGoogleのサーバーへ、IPアドレスなどを含むリクエストが送られます。Google Fontsはこの配信でCookieを使用しません</li>
+<li>ガイドなどの記事の見出しのフォント(Noto Serif JP)はGoogle Fontsから読み込んでいます。このとき、ブラウザからGoogleのサーバーへ、IPアドレスなどを含むリクエストが送られます。Google Fontsはこの配信でCookieを使用しません</li>
 <li>今後、アクセス解析や第三者配信の広告を導入する場合は、本ページで利用サービスとCookieの取り扱いを告知します</li>
 </ul>
 ${opts.mail ? MAIL_PRIVACY : ''}
