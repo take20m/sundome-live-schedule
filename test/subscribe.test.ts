@@ -26,6 +26,11 @@ describe('新着情報を受け取る', () => {
     // 本文のフォントは端末のものを使い、Google Fonts は読まない(読み込み待ちで描画が止まるため)
     expect(top0).not.toContain('fonts.googleapis.com')
     expect(top0).toContain('<link rel="preload" as="image" href="/img/sundome-fukui-21x9.webp" media="(min-width: 481px)" fetchpriority="high">')
+    // ページ間のアニメーション(View Transition)と、PC のホイールの慣性(どのページにも入る共通ヘッダーのスクリプト)
+    expect(top0).toContain('@view-transition { navigation: auto; }')
+    expect(top0).toContain('.appbar { view-transition-name: appbar; }')
+    expect(top0).toContain("window.addEventListener('pagereveal'")
+    expect(top0).toContain("matchMedia('(hover: hover) and (pointer: fine)')")
     // RSS リーダー向けの自動検出は残す
     const top = await (await SELF.fetch('https://example.com/')).text()
     expect(top).toContain('<link rel="alternate" type="application/rss+xml" title="更新情報" href="/feed.xml">')
