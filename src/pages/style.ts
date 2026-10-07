@@ -419,10 +419,10 @@ main { max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
 .sub-toast-close:hover { background: color-mix(in srgb, var(--on-surface) 8%, transparent); }
 .sub-toast-link:focus-visible, .sub-toast-close:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; border-radius: 14px; }
 .sub-card:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-/* 詳細ページの案内は受付一覧と同じくらいの重さに: 文字の幅だけのボタン */
-.sub-card { display: inline-flex; align-items: center; gap: 6px; height: 40px; margin-top: 12px; padding: 0 10px 0 12px; border-radius: 20px; background: var(--secondary-container); color: var(--primary); font-size: 14px; font-weight: 700; letter-spacing: .2px; text-decoration: none; }
-.sub-card .ic { width: 20px; height: 20px; flex: none; }
-.sub-card .ic:last-child { width: 18px; height: 18px; margin-left: 2px; }
+/* 詳細ページの案内は受付一覧より軽く: 文字の幅だけの小さめのボタンを右に寄せる(受付の日付の列と端をそろえる) */
+.sub-card { display: flex; width: fit-content; margin: 10px 0 0 auto; align-items: center; gap: 5px; height: 32px; padding: 0 8px 0 10px; border-radius: 16px; background: var(--secondary-container); color: var(--primary); font-size: 13px; font-weight: 500; letter-spacing: .2px; text-decoration: none; }
+.sub-card .ic { width: 18px; height: 18px; flex: none; }
+.sub-card .ic:last-child { width: 16px; height: 16px; margin-left: 2px; }
 .sub-card:hover { background: color-mix(in srgb, var(--on-secondary-container) 8%, var(--secondary-container)); }
 
 /* 「新着情報を受け取る」ページ */
