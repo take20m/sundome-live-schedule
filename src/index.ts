@@ -123,7 +123,7 @@ app.get('/feed.xml', async (c) => {
 })
 
 // about と /subscribe の中身を最後に変えた日(変えたらここも直す)
-const PAGE_UPDATED = { about: '2026-10-04', subscribe: '2026-10-04' }
+const PAGE_UPDATED = { about: '2026-10-08', subscribe: '2026-10-04' }
 
 app.get('/sitemap.xml', async (c) => {
   // 開催済みの公演ページは載せない(受付情報のない薄いページになるので noindex にしてある)。

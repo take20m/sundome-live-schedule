@@ -35,13 +35,13 @@ export function renderAboutPage(canonical: string, opts: { mail?: boolean; push?
 <ul>
 <li>${
   opts.mail || opts.push
-    ? `本サイトの閲覧に会員登録は要りません。Cookieも使用していません。お預かりするのは、${[opts.mail ? 'メール購読に登録したときのメールアドレス' : '', opts.push ? 'プッシュ通知を受け取ると決めた端末の宛先' : ''].filter(Boolean).join('と、')}だけです(下記)`
-    : '本サイトは会員登録を必要とせず、個人情報を収集しません。Cookieも使用していません'
+    ? `本サイトの閲覧に会員登録は要りません。本サイト自身はCookieを使用していません(広告の配信事業者が使う場合は下記)。お預かりするのは、${[opts.mail ? 'メール購読に登録したときのメールアドレス' : '', opts.push ? 'プッシュ通知を受け取ると決めた端末の宛先' : ''].filter(Boolean).join('と、')}だけです(下記)`
+    : '本サイトは会員登録を必要とせず、個人情報を収集しません。本サイト自身はCookieを使用していません(広告の配信事業者が使う場合は下記)'
 }</li>
 <li>配信インフラ(Cloudflare)がサービス提供・セキュリティのためにアクセスログを処理することがあります</li>
 <li>会場ガイドの地図は、OpenStreetMapの地図タイルを読み込んで表示しています。地図ライブラリのLeafletはcdnjsから読み込んでいます。Cookieは使用しません</li>
 <li>ガイドなどの記事の見出しのフォント(Noto Serif JP)はGoogle Fontsから読み込んでいます。このとき、ブラウザからGoogleのサーバーへ、IPアドレスなどを含むリクエストが送られます。Google Fontsはこの配信でCookieを使用しません</li>
-<li>今後、アクセス解析や第三者配信の広告を導入する場合は、本ページで利用サービスとCookieの取り扱いを告知します</li>
+<li>広告について: 本サイトでは、第三者配信の広告サービス「Google AdSense」を利用する場合があります。その場合、Googleなどの広告配信事業者は、利用者の興味に応じた広告を表示するためにCookieを使用することがあります。パーソナライズ広告は<a href="https://myadcenter.google.com/" rel="noopener" target="_blank">Googleの広告設定</a>で無効にできます。詳しくは<a href="https://policies.google.com/technologies/ads?hl=ja" rel="noopener" target="_blank">広告 – ポリシーと規約 – Google</a>をご覧ください</li>
 </ul>
 ${opts.mail ? MAIL_PRIVACY : ''}
 ${opts.push ? PUSH_PRIVACY : ''}
