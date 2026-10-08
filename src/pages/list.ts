@@ -105,12 +105,14 @@ function renderDeadlines(events: EventWithLotteries[], now: Date): string {
   const sortKey = (x: Entry) => x.lottery.ends_at ?? '9999'
   entries.sort((a, b) => sortKey(a).localeCompare(sortKey(b)) || a.event.date.localeCompare(b.event.date))
 
-  // 「アーティスト+締切」でグループ化して 1 枚にまとめる。
-  // 同一ツアーの複数公演日や、席種違いの同時受付(プレリザーブ/ステージサイド等)を集約する
+  // アーティストごとに 1 枚にまとめる。同一ツアーの複数公演日や、席種違いの同時受付(プレリザーブ/
+  // ステージサイド等)に加え、締切の違う受付(いち早プレリザーブ 10/12 と ぴあ先行 10/18 など)も 1 枚。
+  // entries は締切の近い順なので、先頭の受付がカードのカウントダウンと飛び先になり、
+  // それが締切を過ぎれば次に近い受付へ自動で切り替わる
   type Group = { first: Entry; events: EventWithLotteries[] }
   const groups = new Map<string, Group>()
   for (const entry of entries) {
-    const key = `${entry.event.artist}|${entry.lottery.ends_at ? Date.parse(entry.lottery.ends_at) : 'endless'}`
+    const key = entry.event.artist
     const g = groups.get(key)
     if (!g) {
       groups.set(key, { first: entry, events: [entry.event] })

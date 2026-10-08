@@ -140,6 +140,33 @@ describe('締切セクションとカウントダウン', () => {
     expect(html).not.toContain('他1件') // 受付名を出さないので件数も出さない
   })
 
+  it('同一アーティストで締切の違う受付中が2本あってもカードは1枚で、締切の近い受付へ飛ぶ', async () => {
+    // seed 済みの「オフィシャル先行(抽選)」(締切 +3 日)に、同じ公演で締切 +10 日の一般受付を足す
+    const day = 24 * 60 * 60 * 1000
+    const now = new Date()
+    const seeded = await env.DB.prepare(
+      "SELECT event_id FROM lotteries WHERE name = 'オフィシャル先行(抽選)' LIMIT 1",
+    ).first<{ event_id: string }>()
+    await env.DB.prepare(
+      `INSERT INTO lotteries (id, event_id, name, starts_at, ends_at, confidence, updated_at)
+       VALUES (?, ?, 'ぴあ先行', ?, ?, 'inferred', ?)`,
+    )
+      .bind(
+        `lot-${seeded!.event_id}-feedface`,
+        seeded!.event_id,
+        new Date(now.getTime() - 1 * day).toISOString(),
+        new Date(now.getTime() + 10 * day).toISOString(),
+        now.toISOString(),
+      )
+      .run()
+    const html = await (await SELF.fetch('https://example.com/')).text()
+    expect(html.match(/data-ends=/g)?.length).toBe(1)
+    // 他のテストが入れた別アーティストの受付は残っているので、SAMPLE ARTIST の分だけを見る
+    const onSale = await onSaleLotteryNames(SELF, html)
+    expect(onSale).toContain('オフィシャル先行(抽選)')
+    expect(onSale).not.toContain('ぴあ先行')
+  })
+
   it('今日開催の公演には「本日」マーカーが付く', async () => {
     const today = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
     await env.DB.prepare(
