@@ -14,6 +14,8 @@ describe('新着情報を受け取る', () => {
       const header = html.slice(html.indexOf('<header class="appbar">'), html.indexOf('</header>'))
       expect(header, path).toContain('<a class="iconbtn sub-ic" href="/subscribe" aria-label="新着情報を受け取る" title="新着情報を受け取る">')
       expect(header, path).not.toContain('feed.xml')
+      // 見出しの文字はサイト名と同じ(空白なし)。検索結果のサイト名に使ってもらうため、トップの表記をそろえる
+      expect(header, path).toContain('<h1><span>サンドーム福井</span><span>ライブ情報</span></h1>')
       // フッターには置かない(入口はヘッダーのベルとトースト)
       expect(html, path).toContain('<footer class="site-f">\n<a href="/about">このサイトについて</a>')
     }

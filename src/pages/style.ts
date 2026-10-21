@@ -9,7 +9,7 @@ import { LOGO_SVG, iconSvg } from '../lib/icon'
 const FONT_SANS = '-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", Roboto, "Noto Sans JP", "Yu Gothic UI", Meiryo, sans-serif'
 
 export const SITE_HEADER = `<header class="appbar">
-<a class="brand" href="/">${LOGO_SVG}<h1><span>サンドーム福井</span> <span>ライブ情報</span></h1></a>
+<a class="brand" href="/">${LOGO_SVG}<h1><span>サンドーム福井</span><span>ライブ情報</span></h1></a>
 <span class="spacer"></span>
 <a class="iconbtn sub-ic" href="/subscribe" aria-label="新着情報を受け取る" title="新着情報を受け取る">${iconSvg('notification_add')}<span class="sub-dot" hidden></span></a>
 </header>
@@ -180,6 +180,8 @@ a { color: var(--primary); }
 .appbar.is-hidden:not(:focus-within) { transform: translateY(-100%); }
 .brand { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; min-width: 0; }
 .logo { width: 28px; height: 28px; flex: none; border-radius: 7px; }
+/* 見出しの文字はサイト名(WebSite 構造化データの name・og:site_name)と同じ「サンドーム福井ライブ情報」にそろえる。
+   2 段は flex の縦並びで出すので、span の間に空白を入れない(Google はトップの表記の一致を見る) */
 .appbar h1 { margin: 0; display: flex; flex-direction: column; gap: 2px; font-size: 20px; line-height: 1.15; font-weight: 700; letter-spacing: 3px; }
 .appbar h1 span { white-space: nowrap; }
 .appbar h1 span + span { font-size: 10.5px; font-weight: 500; letter-spacing: 4.5px; color: var(--on-surface-variant); }
