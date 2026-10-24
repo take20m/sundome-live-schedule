@@ -3,6 +3,7 @@ import type { Context } from 'hono'
 import { handleIngest } from './api/ingest'
 import { handlePendingFocus, handlePendingImages, handleSetFocus, handleSetImages } from './api/images'
 import { handleMissing } from './api/missing'
+import { handleRegulars } from './api/regulars'
 import { handleUnknownHosts } from './api/unknown-hosts'
 import { buildRss } from './feeds/rss'
 import { getEventRun, lastChangeByEvent, listAllEventIds, listEvents, listEventsByArtist, listPastEvents, listRecentChanges, todayInJst } from './lib/db'
@@ -164,6 +165,7 @@ app.get('/favicon.svg', serveIcon)
 
 app.post('/api/ingest', handleIngest)
 app.get('/api/missing', handleMissing)
+app.get('/api/regulars', handleRegulars)
 app.get('/api/unknown-hosts', handleUnknownHosts)
 app.get('/api/images/pending', handlePendingImages)
 app.post('/api/images', handleSetImages)
