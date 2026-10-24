@@ -1,4 +1,4 @@
-import { groupLotteryChanges, itemLink } from '../feeds/rss'
+import { groupEventChanges, groupLotteryChanges, itemLink } from '../feeds/rss'
 import type { ChangeRow } from './db'
 import { listNewChangesSince } from './db'
 import { escapeHtml } from './html'
@@ -21,10 +21,15 @@ export type DigestItem = { kind: 'event' | 'lottery'; artist: string; text: stri
 /** サマリ(ingest の書式)を、メールで読む 1 行に直す */
 export function toItem(c: ChangeRow, siteUrl: string): DigestItem | null {
   const url = itemLink(c, siteUrl)
-  const ev = c.summary.match(/^新規公演: (.*?)「(.*)」\((\d{4})-(\d{2})-(\d{2})\)$/)
+  // 日付は 1 日(2027-01-09)か、連日をまとめた範囲(2027-01-09〜2027-01-11)・飛び飛びの並び(読点区切り)
+  const ev = c.summary.match(/^新規公演: (.*?)「(.*)」\(([\d〜、-]+)\)$/)
   if (ev) {
-    const [, artist, title, y, m, d] = ev
-    return { kind: 'event', artist, text: `${artist}「${title}」${Number(y)}/${Number(m)}/${Number(d)}`, url }
+    const [, artist, title, dates] = ev
+    const text = dates
+      .replace(/(\d{4})-(\d{2})-(\d{2})/g, (_, y, m, d) => `${Number(y)}/${Number(m)}/${Number(d)}`)
+      // 範囲の終わりは年が同じなら省く(2027/1/9〜1/11)
+      .replace(/^(\d{4})(\/\d+\/\d+〜)\1\//, '$1$2')
+    return { kind: 'event', artist, text: `${artist}「${title}」${text}`, url }
   }
   const lot = c.summary.match(/^抽選情報: (.*?)「(.*)」(.*?)受付 (.*)$/)
   if (lot) {
@@ -126,7 +131,7 @@ export async function runDigest(env: DigestEnv, siteUrl: string, now: Date): Pro
     return { status: 'initialized', lastChangeId }
   }
   const { changes, maxId } = await listNewChangesSince(db, state.last_change_id)
-  const items = groupLotteryChanges(changes)
+  const items = groupLotteryChanges(groupEventChanges(changes))
     .map((c) => toItem(c, siteUrl))
     .filter((i): i is DigestItem => i !== null)
   // 新着が無い日は送らない。見送った変更(更新・会員限定)を次回また読まないよう、位置だけは進める

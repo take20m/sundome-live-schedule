@@ -191,6 +191,23 @@ describe('新着まとめメール', () => {
     expect(sent).toHaveLength(0)
   })
 
+  it('同じ夜に分かった連日の公演は 1 行にまとめ、受付はそれぞれ 1 行で送る', async () => {
+    const at = new Date().toISOString()
+    const ins = env.DB.prepare(
+      "INSERT INTO changes (item_id, item_type, change_kind, summary, created_at) VALUES (?, ?, 'added', ?, ?)",
+    )
+    await ins.bind('ev-2027-01-09', 'event', '新規公演: 連日「FES 2026」(2027-01-09)', at).run()
+    await ins.bind('lot-ev-2027-01-09-dddddddd', 'lottery', '抽選情報: 連日「一般発売」受付 11/7 10:00〜不明', at).run()
+    await ins.bind('ev-2027-01-10', 'event', '新規公演: 連日「FES 2026」(2027-01-10)', at).run()
+    await ins.bind('ev-2027-01-11', 'event', '新規公演: 連日「FES 2026」(2027-01-11)', at).run()
+    const r = await runDigest(ENV, site, new Date())
+    expect(r).toMatchObject({ status: 'sent', items: 2 })
+    const m = JSON.parse(sent[0].body)[0]
+    expect(m.subject).toBe('新着: 連日 の公演が決まりました ほか1件')
+    expect(m.text).toContain('・連日「FES 2026」2027/1/9〜1/11\n  https://sundome.take20m.dev/e/ev-2027-01-09?c=')
+    expect(m.text).toContain('・連日「一般発売」受付 11/7 10:00〜不明')
+  })
+
   it(`購読者が ${DAILY_SEND_LIMIT} 人を超えたら送らず、次回また同じ新着から送れるよう位置を進めない`, async () => {
     for (let i = 0; i < DAILY_SEND_LIMIT; i++) await addActive(`many${i}@example.com`)
     await addChange('ev-2027-04-01', 'event', 'added', '新規公演: 誰か「TOUR」(2027-04-01)')

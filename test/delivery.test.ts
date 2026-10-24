@@ -256,6 +256,32 @@ describe('RSS のまとめ', () => {
   })
 })
 
+describe('RSS の新着公演のまとめ', () => {
+  it('新しい公演が見つかった夜は、同じ公演の日ごとの通知と受付の通知を 1 件にまとめる', async () => {
+    const at = '2026-10-17T12:00:47.000Z'
+    const ins = env.DB.prepare(
+      `INSERT INTO changes (item_id, item_type, change_kind, summary, created_at) VALUES (?, ?, 'added', ?, ?)`,
+    )
+    const show = 'ミュージカル『束ね』「束ね祭2026」'
+    const first = await ins.bind('ev-2027-01-09', 'event', `新規公演: ${show}(2027-01-09)`, at).run()
+    await ins.bind('lot-ev-2027-01-09-bbbbbbb1', 'lottery', '抽選情報: ミュージカル『束ね』「プレリクエスト抽選先行」受付 10/19 12:00〜10/26 23:59', at).run()
+    await ins.bind('lot-ev-2027-01-09-bbbbbbb2', 'lottery', '抽選情報: ミュージカル『束ね』「一般発売」受付 11/7 10:00〜不明', at).run()
+    await ins.bind('ev-2027-01-10', 'event', `新規公演: ${show}(2027-01-10)`, at).run()
+    await ins.bind('ev-2027-01-11', 'event', `新規公演: ${show}(2027-01-11)`, at).run()
+    // 後の夜に出た受付は、既に知っている公演の新しい受付として別に流す
+    await ins.bind('lot-ev-2027-01-09-bbbbbbb3', 'lottery', '抽選情報: ミュージカル『束ね』「二次先行」受付 11/1 12:00〜11/3 23:59', '2026-10-20T12:00:00.000Z').run()
+    const xml = await (await SELF.fetch('https://example.com/feed.xml')).text()
+    const titles = [...xml.matchAll(/<title>(.*?)<\/title>/g)].map((m) => m[1]).filter((t) => t.includes('束ね'))
+    expect(titles).toEqual([
+      '抽選情報: ミュージカル『束ね』「二次先行」受付 11/1 12:00〜11/3 23:59',
+      '新規公演: ミュージカル『束ね』「束ね祭2026」(2027-01-09〜2027-01-11) ＋受付情報2件',
+    ])
+    // guid は最初に記録された通知のもの(配信済みの item が別物として流れ直さない)、リンクは初日の詳細ページ
+    const id = first.meta.last_row_id
+    expect(xml).toContain(`<link>https://example.com/e/ev-2027-01-09?c=${id}</link>\n      <guid isPermaLink="false">change-${id}</guid>`)
+  })
+})
+
 describe('SEO', () => {
   it('JSON-LD・OGP・canonical が入っている', async () => {
     const res = await SELF.fetch('https://example.com/')

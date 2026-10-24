@@ -159,7 +159,11 @@ function dropRestricted(rows: ChangeWithLottery[]): ChangeRow[] {
     .map(({ lottery_name: _, ...r }) => r)
 }
 
-/** RSS に流す変更(新しい順) */
+/**
+ * RSS に流す変更(新しい順)。
+ * 末尾は同じ夜の記録を途中で切らない。RSS は同じ夜の通知を束ねて最初の通知の guid で出すので、
+ * 束の一部だけが残ると guid が変わり、リーダーが古い通知を新着として流し直す
+ */
 export async function listRecentChanges(db: D1Database, limit = 50): Promise<ChangeRow[]> {
   const { results } = await db
     .prepare(
@@ -169,7 +173,10 @@ export async function listRecentChanges(db: D1Database, limit = 50): Promise<Cha
     )
     .bind(limit * 2)
     .all<ChangeWithLottery>()
-  return dropRestricted(results).slice(0, limit)
+  const rows = dropRestricted(results)
+  if (rows.length <= limit) return rows
+  const cut = rows[limit - 1].created_at
+  return rows.filter((r, i) => i < limit || r.created_at === cut)
 }
 
 /**
