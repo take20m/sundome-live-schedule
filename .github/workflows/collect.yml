@@ -24,13 +24,21 @@ jobs:
       - name: Install Claude Code
         run: npm install -g @anthropic-ai/claude-code
 
+      # 本文に会場名を含む最近のニュースの見出しを集め、1段目の指示に添える(LLM 不使用)。
+      # 初めてサンドーム福井に来る出演者の多都市ツアーは、会場名の検索でも常連の見回りでも拾えない
+      # (HANA のアリーナツアーは 10/31 の発表から 1 週間取れなかった)
+      - name: News hints
+        continue-on-error: true
+        run: node collector/news.mjs 30
+
       - name: Collect with claude -p
         env:
           # `claude setup-token` で発行した長期トークン(Claudeプランの利用枠で動く)
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: |
           mkdir -p collector/out
-          claude -p "$(cat collector/prompt.md)" \
+          touch collector/out/news.md
+          claude -p "$(cat collector/prompt.md collector/out/news.md)" \
             --model "$CLAUDE_MODEL" \
             --allowedTools "WebSearch,WebFetch,Edit(collector/out/**)" \
             --permission-mode acceptEdits \
@@ -93,6 +101,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: events-json
-          path: collector/out/*.json
+          path: |
+            collector/out/*.json
+            collector/out/news.md
           if-no-files-found: ignore
           retention-days: 14
