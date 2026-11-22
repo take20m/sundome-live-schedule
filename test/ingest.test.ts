@@ -591,6 +591,23 @@ describe('ingest API', () => {
     expect(body.skipped.length).toBe(1)
   })
 
+  it('対象外の公演(会場主催のクリスマスショー)は取り込まず skipped に載る。年が付いても同じ', async () => {
+    const res = await post({
+      events: [
+        { title: 'サンドーム福井　クリスマスショー', artist: 'サンドーム福井', date: '2027-12-18', confidence: 'official', lotteries: [{ name: '事前参加申込', ends_at: '2027-12-16T23:59:00+09:00', confidence: 'official' }] },
+        { title: 'サンドーム福井 クリスマスショー2028', artist: 'サンドーム福井', date: '2028-12-16', confidence: 'official', lotteries: [] },
+      ],
+    })
+    const body = (await res.json()) as { events: { added: number }; skipped: string[] }
+    expect(body.events.added).toBe(0)
+    expect(body.skipped).toEqual([
+      'events[0]: 対象外の公演 (サンドーム福井　クリスマスショー)',
+      'events[1]: 対象外の公演 (サンドーム福井 クリスマスショー2028)',
+    ])
+    const row = await env.DB.prepare(`SELECT id FROM events WHERE id IN ('ev-2027-12-18', 'ev-2028-12-16')`).first()
+    expect(row).toBeNull()
+  })
+
   it('events 配列が無いボディは400', async () => {
     const res = await post({ foo: 1 })
     expect(res.status).toBe(400)

@@ -254,6 +254,22 @@ describe('RSS のまとめ', () => {
     expect(xml).toContain(`<guid isPermaLink="false">change-${first.meta.last_row_id}</guid>`)
     expect(xml).toContain('まとめバンド「一般発売」受付 11/1 10:00〜不明')
   })
+
+  it('締切が公演日ごとに違う同じ受付(公式リセールなど)は 1 件にまとめ、期間とリンクは最初の公演日', async () => {
+    const at = '2026-11-21T16:52:00.000Z'
+    const ins = env.DB.prepare(
+      `INSERT INTO changes (item_id, item_type, change_kind, summary, created_at) VALUES (?, 'lottery', 'added', ?, ?)`,
+    )
+    const name = '抽選情報: 日ごと座「チケットリセール」受付 11/21 10:00〜'
+    const first = await ins.bind('lot-ev-2027-02-06-ccccccc3', `${name}2/5 11:59`, at).run()
+    await ins.bind('lot-ev-2027-02-04-ccccccc1', `${name}2/3 11:59`, at).run()
+    await ins.bind('lot-ev-2027-02-05-ccccccc2', `${name}2/4 11:59`, at).run()
+    const xml = await (await SELF.fetch('https://example.com/feed.xml')).text()
+    const titles = [...xml.matchAll(/<title>(.*?)<\/title>/g)].map((m) => m[1]).filter((t) => t.includes('日ごと座'))
+    expect(titles).toEqual(['抽選情報: 日ごと座「チケットリセール」受付 11/21 10:00〜2/3 11:59(締切は公演日ごと、全3件)'])
+    const id = first.meta.last_row_id
+    expect(xml).toContain(`<link>https://example.com/e/ev-2027-02-04?c=${id}</link>\n      <guid isPermaLink="false">change-${id}</guid>`)
+  })
 })
 
 describe('RSS の新着公演のまとめ', () => {

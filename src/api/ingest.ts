@@ -1,6 +1,7 @@
 import type { Context } from 'hono'
 import { isRestrictedLottery } from '../lib/audience'
 import { todayInJst } from '../lib/db'
+import { isExcludedEvent } from '../lib/excluded'
 import { formatJst } from '../lib/format'
 import { hostOf, isDeniedHost, isPlayguideHost, isTopPage, isVenueHost } from '../lib/ticket-url'
 import type { Bindings, Confidence, LotteryRow } from '../types'
@@ -114,6 +115,10 @@ function sanitize(raw: unknown, skipped: string[]): IncomingEvent[] {
     const ev = e as Record<string, unknown>
     if (!nonEmpty(ev.title) || !nonEmpty(ev.artist) || !isDateStr(ev.date)) {
       skipped.push(`events[${i}]: title/artist/date が不正`)
+      continue
+    }
+    if (isExcludedEvent(ev.title)) {
+      skipped.push(`events[${i}]: 対象外の公演 (${ev.title})`)
       continue
     }
     if (!isTimeOrNull(ev.open_time ?? null) || !isTimeOrNull(ev.start_time ?? null)) {

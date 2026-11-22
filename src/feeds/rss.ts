@@ -29,7 +29,7 @@ export function groupLotteryChanges(changes: ChangeRow[]): ChangeRow[] {
   const SUMMARY_RE = /^(抽選(?:情報|更新)): (.*?)「(.*)」受付 (.*)$/
   const groups = new Map<string, { head: ChangeRow; first: ChangeRow; names: string[] }>()
   const out: (ChangeRow | string)[] = []
-  for (const c of changes) {
+  for (const c of groupLotteryDays(changes, SUMMARY_RE)) {
     const m = c.item_type === 'lottery' ? c.summary.match(SUMMARY_RE) : null
     if (!m) {
       out.push(c)
@@ -54,6 +54,40 @@ export function groupLotteryChanges(changes: ChangeRow[]): ChangeRow[] {
     // 名前は最初に記録された受付を代表にする(並びは収集順)
     const firstName = first.summary.match(SUMMARY_RE)![3]
     return { ...first, summary: `${kind}: ${artist}「${firstName}」ほか${names.length - 1}件 受付 ${period}` }
+  })
+}
+
+/**
+ * 同じ夜の収集で、同じアーティストの同じ名前の受付が公演日ごとに別の期間で載ったら 1 件にまとめる。
+ * 公式リセールのように締切が「各公演の前日」になる受付は、連日公演だと期間だけ違う通知が日数分並ぶため。
+ * 期間は最初の公演日のものを代表にする。guid は束の中で最初に記録された通知、リンク先は最初の公演日
+ */
+function groupLotteryDays(changes: ChangeRow[], summaryRe: RegExp): ChangeRow[] {
+  const groups = new Map<string, ChangeRow[]>()
+  for (const c of changes) {
+    const m = c.item_type === 'lottery' ? c.summary.match(summaryRe) : null
+    if (!m) continue
+    const [, kind, artist, name] = m
+    const key = [kind, artist, name, c.created_at].join('|')
+    groups.set(key, [...(groups.get(key) ?? []), c])
+  }
+  const merged = new Map<ChangeRow, ChangeRow | null>()
+  for (const members of groups.values()) {
+    const periods = new Set(members.map((c) => c.summary.match(summaryRe)![4]))
+    if (periods.size < 2) continue
+    const firstDay = members.reduce((a, b) => (eventIdOf(b) < eventIdOf(a) ? b : a))
+    const first = members.reduce((a, b) => (b.id < a.id ? b : a))
+    const [, kind, artist, name, period] = firstDay.summary.match(summaryRe)!
+    for (const c of members) merged.set(c, null)
+    merged.set(first, {
+      ...first,
+      item_id: firstDay.item_id,
+      summary: `${kind}: ${artist}「${name}」受付 ${period}(締切は公演日ごと、全${members.length}件)`,
+    })
+  }
+  return changes.flatMap((c) => {
+    const m = merged.get(c)
+    return m === undefined ? [c] : m === null ? [] : [m]
   })
 }
 
