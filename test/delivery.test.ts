@@ -32,7 +32,7 @@ describe('サイト名の構造化データ', () => {
       const site = JSON.parse(json)['@graph'].find((n: { '@type': string }) => n['@type'] === 'WebSite')
       expect(site, path).toMatchObject({
         '@id': 'https://example.com/#website',
-        name: 'サンドーム福井ライブ情報',
+        name: 'さんどむ',
         url: 'https://example.com/',
       })
     }

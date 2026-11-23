@@ -84,9 +84,10 @@ export function buildJsonLd(events: EventWithLotteries[], pageUrl: string): stri
       {
         '@type': 'WebSite',
         '@id': `${siteRoot}#website`,
-        name: 'サンドーム福井ライブ情報',
-        // 検索結果のサイト名。name が採られなかったときの候補として旧名も渡す
-        alternateName: 'サンドーム福井 コンサート・ライブ情報',
+        name: 'さんどむ',
+        // 検索結果のサイト名。説明的な「サンドーム福井ライブ情報」は採られずドメイン名が出たので(2026-11)、固有の名前にした。
+        // name が採られなかったときの候補として説明的な名前も渡す
+        alternateName: ['サンドーム福井ライブ情報', 'サンドーム福井 コンサート・ライブ情報'],
         url: siteRoot,
       },
       ...items,
@@ -192,7 +193,7 @@ ${opts.noindex ? '<meta name="robots" content="noindex,follow">\n' : ''}
 <meta property="og:url" content="${canonical}">
 <meta property="og:image" content="${escapeHtml(image.url)}">${size}
 <meta property="og:image:alt" content="${escapeHtml(image.alt)}">
-<meta property="og:site_name" content="サンドーム福井ライブ情報">
+<meta property="og:site_name" content="さんどむ">
 <meta property="og:locale" content="ja_JP">
 <meta name="twitter:card" content="summary_large_image">`
 }

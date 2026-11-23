@@ -101,7 +101,7 @@ export function renderMailNotice(
   n: { title: string; lead: string; body: string; extraScripts?: string },
 ): string {
   return renderArticle({
-    head: buildHeadMeta({ title: `${n.title} | サンドーム福井ライブ情報`, description: n.lead, canonical, noindex: true }),
+    head: buildHeadMeta({ title: `${n.title} | さんどむ`, description: n.lead, canonical, noindex: true }),
     crumbs: [{ label: '公演一覧', href: '/' }, { label: '新着情報を受け取る', href: '/subscribe' }, { label: n.title }],
     title: n.title,
     lead: n.lead,
@@ -192,7 +192,7 @@ ${demo('android', ANDROID_FRAMES, [
 </script>`
   return renderArticle({
     head: buildHeadMeta({
-      title: '新着情報を受け取る | サンドーム福井ライブ情報',
+      title: '新着情報を受け取る | さんどむ',
       description: 'サンドーム福井の新しい公演と抽選の受付情報を、ホーム画面への追加やRSSで受け取る方法。',
       canonical,
     }),

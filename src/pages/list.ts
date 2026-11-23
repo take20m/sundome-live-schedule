@@ -575,7 +575,7 @@ export function renderListPage(
       ? `<div class="cards">\n${groupConsecutive(events).map((g) => renderEventCard(g, now)).join('\n')}\n</div>`
       : '<p class="none">今後の公演情報はまだありません。</p>'
   const head = buildHeadMeta({
-    title: 'サンドーム福井ライブ情報｜コンサート・チケット抽選・先行',
+    title: 'さんどむ｜サンドーム福井のライブ情報・チケット抽選・先行',
     description: buildMetaDescription(events),
     canonical,
   })
