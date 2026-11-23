@@ -17,7 +17,7 @@ export const LOGO_FONT_LINK = `<link rel="preconnect" href="https://fonts.gstati
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500&amp;text=${encodeURIComponent('さんどむ')}&amp;display=swap" media="print" onload="this.media='all'">`
 
 export const SITE_HEADER = `<header class="appbar">
-<a class="brand" href="/">${LOGO_SVG}<h1><span>さん<span class="sun">ど</span>む</span><span>サンドーム福井ライブ情報</span></h1></a>
+<a class="brand" href="/">${LOGO_SVG}<h1><span>さ<span class="sun">ん</span>どむ</span><span>サンドーム福井ライブ情報</span></h1></a>
 <span class="spacer"></span>
 <a class="iconbtn sub-ic" href="/subscribe" aria-label="新着情報を受け取る" title="新着情報を受け取る">${iconSvg('notification_add')}<span class="sub-dot" hidden></span></a>
 </header>
@@ -203,7 +203,7 @@ a { color: var(--primary); }
 .appbar h1 span { white-space: nowrap; }
 /* サイト名はロゴとして書体と色を変える(アイコンと同じ紺。ダークでは明るい青) */
 .appbar h1 > span:first-child { font-family: "M PLUS Rounded 1c", ${FONT_SANS}; font-size: 22px; font-weight: 500; letter-spacing: .04em; color: var(--primary); }
-/* 「ど」はアイコンの太陽と同じ黄色の丸に入れる。黄色の上なのでダークでも濃紺のまま。
+/* 「ん」(サン=sun の「ン」)はアイコンの太陽と同じ黄色の丸に入れる。黄色の上なのでダークでも濃紺のまま。
    見出しの文字は「さんどむ」のまま(span で囲むだけ。検索結果のサイト名との一致を崩さない) */
 .appbar h1 .sun { display: inline-grid; place-items: center; width: 1.3em; height: 1.3em; margin: 0 .04em; border-radius: 50%; background: var(--brand-yellow); color: #0B3D91; line-height: 1; }
 .appbar h1 span + span { font-size: 10.5px; font-weight: 500; letter-spacing: .04em; color: var(--on-surface-variant); }
