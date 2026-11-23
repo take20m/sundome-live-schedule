@@ -339,7 +339,7 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
       : events[events.length - 1].date < todayInJst(now)
         ? '' // 開催済みの公演はもう収集しないので、「発表待ち」とは言わない
         // 「未発表」とは言い切らない(公式サイトが読めず、発表済みを拾えていないこともある)
-        : `<p class="none">${detail ? 'チケット情報は発表待ちです(発表され次第ここに載せます)' : 'チケット情報は発表待ちです'}</p>`
+        : `<p class="none">${detail ? 'チケット情報は発表待ちです(発表され次第掲載されます)' : 'チケット情報は発表待ちです'}</p>`
 
   const anchors = events
     .slice(1)
