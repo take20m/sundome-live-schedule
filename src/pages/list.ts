@@ -337,8 +337,9 @@ export function renderEventCard(group: EventGroup, now: Date, opts: CardOptions 
       : !detail && merged.length > 0
         ? '' // 受付の記録はあるが今申し込めるもの・予告するものがない。一覧では何も出さない(詳細ページに全部ある)
       : events[events.length - 1].date < todayInJst(now)
-        ? '' // 開催済みの公演はもう収集しないので、「未収集」とは言わない
-        : `<p class="none">${detail ? 'チケット情報は未収集です(毎晩調べ直しています)' : 'チケット情報は未収集です'}</p>`
+        ? '' // 開催済みの公演はもう収集しないので、「発表待ち」とは言わない
+        // 「未発表」とは言い切らない(公式サイトが読めず、発表済みを拾えていないこともある)
+        : `<p class="none">${detail ? 'チケット情報は発表待ちです(発表され次第ここに載せます)' : 'チケット情報は発表待ちです'}</p>`
 
   const anchors = events
     .slice(1)
