@@ -121,10 +121,19 @@ export const SITE_HEADER = `<header class="appbar">
 })();
 </script>`
 
+/**
+ * アクセス解析(Cloudflare Web Analytics)。Cookie を使わない。プライバシーポリシー(about)に記載あり。
+ * take20m.dev ゾーン全体の自動挿入は他のサブドメインにも入るので使わず、このホスト専用のサイトのスニペットを置く。
+ * token はページに公開される識別子で、秘密情報ではない
+ */
+const WEB_ANALYTICS = `<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "b7210ab3c9314c06a770a0b9074d5ff9"}'></script>`
+
+/** 全ページ共通のフッター。全 HTML ページの末尾に必ず入るので、解析タグもここに付ける */
 export const SITE_FOOTER = `<footer class="site-f">
 <a href="/about">このサイトについて</a>
 <span>© 2026 take20m</span>
-</footer>`
+</footer>
+${WEB_ANALYTICS}`
 
 /**
  * ダーク時のトークン。OS 追従(@media)と手動切り替え([data-theme="dark"])の両方に同じ値が必要で、
