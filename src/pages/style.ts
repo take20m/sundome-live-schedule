@@ -8,8 +8,16 @@ import { LOGO_SVG, iconSvg } from '../lib/icon'
 /** 端末のフォント: iPhone/Mac はヒラギノ、Android は Roboto + Noto、Windows は游ゴシック */
 const FONT_SANS = '-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", Roboto, "Noto Sans JP", "Yu Gothic UI", Meiryo, sans-serif'
 
+/**
+ * ヘッダーのサイト名「さんどむ」の書体(M PLUS Rounded 1c)。この 4 文字だけを Google Fonts から読む(数 KB)。
+ * 全ページの <head> に置く。プライバシーポリシー(about)に記載あり。
+ * 描画を止めないよう media="print" で読み、読み終えたら all に切り替える(届くまでは端末のゴシック体で出る)
+ */
+export const LOGO_FONT_LINK = `<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500&amp;text=${encodeURIComponent('さんどむ')}&amp;display=swap" media="print" onload="this.media='all'">`
+
 export const SITE_HEADER = `<header class="appbar">
-<a class="brand" href="/">${LOGO_SVG}<h1><span>さんどむ</span><span>サンドーム福井ライブ情報</span></h1></a>
+<a class="brand" href="/">${LOGO_SVG}<h1><span>さん<span class="sun">ど</span>む</span><span>サンドーム福井ライブ情報</span></h1></a>
 <span class="spacer"></span>
 <a class="iconbtn sub-ic" href="/subscribe" aria-label="新着情報を受け取る" title="新着情報を受け取る">${iconSvg('notification_add')}<span class="sub-dot" hidden></span></a>
 </header>
@@ -193,7 +201,12 @@ a { color: var(--primary); }
    2 段は flex の縦並びで出すので、span の間に空白を入れない(Google はトップの表記の一致を見る) */
 .appbar h1 { margin: 0; display: flex; flex-direction: column; gap: 2px; font-size: 20px; line-height: 1.15; font-weight: 700; letter-spacing: 3px; }
 .appbar h1 span { white-space: nowrap; }
-.appbar h1 span + span { font-size: 10.5px; font-weight: 500; letter-spacing: 1px; color: var(--on-surface-variant); }
+/* サイト名はロゴとして書体と色を変える(アイコンと同じ紺。ダークでは明るい青) */
+.appbar h1 > span:first-child { font-family: "M PLUS Rounded 1c", ${FONT_SANS}; font-size: 22px; font-weight: 500; letter-spacing: .04em; color: var(--primary); }
+/* 「ど」はアイコンの太陽と同じ黄色の丸に入れる。黄色の上なのでダークでも濃紺のまま。
+   見出しの文字は「さんどむ」のまま(span で囲むだけ。検索結果のサイト名との一致を崩さない) */
+.appbar h1 .sun { display: inline-grid; place-items: center; width: 1.3em; height: 1.3em; margin: 0 .04em; border-radius: 50%; background: var(--brand-yellow); color: #0B3D91; line-height: 1; }
+.appbar h1 span + span { font-size: 10.5px; font-weight: 500; letter-spacing: .04em; color: var(--on-surface-variant); }
 .spacer { flex: 1; }
 .iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 24px; color: var(--on-surface-variant); text-decoration: none; }
 .iconbtn .ic { width: 24px; height: 24px; }
@@ -558,7 +571,7 @@ a.sub-btn { text-decoration: none; }
 
 @media (max-width: 480px) {
   .appbar h1 { font-size: 17px; letter-spacing: 2px; }
-  .appbar h1 span + span { font-size: 9.5px; letter-spacing: 3.4px; }
+  .appbar h1 span + span { font-size: 9.5px; letter-spacing: .04em; }
   .card-main { padding: 12px; gap: 12px; }
   .thumb { flex-basis: 76px; width: 76px; height: 76px; }
   .tile-wrap { flex-basis: 60px; }

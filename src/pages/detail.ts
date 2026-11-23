@@ -6,7 +6,7 @@ import { buildHeadMeta, buildJsonLd } from '../lib/seo'
 import { COUNTDOWN_SCRIPT, formatRunDatesJa, renderEventCard } from './list'
 import { promoToast } from './promo'
 import { pushClientScript } from './pushClient'
-import { SITE_CSS, SITE_FOOTER, SITE_HEADER } from './style'
+import { LOGO_FONT_LINK, SITE_CSS, SITE_FOOTER, SITE_HEADER } from './style'
 
 function metaDescription(e: EventWithLotteries, dates: string): string {
   const names = e.lotteries.map((l) => l.name).slice(0, 3)
@@ -41,6 +41,7 @@ export function renderDetailPage(
 <meta name="viewport" content="width=device-width, initial-scale=1">
 ${head}
 <link rel="alternate" type="application/rss+xml" title="更新情報" href="/feed.xml">
+${LOGO_FONT_LINK}
 <style>${SITE_CSS}</style>
 <script type="application/ld+json">${buildJsonLd(run.group.events, canonical)}</script>
 </head>

@@ -15,7 +15,7 @@ describe('新着情報を受け取る', () => {
       expect(header, path).toContain('<a class="iconbtn sub-ic" href="/subscribe" aria-label="新着情報を受け取る" title="新着情報を受け取る">')
       expect(header, path).not.toContain('feed.xml')
       // 見出しの 1 段目はサイト名と同じ「さんどむ」。検索結果のサイト名に使ってもらうため、トップの表記をそろえる
-      expect(header, path).toContain('<h1><span>さんどむ</span><span>サンドーム福井ライブ情報</span></h1>')
+      expect(header, path).toContain('<h1><span>さん<span class="sun">ど</span>む</span><span>サンドーム福井ライブ情報</span></h1>')
       // フッターには置かない(入口はヘッダーのベルとトースト)
       expect(html, path).toContain('<footer class="site-f">\n<a href="/about">このサイトについて</a>')
     }
@@ -25,8 +25,11 @@ describe('新着情報を受け取る', () => {
     expect(top0).toContain("bell.classList.add('ringing');")
     expect(top0).toContain('.sub-ic.ringing .ic { transform-origin: 50% 12%; animation: bell-ring 3s ease-in-out infinite; }')
     expect(top0).toContain('@keyframes dot-ripple')
-    // 本文のフォントは端末のものを使い、Google Fonts は読まない(読み込み待ちで描画が止まるため)
-    expect(top0).not.toContain('fonts.googleapis.com')
+    // 本文のフォントは端末のものを使う。Google Fonts はロゴ「さんどむ」の 4 文字だけを、描画を止めない形(media="print")で読む
+    expect(top0.match(/fonts\.googleapis\.com\/css2/g)).toHaveLength(1)
+    expect(top0).toContain(
+      `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500&amp;text=${encodeURIComponent('さんどむ')}&amp;display=swap" media="print" onload="this.media='all'">`,
+    )
     expect(top0).toContain('<link rel="preload" as="image" href="/img/sundome-fukui-21x9.webp" media="(min-width: 481px)" fetchpriority="high">')
     // ページ間のアニメーション(View Transition)と、PC のホイールの慣性(どのページにも入る共通ヘッダーのスクリプト)
     expect(top0).toContain('@view-transition { navigation: auto; }')

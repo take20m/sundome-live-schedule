@@ -3,7 +3,7 @@ import { groupConsecutive } from '../lib/group'
 import { iconSvg } from '../lib/icon'
 import { buildHeadMeta } from '../lib/seo'
 import { renderEventCard } from './list'
-import { SITE_CSS, SITE_FOOTER, SITE_HEADER } from './style'
+import { LOGO_FONT_LINK, SITE_CSS, SITE_FOOTER, SITE_HEADER } from './style'
 
 type Groups = ReturnType<typeof groupConsecutive>
 
@@ -71,6 +71,7 @@ ${pager}`
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 ${head}
+${LOGO_FONT_LINK}
 <style>${SITE_CSS}</style>
 </head>
 <body>

@@ -14,7 +14,7 @@ import { isPurchasePage } from '../lib/ticket-url'
 import type { LotteryRow } from '../types'
 import { promoCard, promoToast } from './promo'
 import { pushClientScript } from './pushClient'
-import { SITE_CSS, SITE_FOOTER, SITE_HEADER } from './style'
+import { LOGO_FONT_LINK, SITE_CSS, SITE_FOOTER, SITE_HEADER } from './style'
 
 const WEEKDAYS_JA = ['日', '月', '火', '水', '木', '金', '土']
 
@@ -587,6 +587,7 @@ export function renderListPage(
 ${head}
 ${VENUE_PRELOAD}
 <link rel="alternate" type="application/rss+xml" title="更新情報" href="/feed.xml">
+${LOGO_FONT_LINK}
 <style>${SITE_CSS}</style>
 <script type="application/ld+json">${buildJsonLd(events, canonical)}</script>
 </head>

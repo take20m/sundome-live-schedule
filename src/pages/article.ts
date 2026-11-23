@@ -8,7 +8,7 @@ import { MAP_HEAD, MAP_SCRIPT, renderDoc, splitMeta } from '../lib/content'
 import { escapeHtml } from '../lib/html'
 import { iconSvg } from '../lib/icon'
 import { buildHeadMeta } from '../lib/seo'
-import { ARTICLE_CSS, SITE_CSS, SITE_FOOTER, SITE_HEADER } from './style'
+import { ARTICLE_CSS, LOGO_FONT_LINK, SITE_CSS, SITE_FOOTER, SITE_HEADER } from './style'
 
 /**
  * 見出しの明朝体(Noto Serif JP)。そのページで明朝体になる文字(タイトル・リード・見出し)だけを読む
@@ -85,6 +85,7 @@ export function renderArticle(a: ArticleShell): string {
 ${a.head}
 ${serifFontLinks([a.title, a.lead ?? '', verdict ? '要点' : '', ...headingTexts(a.body), ...headingTexts(a.after ?? '')])}
 ${a.extraHead ?? ''}
+${LOGO_FONT_LINK}
 <style>${SITE_CSS}${ARTICLE_CSS}</style>
 ${a.hasMap ? MAP_HEAD : ''}
 </head>
