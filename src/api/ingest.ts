@@ -179,9 +179,19 @@ function sanitize(raw: unknown, skipped: string[]): IncomingEvent[] {
   return out
 }
 
+/** 通知に書く受付期間(「11/7 10:00〜1/8 18:00」)。通知済みかの照合にも使う */
+function lotteryPeriod(l: Pick<IncomingLottery, 'starts_at' | 'ends_at'>): string {
+  return l.starts_at || l.ends_at ? `${formatJst(l.starts_at)}〜${formatJst(l.ends_at)}` : '期間未確認'
+}
+
+/** 通知のサマリ(「抽選情報: アーティスト「受付名」受付 期間」)から期間を取り出す */
+function periodOfSummary(summary: string): string | null {
+  const i = summary.lastIndexOf('」受付 ')
+  return i < 0 ? null : summary.slice(i + '」受付 '.length)
+}
+
 function lotterySummary(artist: string, l: IncomingLottery, kind: 'added' | 'updated'): string {
-  const period =
-    l.starts_at || l.ends_at ? `${formatJst(l.starts_at)}〜${formatJst(l.ends_at)}` : '期間未確認'
+  const period = lotteryPeriod(l)
   return kind === 'added'
     ? `抽選情報: ${artist}「${l.name}」受付 ${period}`
     : `抽選更新: ${artist}「${l.name}」受付 ${period}`
@@ -381,6 +391,15 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
       .all<LotteryRow>()
     const existingLots = new Map(existingLotRows.map((r) => [r.id, r]))
 
+    // この公演で通知済みの受付期間。受付名の書き方が夜ごとに変わり(「先着一般発売(イープラス)」→「先着一般発売」)、
+    // 古い行が 2 晩の見落としで消えた後に戻ってくると、期間一致の ID 引き継ぎ(下)が効かず新規扱いになる。
+    // 同じ期間を通知済みなら、新しい行は黙って載せる(刀剣乱舞 2026-11-23 で再通知された)
+    const { results: notifiedLotRows } = await db
+      .prepare(`SELECT summary FROM changes WHERE item_type = 'lottery' AND item_id LIKE ?`)
+      .bind(`lot-${eventId}-%`)
+      .all<{ summary: string }>()
+    const notifiedPeriods = new Set(notifiedLotRows.map((r) => periodOfSummary(r.summary)).filter((p) => p !== null))
+
     // この収集が期間情報を1件でも持っているか(削除ガードの判定に使う)
     const runHasPeriod = ev.lotteries.some((l) => l.starts_at || l.ends_at)
 
@@ -425,7 +444,9 @@ export async function handleIngest(c: Context<{ Bindings: Bindings }>): Promise<
         !eventInPast &&
         (lm.starts_at !== null || lm.ends_at !== null) &&
         !(lm.ends_at && Date.parse(lm.ends_at) < now.getTime()) &&
-        !isRestrictedLottery(l.name)
+        !isRestrictedLottery(l.name) &&
+        // 新しい行で、同じ期間を通知済みなら名前違いの同じ受付とみなす(既存行の更新判定は 'added-only' が担う)
+        !(!existingLots.has(lotteryId) && notifiedPeriods.has(lotteryPeriod(lm)))
       const lotteryResult = await diffAndUpsert(
         db,
         lotteryId,

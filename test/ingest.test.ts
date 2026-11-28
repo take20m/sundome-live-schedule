@@ -238,6 +238,29 @@ describe('ingest API', () => {
     expect(results.length).toBe(1)
   })
 
+  it('古い行が消えた後に名前違いで戻った受付は、同じ期間を通知済みなら通知しない。期間が違えば通知する', async () => {
+    const day = 24 * 60 * 60 * 1000
+    const at = (d: number) => new Date(Date.now() + d * day).toISOString()
+    const mk = (lotteries: object[]) => ({ title: 'DRIFT TOUR', artist: 'ドリフト', date: '2027-10-10', confidence: 'official', lotteries })
+    const other = { name: 'ファンクラブ先行', starts_at: at(-40), ends_at: at(-30), url: null, confidence: 'official' }
+    const general = { name: '先着一般発売(イープラス)', starts_at: at(-1), ends_at: at(30), url: null, confidence: 'official' }
+    const count = async () =>
+      (await env.DB.prepare("SELECT count(*) AS n FROM changes WHERE item_id LIKE 'lot-ev-2027-10-10-%'").first<{ n: number }>())!.n
+    await post({ events: [mk([other, general])] })
+    expect(await count()).toBe(1)
+    // 2 晩続けて収集に出ず、行が消える
+    await post({ events: [mk([other])] })
+    await post({ events: [mk([other])] })
+    expect(await env.DB.prepare("SELECT count(*) AS n FROM lotteries WHERE name LIKE '先着一般発売%'").first<{ n: number }>()).toEqual({ n: 0 })
+    // 名前を変えて戻る → 載るが通知はしない
+    await post({ events: [mk([other, { ...general, name: '先着一般発売' }])] })
+    expect(await env.DB.prepare("SELECT name FROM lotteries WHERE name = '先着一般発売'").first()).toEqual({ name: '先着一般発売' })
+    expect(await count()).toBe(1)
+    // 期間の違う新しい受付は通知する
+    await post({ events: [mk([other, { ...general, name: '先着一般発売' }, { ...general, name: '先着追加発売', starts_at: at(1) }])] })
+    expect(await count()).toBe(2)
+  })
+
   it('通知ノイズ抑制: 改名・締切済み・複数公演日の重複はRSSに流れない', async () => {
     const day = 24 * 60 * 60 * 1000
     const future = (d: number) => new Date(Date.now() + d * day).toISOString()
