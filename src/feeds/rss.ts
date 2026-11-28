@@ -166,8 +166,31 @@ export function groupEventChanges(changes: ChangeRow[], foldLotteries = false): 
   return out
 }
 
+/** 新規公演の後、この時間内に出た同じ公演の「公演更新」は RSS に出さない */
+const SAME_NIGHT_MS = 12 * 60 * 60 * 1000
+
+/**
+ * 新しく見つかった公演の「公演更新」を、同じ夜のうちなら落とす。
+ * 夜の収集は段に分かれていて(1段目の収集 → 見回り → 補強)、1段目で見つけた公演の開演時刻を
+ * 後の段が補うと、数十秒後に「公演更新」が記録される(さくらいと 2026-11-26 で新規と更新が並んだ)。
+ * 記録時刻がずれるので groupEventChanges では束ねられない。メールと通知は更新を送らないので RSS だけの対策
+ */
+export function dropSameNightUpdates(changes: ChangeRow[]): ChangeRow[] {
+  const addedAt = new Map<string, number[]>()
+  for (const c of changes) {
+    if (c.item_type === 'event' && c.summary.startsWith('新規公演: ')) {
+      addedAt.set(c.item_id, [...(addedAt.get(c.item_id) ?? []), Date.parse(c.created_at)])
+    }
+  }
+  return changes.filter((c) => {
+    if (c.item_type !== 'event' || !c.summary.startsWith('公演更新: ')) return true
+    const at = Date.parse(c.created_at)
+    return !(addedAt.get(c.item_id) ?? []).some((t) => t <= at && at - t < SAME_NIGHT_MS)
+  })
+}
+
 export function buildRss(changes: ChangeRow[], siteUrl: string): string {
-  const items = groupLotteryChanges(groupEventChanges(changes, true))
+  const items = groupLotteryChanges(groupEventChanges(dropSameNightUpdates(changes), true))
     .map((c) => {
       const pubDate = new Date(c.created_at)
       const date = Number.isNaN(pubDate.getTime()) ? new Date() : pubDate

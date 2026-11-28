@@ -273,6 +273,19 @@ describe('RSS のまとめ', () => {
 })
 
 describe('RSS の新着公演のまとめ', () => {
+  it('新しい公演が見つかった夜に、後の段で開演時刻が分かっても「公演更新」は出さない。翌日以降の更新は出す', async () => {
+    const ins = env.DB.prepare(
+      `INSERT INTO changes (item_id, item_type, change_kind, summary, created_at) VALUES (?, ?, ?, ?, ?)`,
+    )
+    const show = 'さくらんぼ「スポカル2026」(2026-12-05)'
+    await ins.bind('ev-2026-12-05', 'event', 'added', `新規公演: ${show}`, '2026-11-25T18:26:20.377Z').run()
+    await ins.bind('ev-2026-12-05', 'event', 'updated', `公演更新: ${show}`, '2026-11-25T18:27:09.287Z').run()
+    await ins.bind('ev-2026-12-05', 'event', 'updated', `公演更新: ${show}`, '2026-11-27T18:00:00.000Z').run()
+    const xml = await (await SELF.fetch('https://example.com/feed.xml')).text()
+    const titles = [...xml.matchAll(/<title>(.*?)<\/title>/g)].map((m) => m[1]).filter((t) => t.includes('さくらんぼ'))
+    expect(titles).toEqual([`公演更新: ${show}`, `新規公演: ${show}`])
+  })
+
   it('新しい公演が見つかった夜は、同じ公演の日ごとの通知と受付の通知を 1 件にまとめる', async () => {
     const at = '2026-10-17T12:00:47.000Z'
     const ins = env.DB.prepare(
